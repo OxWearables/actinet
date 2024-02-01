@@ -16,20 +16,20 @@ def main():
         long_description = fh.read()
 
     setup(
-        name="sample-package-chanshing",
+        name="actinet",
         version=versioneer.get_version(),    # Do not edit
         cmdclass=versioneer.get_cmdclass(),  # Do not edit
         python_requires=">=3.8, <4",
-        description="An example Python project",
+        description="Activity detection algorithm compatible with the UK Biobank Accelerometer Dataset",
         long_description=long_description,  # Do not edit. See README.md
         long_description_content_type="text/markdown",
         keywords="example, setuptools, versioneer",
-        url="https://github.com/chanshing/sample-package",
-        download_url="https://github.com/chanshing/sample-package",
-        author=get_string("__author__"),                      # Do not edit. see src/sample_package/__init__.py
-        maintainer=get_string("__maintainer__"),              # Do not edit. see src/sample_package/__init__.py
-        maintainer_email=get_string("__maintainer_email__"),  # Do not edit. See src/sample_package/__init__.py
-        license=get_string("__license__"),                    # Do not edit. See src/sample_package/__init__.py
+        url="https://github.com/OxWearables/actinet",
+        download_url="https://github.com/OxWearables/actinet",
+        author=get_string("__author__"),                      # Do not edit. see src/actinet/__init__.py
+        maintainer=get_string("__maintainer__"),              # Do not edit. see src/actinet/__init__.py
+        maintainer_email=get_string("__maintainer_email__"),  # Do not edit. See src/actinet/__init__.py
+        license=get_string("__license__"),                    # Do not edit. See src/actinet/__init__.py
 
         # This is for PyPI to categorize your project. See: https://pypi.org/classifiers/
         classifiers=[
@@ -41,22 +41,12 @@ def main():
         packages=find_packages(where="src", exclude=("test", "tests")),
         package_dir={"": "src"},
         # What other files to include, e.g. *.class if the package uses some Java code.
-        package_data={"sample_package": ["*.txt", "*.rst", "*.md"]},
-
-        # This option will include all files in the `src/sample_package` directory provided they
-        # are listed in the `MANIFEST.in` file, OR are being tracked by git.
-        # See: https://setuptools.pypa.io/en/latest/userguide/datafiles.html
-        # include_package_data=True,
+        package_data={"actinet": ["*.txt", "*.rst", "*.md"]},
 
         # Dependencies
         install_requires=[],
 
-        # Optional packages. Can be installed with:
-        # `$ pip install sample-package-chanshing[dev]` or
-        # `$ pip install sample-package-chanshing[docs]` or
-        # `$ pip install sample-package-chanshing[dev,docs]`
         extras_require={
-            # Will be installed with `$ pip install sample-package-chanshing[dev]`
             "dev": [
                 "versioneer",
                 "twine",
@@ -64,7 +54,6 @@ def main():
                 "flake8",
                 "autopep8",
             ],
-            # Will be installed with `$ pip install sample-package-chanshing[docs]`
             "docs": [
                 "sphinx>=4.2",
                 "sphinx_rtd_theme>=1.0",
@@ -76,7 +65,7 @@ def main():
         # Define entry points for command-line scripts, e.g.: `$ hello --name Alice`
         entry_points={
             "console_scripts": [
-                "hello=sample_package.main:main",
+                "hello=actinet.main:main",
             ],
         },
 
@@ -89,7 +78,7 @@ def read(rel_path):
         return fp.read()
 
 
-def get_string(string, rel_path="src/sample_package/__init__.py"):
+def get_string(string, rel_path="src/actinet/__init__.py"):
     for line in read(rel_path).splitlines():
         if line.startswith(string):
             delim = '"' if '"' in line else "'"
