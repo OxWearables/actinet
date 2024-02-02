@@ -58,7 +58,6 @@ def main():
             "joblib==1.2.*",
             "scikit-learn==1.1.1",
             "imbalanced-learn==0.9.1",
-            "hmmlearn==0.3.*",
             "torch==1.13.*",
             "torchvision==0.14.*",
             "transforms3d==0.4.*",
