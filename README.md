@@ -6,7 +6,7 @@ The backbone of this repository is a self-supervised Resnet18 model.
 
 ## Install
 
-*Minimum requirements*: Python>=3.8, Java 8 (1.8)
+*Minimum requirements*: Python>=3.9, Java 8 (1.8)
 
 The following instructions make use of Anaconda to meet the minimum requirements:
 
@@ -63,7 +63,10 @@ conda install -n actinet openjdk=8
 By default, output files will be stored in a folder named after the input file, `outputs/{filename}/`, created in the current working directory. You can change the output path with the `-o` flag:
 
 ```console
-actinet sample.cwa -o /path/to/some/folder/
+$ actinet sample.cwa -o /path/to/some/folder/
+
+<Output summary written to: /path/to/some/folder/sample-outputSummary.json>
+<Time series output written to: /path/to/some/folder/sample-timeSeries.csv.gz>
 ```
 
 The following output files are created:
@@ -72,6 +75,15 @@ The following output files are created:
 - *timeSeries.csv* Raw time-series of activity levels
 
 See [Data Dictionary](https://biobankaccanalysis.readthedocs.io/en/latest/datadict.html) for the list of output variables.
+
+### Plotting activity profiles
+
+To plot the activity profiles, you can use the -p flag:
+
+```console
+$ actinet sample.cwa -p
+<Output plot written to: data/sample-timeSeries-plot.png>
+```
 
 ### Crude vs. Adjusted Estimates
 
@@ -123,6 +135,16 @@ actinet file3.cwa
 ```
 
 Then, run `bash command.sh` from the terminal.
+
+### Collating outputs
+
+A utility script is provided to collate outputs from multiple runs:
+
+```console
+actinet-collate-outputs outputs/
+```
+
+This will collate all *-Info.json files found in outputs/ and generate a CSV file.
 
 ## Citing our work
 

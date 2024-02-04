@@ -84,7 +84,8 @@ def main():
         # Define entry points for command-line scripts, e.g.: `$ hello --name Alice`
         entry_points={
             "console_scripts": [
-                "hello=actinet.main:main",
+                "actinet=actinet.actinet:main",
+                "actinet-collate-outputs=actinet.utils.collate_outputs:main",
             ],
         },
     )
