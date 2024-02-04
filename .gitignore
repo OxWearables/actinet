@@ -1,4 +1,3 @@
-######################################### Copied from Pandas Project
 # Editor temporary/working/backup files #
 .#*
 *\#*\#
@@ -91,6 +90,12 @@ Thumbs.db
 pandas/io/*.dat
 pandas/io/*.json
 scikits
+
+# Model files #
+###############
+*.lzma
+*.pt
+*.npz
 
 # Generated Sources #
 #####################
