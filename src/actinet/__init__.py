@@ -4,7 +4,7 @@ __maintainer__ = "Shing Chan"
 __maintainer_email__ = "shing.chan@ndph.ox.ac.uk"
 __license__ = "See LICENSE file."
 
-__model_version__ = "ssl-ukb-c24-rw"
+__model_version__ = "ssl_ukb_c24_rw_20240204"
 __model_md5__ = ""
 
 from . import _version

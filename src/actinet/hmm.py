@@ -8,15 +8,23 @@ class HMM:
     Implement a basic HMM model with parameter saving/loading.
     """
 
-    def __init__(self, labels=None, uniform_prior=True):
-        self.prior = None
-        self.emission = None
-        self.transition = None
+    def __init__(
+        self,
+        prior=None,
+        emission=None,
+        transition=None,
+        labels=None,
+        uniform_prior=True,
+    ):
+        self.prior = prior
+        self.emission = emission
+        self.transition = transition
         self.labels = labels
         self.uniform_prior = uniform_prior
 
     def __str__(self):
         return (
+            "Hidden Markov Model\n"
             "prior: {prior}\n"
             "emission: {emission}\n"
             "transition: {transition}\n"

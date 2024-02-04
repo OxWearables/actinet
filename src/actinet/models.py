@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 
@@ -16,6 +15,7 @@ class ActivityClassifier:
         window_sec=30,
         weights_path="state_dict.pt",
         labels=[],
+        ssl_repo=None,
         repo_tag="v1.0.0",
         hmm_params=None,
         verbose=False,
@@ -26,13 +26,25 @@ class ActivityClassifier:
         self.batch_size = batch_size
         self.window_sec = window_sec
         self.state_dict = None
-        self.label_encoder = LabelEncoder().fit(labels)
+        self.labels = labels
         self.window_len = int(np.ceil(self.window_sec * sslmodel.SAMPLE_RATE))
-
         self.verbose = verbose
+
+        self.model = self._load_ssl(ssl_repo, weights_path)
 
         hmm_params = hmm_params or dict()
         self.hmms = hmm.HMM(**hmm_params)
+
+    def __str__(self):
+        return (
+            "Activity Classifier\n"
+            "class_labels: {self.labels}\n"
+            "window_length: {self.window_sec}\n"
+            "batch_size: {self.batch_size}\n"
+            "device: {self.device}\n"
+            "hmm: {self.hmms}\n"
+            "model: {self.model}".format(self=self)
+        )
 
     def predict_from_frame(self, data):
 
@@ -55,16 +67,14 @@ class ActivityClassifier:
             data, self.window_sec, fn=fn, return_index=True, verbose=self.verbose
         )
 
-        Y_labels = self.label_encoder.inverse_transform(self._predict(X))
-
-        Y = raw_to_df(X, Y_labels, T, self.label_encoder.classes_, reindex=False)
+        Y = raw_to_df(X, self._predict(X), T, self.labels, reindex=False)
 
         return Y
 
-    def _predict(self, X, groups=None):
+    def _predict(self, X):
         sslmodel.verbose = self.verbose
 
-        dataset = sslmodel.NormalDataset(X, name="prediction")
+        dataset = sslmodel.NormalDataset(X)
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -72,22 +82,26 @@ class ActivityClassifier:
             num_workers=0,
         )
 
-        model = sslmodel.get_sslnet(
-            tag=self.repo_tag,
-            pretrained=False,
-            window_sec=self.window_sec,
-            num_labels=len(self.label_encoder.classes_),
-        )
-        model.load_state_dict(self.state_dict)
-        model.to(self.device)
-
         _, y_pred, _ = sslmodel.predict(
-            model, dataloader, self.device, output_logits=False
+            self.model, dataloader, self.device, output_logits=False
         )
 
-        y_pred = self.hmms.predict(y_pred, groups=groups)
+        y_pred = self.hmms.predict(y_pred)
 
         return y_pred
+
+    def _load_ssl(self, ssl_repo, weights):
+        model = sslmodel.get_sslnet(
+            self.device,
+            tag=self.repo_tag,
+            local_repo_path=ssl_repo,
+            pretrained=weights,
+            window_sec=self.window_sec,
+            num_labels=len(self.labels),
+        )
+        model.to(self.device)
+
+        return model
 
 
 def make_windows(data, window_sec, fn=None, return_index=False, verbose=True):

@@ -184,41 +184,25 @@ class EarlyStopping:
 
 
 def get_sslnet(
-    tag="v1.0.0", pretrained=False, window_sec: int = 30, num_labels: int = 4
+    device,
+    tag="v1.0.0",
+    local_repo_path=None,
+    pretrained=False,
+    window_sec: int = 30,
+    num_labels: int = 4,
 ):
     """
-    Load and return the Self Supervised Learning (SSL) model from pytorch hub.
+    Load and return the Self Supervised Learning (SSL) model from pytorch hub or local storage.
 
+    :param str device: PyTorch device to use
     :param str tag: Tag on the ssl-wearables repo to check out
-    :param bool pretrained: Initialise the model with UKB self-supervised pretrained weights
+    :param str local_repo_path: Path to local version of the SSL repo for offline usage
+    :param bool/str pretrained: Initialise the model with UKB self-supervised pretrained weights
     :param int window_sec: The length of the window of data in seconds (limited to 5, 10 or 30)
     :param int num_labels: The number of labels to predict
     :return: pytorch SSL model
     :rtype: nn.Module
     """
-
-    repo_name = "ssl-wearables"
-    repo = f"OxWearables/{repo_name}:{tag}"
-
-    if not torch_cache_path.exists():
-        Path.mkdir(torch_cache_path, parents=True, exist_ok=True)
-
-    torch.hub.set_dir(str(torch_cache_path))
-
-    # find repo cache dir that matches repo name and tag
-    cache_dirs = [f for f in torch_cache_path.iterdir() if f.is_dir()]
-    repo_path = next(
-        (f for f in cache_dirs if repo_name in f.name and tag in f.name), None
-    )
-
-    if repo_path is None:
-        repo_path = repo
-        source = "github"
-    else:
-        repo_path = str(repo_path)
-        source = "local"
-        if verbose:
-            print(f"Using local {repo_path}")
 
     if window_sec not in [5, 10, 30]:
         raise ValueError(
@@ -228,15 +212,52 @@ def get_sslnet(
     if num_labels < 1:
         raise ValueError("Numer of class labels should be > 0")
 
-    sslnet: nn.Module = torch.hub.load(
-        repo_path,
-        f"harnet{window_sec}",
-        trust_repo=True,
-        source=source,
-        class_num=num_labels,
-        pretrained=pretrained,
-        verbose=verbose,
-    )
+    if local_repo_path is not None:
+        sslnet: nn.Module = torch.hub.load(
+            local_repo_path,
+            f"harnet{window_sec}",
+            source="local",
+            class_num=num_labels,
+            pretrained=pretrained == True,
+        )
+
+    else:
+        repo_name = "ssl-wearables"
+        repo = f"OxWearables/{repo_name}:{tag}"
+
+        if not torch_cache_path.exists():
+            Path.mkdir(torch_cache_path, parents=True, exist_ok=True)
+
+        torch.hub.set_dir(str(torch_cache_path))
+
+        # find repo cache dir that matches repo name and tag
+        cache_dirs = [f for f in torch_cache_path.iterdir() if f.is_dir()]
+        repo_path = next(
+            (f for f in cache_dirs if repo_name in f.name and tag in f.name), None
+        )
+
+        if repo_path is None:
+            repo_path = repo
+            source = "github"
+        else:
+            repo_path = str(repo_path)
+            source = "local"
+            if verbose:
+                print(f"Using local {repo_path}")
+
+        sslnet: nn.Module = torch.hub.load(
+            repo_path,
+            f"harnet{window_sec}",
+            trust_repo=True,
+            source=source,
+            class_num=num_labels,
+            pretrained=pretrained == True,
+            verbose=verbose,
+        )
+
+    model_dict = torch.load(pretrained, map_location=device)
+    sslnet.load_state_dict(model_dict)
+
     return sslnet
 
 

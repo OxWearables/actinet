@@ -20,6 +20,8 @@ from actinet.sslmodel import SAMPLE_RATE
 from actinet.summarisation import getActivitySummary, ACTIVITY_LABELS
 from actinet.utils.utils import infer_freq
 
+BASE_URL = "https://zenodo.org/records/10616280/files/"
+
 
 def main():
 
@@ -86,7 +88,7 @@ def main():
     model_path = pathlib.Path(__file__).parent / f"{__model_version__}.joblib.lzma"
     check_md5 = args.model_path is None
     model: ActivityClassifier = load_model(
-        args.model_path or model_path, args.model_type, check_md5, args.force_download
+        args.model_path or model_path, check_md5, args.force_download
     )
 
     model.verbose = verbose
@@ -222,14 +224,14 @@ def resolve_path(path):
     return dirname, filename, extension
 
 
-def load_model(model_path, model_type, check_md5=True, force_download=False):
+def load_model(model_path, check_md5=True, force_download=False):
     """Load trained model. Download if not exists."""
 
     pth = pathlib.Path(model_path)
 
     if force_download or not pth.exists():
 
-        url = f"https://wearables-files.ndph.ox.ac.uk/files/models/stepcount/{__model_version__}.joblib.lzma"
+        url = f"{BASE_URL}{__model_version__}.joblib.lzma"
 
         print(f"Downloading {url}...")
 

@@ -7,7 +7,7 @@ from pandas.tseries.frequencies import to_offset
 from actinet.utils.utils import date_parser, toScreen
 from actinet import circadian
 
-ACTIVITY_LABELS = ["light", "MVPA", "sedentary", "sleep"]
+ACTIVITY_LABELS = ["light", "moderate-vigorous", "sedentary", "sleep"]
 
 
 def getActivitySummary(
@@ -97,8 +97,6 @@ def _summarise(
     for i, row in dailyStats.iterrows():
         for col in cols:
             summary[f"day{i}-recorded-{col}(hrs)"] = row.loc[col]
-
-    summary["day_avg"]
 
     # Calculate empirical cumulative distribution function of vector magnitudes
     if intensityDistribution:
