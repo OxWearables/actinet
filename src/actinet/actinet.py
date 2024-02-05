@@ -62,12 +62,25 @@ def main():
         action="store_true",
         help="Plot the predicted activity labels",
     )
+    parser.add_argument(
+        "--cache-ssl",
+        action="store_true",
+        help="Download and cache ssl module for offline usage",
+    )
     parser.add_argument("--quiet", "-q", action="store_true", help="Suppress output")
     args = parser.parse_args()
 
     before = time.time()
 
     verbose = not args.quiet
+
+    if args.cache_ssl:
+        model = ActivityClassifier(weights_path=True, ssl_repo=None, verbose=verbose)
+
+        after = time.time()
+        print(f"Done! ({round(after - before,2)}s)")
+
+        return
 
     # Load file
     data, info = read(
