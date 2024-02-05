@@ -13,7 +13,7 @@ class ActivityClassifier:
         device="cpu",
         batch_size=512,
         window_sec=30,
-        weights_path="state_dict.pt",
+        weights_path=None,
         labels=[],
         ssl_repo=None,
         repo_tag="v1.0.0",
@@ -21,16 +21,15 @@ class ActivityClassifier:
         verbose=False,
     ):
         self.device = device
-        self.weights_path = weights_path
         self.repo_tag = repo_tag
         self.batch_size = batch_size
         self.window_sec = window_sec
-        self.state_dict = None
         self.labels = labels
         self.window_len = int(np.ceil(self.window_sec * sslmodel.SAMPLE_RATE))
         self.verbose = verbose
-
-        self.model = self._load_ssl(ssl_repo, weights_path)
+        
+        self.model_weights = sslmodel.get_model_dict(weights_path, device) if weights_path else None
+        self.model = self.load_ssl(ssl_repo)
 
         hmm_params = hmm_params or dict()
         self.hmms = hmm.HMM(**hmm_params)
@@ -90,12 +89,11 @@ class ActivityClassifier:
 
         return y_pred
 
-    def _load_ssl(self, ssl_repo, weights):
+    def load_ssl(self, ssl_repo):
         model = sslmodel.get_sslnet(
-            self.device,
             tag=self.repo_tag,
             local_repo_path=ssl_repo,
-            pretrained=weights,
+            pretrained_weights = self.model_weights or True,
             window_sec=self.window_sec,
             num_labels=len(self.labels),
         )

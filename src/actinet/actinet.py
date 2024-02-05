@@ -20,7 +20,7 @@ from actinet.sslmodel import SAMPLE_RATE
 from actinet.summarisation import getActivitySummary, ACTIVITY_LABELS
 from actinet.utils.utils import infer_freq
 
-BASE_URL = "https://zenodo.org/records/10616280/files/"
+BASE_URL = "https://zenodo.org/records/10619096/files/"
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
         description="A tool to predict activities from accelerometer data using a self-supervised Resnet 18 model",
         add_help=True,
     )
-    parser.add_argument("filepath", help="Enter file to be processed")
+    parser.add_argument("--filepath", "-f", help="Enter file to be processed")
     parser.add_argument(
         "--outdir",
         "-o",
@@ -67,6 +67,9 @@ def main():
         action="store_true",
         help="Download and cache ssl module for offline usage",
     )
+    parser.add_argument(
+        "--ssl-repo-path", "-s", help="Enter repository of ssl model", default=None
+    )
     parser.add_argument("--quiet", "-q", action="store_true", help="Suppress output")
     args = parser.parse_args()
 
@@ -75,7 +78,7 @@ def main():
     verbose = not args.quiet
 
     if args.cache_ssl:
-        model = ActivityClassifier(weights_path=True, ssl_repo=None, verbose=verbose)
+        model = ActivityClassifier(weights_path=None, ssl_repo=None, verbose=verbose, labels=ACTIVITY_LABELS)
 
         after = time.time()
         print(f"Done! ({round(after - before,2)}s)")
@@ -101,7 +104,7 @@ def main():
     model_path = pathlib.Path(__file__).parent / f"{__model_version__}.joblib.lzma"
     check_md5 = args.model_path is None
     model: ActivityClassifier = load_model(
-        args.model_path or model_path, check_md5, args.force_download
+        args.model_path or model_path, check_md5, args.force_download, verbose
     )
 
     model.verbose = verbose
@@ -237,7 +240,7 @@ def resolve_path(path):
     return dirname, filename, extension
 
 
-def load_model(model_path, check_md5=True, force_download=False):
+def load_model(model_path, ssl_repo_path=None, check_md5=True, force_download=False, verbose=True):
     """Load trained model. Download if not exists."""
 
     pth = pathlib.Path(model_path)
@@ -246,7 +249,8 @@ def load_model(model_path, check_md5=True, force_download=False):
 
         url = f"{BASE_URL}{__model_version__}.joblib.lzma"
 
-        print(f"Downloading {url}...")
+        if verbose:
+            print(f"Downloading {url}...")
 
         with urllib.request.urlopen(url) as f_src, open(pth, "wb") as f_dst:
             shutil.copyfileobj(f_src, f_dst)
@@ -257,7 +261,15 @@ def load_model(model_path, check_md5=True, force_download=False):
             "to download the model file again."
         )
 
-    return joblib.load(pth)
+    model: ActivityClassifier = joblib.load(pth)
+
+    if ssl_repo_path and pathlib.Path(ssl_repo_path).exists():
+        if verbose:
+            print(f"Loading ssl repository from {ssl_repo_path}.")
+
+        model = model.load_ssl(ssl_repo_path)
+
+    return model
 
 
 def md5(fname):

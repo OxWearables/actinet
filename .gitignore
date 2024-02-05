@@ -127,3 +127,7 @@ doc/build/html/index.html
 doc/tmp.sv
 env/
 doc/source/savefig/
+
+# Torch hub cache #
+###################
+src/actinet/torch_hub_cache/*

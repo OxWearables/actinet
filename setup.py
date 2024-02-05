@@ -55,7 +55,7 @@ def main():
             "scipy==1.10.*",
             "pandas==2.0.*",
             "tqdm==4.64.*",
-            "matplotlib==3.1.*",
+            "matplotlib==3.5.*",
             "joblib==1.2.*",
             "scikit-learn==1.1.1",
             "imbalanced-learn==0.9.1",

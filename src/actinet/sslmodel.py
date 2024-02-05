@@ -1,5 +1,6 @@
 """ Helper classes and functions for the SSL model """
 
+from collections import OrderedDict
 import torch
 import torch.nn as nn
 import numpy as np
@@ -184,10 +185,9 @@ class EarlyStopping:
 
 
 def get_sslnet(
-    device,
     tag="v1.0.0",
     local_repo_path=None,
-    pretrained=False,
+    pretrained_weights=False,
     window_sec: int = 30,
     num_labels: int = 4,
 ):
@@ -196,8 +196,8 @@ def get_sslnet(
 
     :param str device: PyTorch device to use
     :param str tag: Tag on the ssl-wearables repo to check out
-    :param str local_repo_path: Path to local version of the SSL repo for offline usage
-    :param bool/str pretrained: Initialise the model with UKB self-supervised pretrained weights
+    :param str local_repo_path: Path to local version of the SSL repository for offline usage
+    :param bool/OrderedDict pretrained_weights: Initialise the model with UKB self-supervised/specified pretrained weights
     :param int window_sec: The length of the window of data in seconds (limited to 5, 10 or 30)
     :param int num_labels: The number of labels to predict
     :return: pytorch SSL model
@@ -218,7 +218,7 @@ def get_sslnet(
             f"harnet{window_sec}",
             source="local",
             class_num=num_labels,
-            pretrained=pretrained == True,
+            pretrained=pretrained_weights == True,
         )
 
     else:
@@ -251,14 +251,18 @@ def get_sslnet(
             trust_repo=True,
             source=source,
             class_num=num_labels,
-            pretrained=pretrained == True,
+            pretrained=pretrained_weights == True,
             verbose=verbose,
         )
 
-    model_dict = torch.load(pretrained, map_location=device)
-    sslnet.load_state_dict(model_dict)
+    if isinstance(pretrained_weights, OrderedDict):
+        sslnet.load_state_dict(pretrained_weights)
 
     return sslnet
+
+
+def get_model_dict(weights_path, device):
+    return torch.load(weights_path, map_location=device)
 
 
 def predict(model, dataloader, device, output_logits=False):
