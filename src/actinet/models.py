@@ -44,7 +44,7 @@ class ActivityClassifier:
             "batch_size: {self.batch_size}\n"
             "device: {self.device}\n"
             "hmm: {self.hmms}\n"
-            "model: {self.model}".format(self=self)
+            "model: {model}".format(self=self, model=self.model or "Model has not been loaded.")
         )
 
     def predict_from_frame(self, data):

@@ -17,11 +17,10 @@ from actinet import __classifier_md5__
 from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
 from actinet.sslmodel import SAMPLE_RATE
-from actinet.summarisation import getActivitySummary, ACTIVITY_LABELS
+from actinet.summarisation import getActivitySummary
 from actinet.utils.utils import infer_freq
 
-BASE_URL = "https://zenodo.org/records/10619096/files/"
-
+BASE_URL = "https://zenodo.org/records/10625542/files/"
 
 def main():
 
@@ -86,7 +85,7 @@ def main():
         pathlib.Path(__file__).parent / f"{__classifier_version__}.joblib.lzma"
     )
 
-    if args.cache_model:
+    if args.cache_classifier:
         load_classifier(
             classifier_path=classifier_path,
             model_repo_path=None,
@@ -115,11 +114,11 @@ def main():
 
     # Run classifier
     if verbose:
-        print("Loading model...")
+        print("Loading classifier...")
 
     check_md5 = args.classifier_path is None
     classifier: ActivityClassifier = load_classifier(
-        args.clasifier_path or classifier_path, check_md5, args.force_download, verbose
+        args.classifier_path or classifier_path, args.model_repo_path, check_md5, args.force_download, verbose
     )
 
     classifier.verbose = verbose
@@ -136,8 +135,17 @@ def main():
     if verbose:
         print("Time series output written to:", timeSeriesFile)
 
+    # Plot activity profile
+    if args.plot_activity:
+        plotFile = f"{outdir}/{basename}-timeSeries-plot.png"
+        fig = plotTimeSeries(Y)
+        fig.savefig(plotFile, dpi=200, bbox_inches="tight")
+
+        if verbose:
+            print("Output plot written to:", plotFile)
+
     # Summary
-    summary = getActivitySummary(Y, True, True, verbose)
+    summary = getActivitySummary(Y, classifier.labels, True, True, verbose)
 
     # Join the actipy processing info, with acitivity summary data
     outputSummary = {**summary, **info}
@@ -154,7 +162,7 @@ def main():
     if verbose:
         print("\nSummary Stats\n---------------------")
         print(
-            {
+            json.dumps({
                 key: outputSummary[key]
                 for key in [
                     "Filename",
@@ -162,20 +170,10 @@ def main():
                     "WearTime(days)",
                     "NonwearTime(days)",
                     "ReadOK",
-                    "acc-overall-avg(mg)",
                 ]
-                + [f"{label}-week-avg" for label in ACTIVITY_LABELS]
-            }
+                + [f"{label}-overall-avg" for label in ["acc"] + classifier.labels]
+            }, indent=4, cls=NpEncoder)
         )
-
-    # Plot activity profile
-    if args.plot_activity:
-        plotFile = f"{outdir}/{basename}-timeSeries-plot.png"
-        fig = plotTimeSeries(Y)
-        fig.savefig(plotFile, dpi=200, bbox_inches="tight")
-
-        if verbose:
-            print("Output plot written to:", plotFile)
 
     after = time.time()
     print(f"Done! ({round(after - before,2)}s)")

@@ -7,11 +7,10 @@ from pandas.tseries.frequencies import to_offset
 from actinet.utils.utils import date_parser, toScreen
 from actinet import circadian
 
-ACTIVITY_LABELS = ["light", "moderate-vigorous", "sedentary", "sleep"]
-
 
 def getActivitySummary(
     data,
+    labels,
     intensityDistribution=False,
     circadianMetrics=False,
     verbose=True,
@@ -19,12 +18,12 @@ def getActivitySummary(
     """
     Calculate overall activity summary from predicted activity label data.
     This is achieved by:
-    1) check if data occurs at a daylight savings crossover
-    2) calculate imputation values to replace nan PA metric values
-    3) calculate empirical cumulative distribution function of vector magnitudes
-    4) derive main movement summaries (overall, weekday/weekend, and hour)
+    1) calculate imputation values to replace nan PA metric values
+    2) calculate empirical cumulative distribution function of vector magnitudes
+    3) derive main movement summaries (overall, weekday/weekend, and hour)
 
     :param str data: Input csv.gz file or pandas dataframe of processed epoch data
+    :param list(str) labels: Activity state labels
     :param bool intensityDistribution: Add intensity outputs to dict <summary>
     :param bool circadianMetrics: Add circadian rhythm metrics to dict <summary>
     :param bool verbose: Print verbose output
@@ -46,7 +45,7 @@ def getActivitySummary(
 
     # Main movement summaries
     summary = _summarise(
-        data, ACTIVITY_LABELS, intensityDistribution, circadianMetrics, verbose, summary
+        data, labels, intensityDistribution, circadianMetrics, verbose,
     )
 
     # Return physical activity summary
@@ -83,9 +82,6 @@ def _summarise(
     # Get start day
     startTime = data.index[0]
     summary["FirstDay(0=mon,6=sun)"] = startTime.weekday()
-
-    # Check daylight savings crossings
-    summary = checkDST(data, summary)
 
     # Hours of activity for each recorded day
     epochPeriod = int(pd.Timedelta(freq).total_seconds())
@@ -171,31 +167,22 @@ def _summarise(
     if circadianMetrics:
         toScreen("=== Calculating circadian metrics ===", verbose)
         summary = circadian.calculatePSD(
-            data, epochPeriod, False, ACTIVITY_LABELS, summary
+            data, epochPeriod, False, labels, summary
         )
         summary = circadian.calculatePSD(
-            data, epochPeriod, True, ACTIVITY_LABELS, summary
+            data, epochPeriod, True, labels, summary
         )
         summary = circadian.calculateFourierFreq(
-            data, epochPeriod, False, ACTIVITY_LABELS, summary
+            data, epochPeriod, False, labels, summary
         )
         summary = circadian.calculateFourierFreq(
-            data, epochPeriod, False, ACTIVITY_LABELS, summary
+            data, epochPeriod, False, labels, summary
         )
         summary = circadian.calculateM10L5(data, epochPeriod, summary)
 
     return summary
 
 
-def checkDST(data, summary={}):
-    if data.index[0].dst() < data.index[-1].dst():
-        summary["quality-daylightSavingsCrossover"] = 1
-    elif data.index[0].dst() > data.index[-1].dst():
-        summary["quality-daylightSavingsCrossover"] = -1
-    else:
-        summary["quality-daylightSavingsCrossover"] = 0
-
-    return summary
 
 
 def imputeMissing(data, extrapolate=True):
@@ -223,7 +210,7 @@ def imputeMissing(data, extrapolate=True):
                 data.index[0].floor("D"),
                 data.index[-1].ceil("D"),
                 freq=to_offset(pd.infer_freq(data.index)),
-                closed="left",
+                inclusive="left",
                 name="time",
             ),
             method="nearest",
@@ -303,7 +290,7 @@ def calculateECDF(x, summary):
     )
 
     # Write to summary
-    for level, val in ecdf.iteritems():
+    for level, val in ecdf.items():
         summary[f"{x.name}-ecdf-{level}mg"] = val
 
     return summary
