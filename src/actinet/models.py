@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import joblib
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 
@@ -15,7 +16,6 @@ class ActivityClassifier:
         window_sec=30,
         weights_path=None,
         labels=[],
-        ssl_repo=None,
         repo_tag="v1.0.0",
         hmm_params=None,
         verbose=False,
@@ -27,9 +27,11 @@ class ActivityClassifier:
         self.labels = labels
         self.window_len = int(np.ceil(self.window_sec * sslmodel.SAMPLE_RATE))
         self.verbose = verbose
-        
-        self.model_weights = sslmodel.get_model_dict(weights_path, device) if weights_path else None
-        self.model = self.load_ssl(ssl_repo)
+
+        self.model_weights = (
+            sslmodel.get_model_dict(weights_path, device) if weights_path else None
+        )
+        self.model = None
 
         hmm_params = hmm_params or dict()
         self.hmms = hmm.HMM(**hmm_params)
@@ -71,6 +73,9 @@ class ActivityClassifier:
         return Y
 
     def _predict(self, X):
+        if self.model is None:
+            raise Exception("Model has not been loaded for ActivityClassifier.")
+
         sslmodel.verbose = self.verbose
 
         dataset = sslmodel.NormalDataset(X)
@@ -89,17 +94,18 @@ class ActivityClassifier:
 
         return y_pred
 
-    def load_ssl(self, ssl_repo):
-        model = sslmodel.get_sslnet(
+    def load_model(self, model_repo=None):
+        self.model = sslmodel.get_sslnet(
             tag=self.repo_tag,
-            local_repo_path=ssl_repo,
-            pretrained_weights = self.model_weights or True,
+            local_repo_path=model_repo,
+            pretrained_weights=self.model_weights or True,
             window_sec=self.window_sec,
             num_labels=len(self.labels),
         )
-        model.to(self.device)
+        self.model.to(self.device)
 
-        return model
+    def save(self, output_path):
+        joblib.dump(self, output_path, compress=("lzma", 3))
 
 
 def make_windows(data, window_sec, fn=None, return_index=False, verbose=True):

@@ -38,16 +38,16 @@ You are all set! The next time that you want to use `actinet`, open the Anaconda
 
 ```bash
 # Process an AX3 file
-$ actinet sample.cwa
+$ actinet -f sample.cwa
 
 # Or an ActiGraph file
-$ actinet sample.gt3x
+$ actinet -f sample.gt3x
 
 # Or a GENEActiv file
-$ actinet sample.bin
+$ actinet -f sample.bin
 
 # Or a CSV file (see data format below)
-$ actinet sample.csv
+$ actinet -f sample.csv
 ```
 
 ### Troubleshooting
@@ -58,12 +58,34 @@ Some systems may face issues with Java when running the script. If this is your 
 conda install -n actinet openjdk=8
 ```
 
+### Offline usage
+
+To use this package offline, one must first download and install the relevant classifier file and model modules.
+This repository offers two ways of doing this.
+
+Run the following code when you have internet access:
+```console
+actinet --cache-classifier
+```
+ 
+Following this, the actinet classifier can be used as standard without internet access, without needing to specify the flags relating to the model repository.
+ 
+Alternatively, you can download or git clone the ssl modules from the [ssl-wearables repository](https://github.com/OxWearables/ssl-wearables).
+
+In addition, you can donwload/prepare a custom classifier file.
+
+Once this is downloaded to an appopriate location, you can run the actinet model using:
+ 
+```console
+actinet -f sample.cwa -c /path/to/classifier.joblib.lzma -m /path/to/ssl-wearables
+```
+
 ### Output files
 
 By default, output files will be stored in a folder named after the input file, `outputs/{filename}/`, created in the current working directory. You can change the output path with the `-o` flag:
 
 ```console
-$ actinet sample.cwa -o /path/to/some/folder/
+$ actinet -f sample.cwa -o /path/to/some/folder/
 
 <Output summary written to: /path/to/some/folder/sample-outputSummary.json>
 <Time series output written to: /path/to/some/folder/sample-timeSeries.csv.gz>
@@ -81,7 +103,7 @@ See [Data Dictionary](https://biobankaccanalysis.readthedocs.io/en/latest/datadi
 To plot the activity profiles, you can use the -p flag:
 
 ```console
-$ actinet sample.cwa -p
+$ actinet -f sample.cwa -p
 <Output plot written to: data/sample-timeSeries-plot.png>
 ```
 
@@ -116,9 +138,9 @@ To process multiple files you can create a text file in Notepad which includes o
 Example text file *commands.txt*:
 
 ```console
-actinet file1.cwa &
-actinet file2.cwa &
-actinet file3.cwa 
+actinet -f file1.cwa &
+actinet -f file2.cwa &
+actinet -f file3.cwa 
 :END
 ````
 
@@ -129,9 +151,9 @@ Once this file is created, run `cmd < commands.txt` from the terminal.
 Create a file *command.sh* with:
 
 ```console
-actinet file1.cwa
-actinet file2.cwa
-actinet file3.cwa
+actinet -f file1.cwa
+actinet -f file2.cwa
+actinet -f file3.cwa
 ```
 
 Then, run `bash command.sh` from the terminal.

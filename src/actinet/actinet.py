@@ -12,8 +12,8 @@ import joblib
 
 import actipy
 
-from actinet import __model_version__
-from actinet import __model_md5__
+from actinet import __classifier_version__
+from actinet import __classifier_md5__
 from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
 from actinet.sslmodel import SAMPLE_RATE
@@ -37,10 +37,15 @@ def main():
         default="outputs/",
     )
     parser.add_argument(
-        "--model-path", "-m", help="Enter custom model file to use", default=None
+        "--classifier-path",
+        "-c",
+        help="Enter custom acitivty classifier file to use",
+        default=None,
     )
     parser.add_argument(
-        "--force-download", action="store_true", help="Force download of model file"
+        "--force-download",
+        action="store_true",
+        help="Force download of classifier file",
     )
     parser.add_argument(
         "--pytorch-device",
@@ -63,12 +68,12 @@ def main():
         help="Plot the predicted activity labels",
     )
     parser.add_argument(
-        "--cache-ssl",
+        "--cache-classifier",
         action="store_true",
-        help="Download and cache ssl module for offline usage",
+        help="Download and cache classifier file and model modules for offline usage",
     )
     parser.add_argument(
-        "--ssl-repo-path", "-s", help="Enter repository of ssl model", default=None
+        "--model-repo-path", "-m", help="Enter repository of ssl model", default=None
     )
     parser.add_argument("--quiet", "-q", action="store_true", help="Suppress output")
     args = parser.parse_args()
@@ -77,8 +82,18 @@ def main():
 
     verbose = not args.quiet
 
-    if args.cache_ssl:
-        model = ActivityClassifier(weights_path=None, ssl_repo=None, verbose=verbose, labels=ACTIVITY_LABELS)
+    classifier_path = (
+        pathlib.Path(__file__).parent / f"{__classifier_version__}.joblib.lzma"
+    )
+
+    if args.cache_model:
+        load_classifier(
+            classifier_path=classifier_path,
+            model_repo_path=None,
+            check_md5=True,
+            force_download=True,
+            verbose=verbose,
+        )
 
         after = time.time()
         print(f"Done! ({round(after - before,2)}s)")
@@ -98,21 +113,21 @@ def main():
     outdir = os.path.join(args.outdir, basename)
     os.makedirs(outdir, exist_ok=True)
 
-    # Run model
+    # Run classifier
     if verbose:
         print("Loading model...")
-    model_path = pathlib.Path(__file__).parent / f"{__model_version__}.joblib.lzma"
-    check_md5 = args.model_path is None
-    model: ActivityClassifier = load_model(
-        args.model_path or model_path, check_md5, args.force_download, verbose
+
+    check_md5 = args.classifier_path is None
+    classifier: ActivityClassifier = load_classifier(
+        args.clasifier_path or classifier_path, check_md5, args.force_download, verbose
     )
 
-    model.verbose = verbose
-    model.device = args.pytorch_device
+    classifier.verbose = verbose
+    classifier.device = args.pytorch_device
 
     if verbose:
         print("Running activity classifier...")
-    Y = model.predict_from_frame(data)
+    Y = classifier.predict_from_frame(data)
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
@@ -240,14 +255,20 @@ def resolve_path(path):
     return dirname, filename, extension
 
 
-def load_model(model_path, ssl_repo_path=None, check_md5=True, force_download=False, verbose=True):
-    """Load trained model. Download if not exists."""
+def load_classifier(
+    classifier_path,
+    model_repo_path=None,
+    check_md5=True,
+    force_download=False,
+    verbose=True,
+):
+    """Load trained classifier. Download if not exists."""
 
-    pth = pathlib.Path(model_path)
+    pth = pathlib.Path(classifier_path)
 
     if force_download or not pth.exists():
 
-        url = f"{BASE_URL}{__model_version__}.joblib.lzma"
+        url = f"{BASE_URL}{__classifier_version__}.joblib.lzma"
 
         if verbose:
             print(f"Downloading {url}...")
@@ -256,20 +277,19 @@ def load_model(model_path, ssl_repo_path=None, check_md5=True, force_download=Fa
             shutil.copyfileobj(f_src, f_dst)
 
     if check_md5:
-        assert md5(pth) == __model_md5__, (
-            "Model file is corrupted. Please run with --force-download "
+        assert md5(pth) == __classifier_md5__, (
+            "Classifier file is corrupted. Please run with --force-download "
             "to download the model file again."
         )
 
-    model: ActivityClassifier = joblib.load(pth)
+    classifier: ActivityClassifier = joblib.load(pth)
 
-    if ssl_repo_path and pathlib.Path(ssl_repo_path).exists():
-        if verbose:
-            print(f"Loading ssl repository from {ssl_repo_path}.")
+    if model_repo_path and pathlib.Path(model_repo_path).exists() and verbose:
+        print(f"Loading model repository from {model_repo_path}.")
 
-        model = model.load_ssl(ssl_repo_path)
+    classifier.load_model(model_repo_path)
 
-    return model
+    return classifier
 
 
 def md5(fname):
