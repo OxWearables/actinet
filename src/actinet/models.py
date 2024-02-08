@@ -162,7 +162,7 @@ class ActivityClassifier:
 
         return y_pred
 
-    def load_model(self, model_repo_path):
+    def load_model(self, model_repo_path=None):
         self.model = sslmodel.get_sslnet(
             tag=self.repo_tag,
             local_repo_path=model_repo_path,
