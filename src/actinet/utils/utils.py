@@ -34,3 +34,7 @@ def date_parser(t):
         tz = tz.group()
     t = re.sub(r"\[(.*?)\]", "", t)
     return pd.to_datetime(t, utc=True).tz_convert(tz)
+
+
+def safe_indexer(array, indexes):
+    return array[indexes] if array is not None else None

@@ -36,7 +36,7 @@ class HMM:
             )
         )
 
-    def train(self, y_prob, y_true, t=None, interval=None):
+    def fit(self, y_prob, y_true, t=None, interval=None):
         """https://en.wikipedia.org/wiki/Hidden_Markov_model
         :param y_prob: Observation probabilities
         :param y_true: Ground truth labels
