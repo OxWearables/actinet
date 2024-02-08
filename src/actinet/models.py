@@ -38,7 +38,7 @@ class ActivityClassifier:
             sslmodel.get_model_dict(weights_path, device) if weights_path else None
         )
         self.model = None
-
+        
         self.load_hmm_params(hmm_params)
 
     def __str__(self):
@@ -53,6 +53,69 @@ class ActivityClassifier:
                 self=self, model=self.model or "Model has not been loaded."
             )
         )
+    
+    def fit(self, X, Y, groups=None, T=None, weights_path="models/weights.pt",
+            model_repo_path=None):
+        sslmodel.verbose = self.verbose
+
+        Y = LabelEncoder().fit_transform(Y)
+
+        if self.verbose:
+            print('Training SSL')
+
+        # prepare training and validation sets
+        folds = GroupShuffleSplit(
+            1, test_size=0.2, random_state=41
+        ).split(X, Y, groups=groups)
+        train_idx, val_idx = next(folds)
+
+        x_train = X[train_idx]
+        x_val = X[val_idx]
+
+        y_train = Y[train_idx]
+        y_val = Y[val_idx]
+
+        group_train = safe_indexer(groups, train_idx)
+        group_val = safe_indexer(groups, val_idx)
+
+        t_val = safe_indexer(T, val_idx)
+
+        train_dataset = sslmodel.NormalDataset(x_train, y_train, pid=group_train, augmentation=True)
+        val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val)
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=1,
+        )
+
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=1,
+        )
+
+        self.load_model(model_repo_path)
+
+        sslmodel.train(self.model, train_loader, val_loader, self.device, weights_path=weights_path)
+        self.model.load_state_dict(torch.load(weights_path, self.device))
+
+        if self.verbose:
+            print('Training HMM')
+
+        # train HMM with predictions of the validation set
+        y_val, y_val_pred, group_val = sslmodel.predict(self.model, val_loader, self.device, output_logits=True)
+        y_val_pred_sf = softmax(y_val_pred, axis=1)
+
+        self.hmms.fit(y_val_pred_sf, y_val, t_val, 1/sslmodel.SAMPLE_RATE)
+
+        # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
+        self.model.to('cpu')
+        self.model_weights = self.model.state_dict()
+
+        return self
 
     def fit(
         self,
