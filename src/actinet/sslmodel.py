@@ -318,8 +318,17 @@ def predict(model, dataloader, device, output_logits=False):
         )
 
 
-def train(model, train_loader, val_loader, device, class_weights=None, weights_path='weights.pt',
-          num_epoch=100, learning_rate=0.0001, patience=5):
+def train(
+    model,
+    train_loader,
+    val_loader,
+    device,
+    class_weights=None,
+    weights_path="weights.pt",
+    num_epoch=100,
+    learning_rate=0.0001,
+    patience=5,
+):
     """
     Iterate over the training dataloader and train a pytorch model.
     After each epoch, validate model and early stop when validation loss function bottoms out.
@@ -337,9 +346,7 @@ def train(model, train_loader, val_loader, device, class_weights=None, weights_p
     :param learning_rate: Adam learning rate
     :param patience: early stopping patience
     """
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=learning_rate, amsgrad=True
-    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, amsgrad=True)
 
     if class_weights is not None:
         class_weights = torch.FloatTensor(class_weights).to(device)
@@ -392,15 +399,15 @@ def train(model, train_loader, val_loader, device, class_weights=None, weights_p
 
         if early_stopping.early_stop:
             if verbose:
-                print('Early stopping')
-                print(f'SSLNet weights saved to {weights_path}')
+                print("Early stopping")
+                print(f"SSLNet weights saved to {weights_path}")
             break
 
     return model
 
 
 def _validate_model(model, val_loader, device, loss_fn):
-    """ Iterate over a validation data loader and return mean model loss and accuracy. """
+    """Iterate over a validation data loader and return mean model loss and accuracy."""
     model.eval()
     losses = []
     acces = []

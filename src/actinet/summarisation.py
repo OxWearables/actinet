@@ -45,7 +45,11 @@ def getActivitySummary(
 
     # Main movement summaries
     summary = _summarise(
-        data, labels, intensityDistribution, circadianMetrics, verbose,
+        data,
+        labels,
+        intensityDistribution,
+        circadianMetrics,
+        verbose,
     )
 
     # Return physical activity summary
@@ -166,12 +170,8 @@ def _summarise(
     # Calculate circadian metrics
     if circadianMetrics:
         toScreen("=== Calculating circadian metrics ===", verbose)
-        summary = circadian.calculatePSD(
-            data, epochPeriod, False, labels, summary
-        )
-        summary = circadian.calculatePSD(
-            data, epochPeriod, True, labels, summary
-        )
+        summary = circadian.calculatePSD(data, epochPeriod, False, labels, summary)
+        summary = circadian.calculatePSD(data, epochPeriod, True, labels, summary)
         summary = circadian.calculateFourierFreq(
             data, epochPeriod, False, labels, summary
         )
@@ -181,8 +181,6 @@ def _summarise(
         summary = circadian.calculateM10L5(data, epochPeriod, summary)
 
     return summary
-
-
 
 
 def imputeMissing(data, extrapolate=True):

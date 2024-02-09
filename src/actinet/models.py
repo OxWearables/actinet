@@ -7,12 +7,13 @@ import torch
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.preprocessing import LabelEncoder 
+from sklearn.preprocessing import LabelEncoder
 from scipy.special import softmax
 
 from actinet import hmm
 from actinet import sslmodel
 from actinet.utils.utils import safe_indexer
+
 
 class ActivityClassifier:
     def __init__(
@@ -38,7 +39,7 @@ class ActivityClassifier:
             sslmodel.get_model_dict(weights_path, device) if weights_path else None
         )
         self.model = None
-        
+
         self.load_hmm_params(hmm_params)
 
     def __str__(self):
@@ -49,22 +50,31 @@ class ActivityClassifier:
             "batch_size: {self.batch_size}\n"
             "device: {self.device}\n"
             "hmm: {self.hmms}\n"
-            "model: {model}".format(self=self, model=self.model or "Model has not been loaded.")
+            "model: {model}".format(
+                self=self, model=self.model or "Model has not been loaded."
+            )
         )
-    
-    def fit(self, X, Y, groups=None, T=None, weights_path="models/weights.pt",
-            model_repo_path=None):
+
+    def fit(
+        self,
+        X,
+        Y,
+        groups=None,
+        T=None,
+        weights_path="models/weights.pt",
+        model_repo_path=None,
+    ):
         sslmodel.verbose = self.verbose
 
         Y = LabelEncoder().fit_transform(Y)
 
         if self.verbose:
-            print('Training SSL')
+            print("Training SSL")
 
         # prepare training and validation sets
-        folds = GroupShuffleSplit(
-            1, test_size=0.2, random_state=41
-        ).split(X, Y, groups=groups)
+        folds = GroupShuffleSplit(1, test_size=0.2, random_state=41).split(
+            X, Y, groups=groups
+        )
         train_idx, val_idx = next(folds)
 
         x_train = X[train_idx]
@@ -78,7 +88,9 @@ class ActivityClassifier:
 
         t_val = safe_indexer(T, val_idx)
 
-        train_dataset = sslmodel.NormalDataset(x_train, y_train, pid=group_train, augmentation=True)
+        train_dataset = sslmodel.NormalDataset(
+            x_train, y_train, pid=group_train, augmentation=True
+        )
         val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val)
 
         train_loader = DataLoader(
@@ -97,20 +109,24 @@ class ActivityClassifier:
 
         self.load_model(model_repo_path)
 
-        sslmodel.train(self.model, train_loader, val_loader, self.device, weights_path=weights_path)
+        sslmodel.train(
+            self.model, train_loader, val_loader, self.device, weights_path=weights_path
+        )
         self.model.load_state_dict(torch.load(weights_path, self.device))
 
         if self.verbose:
-            print('Training HMM')
+            print("Training HMM")
 
         # train HMM with predictions of the validation set
-        y_val, y_val_pred, group_val = sslmodel.predict(self.model, val_loader, self.device, output_logits=True)
+        y_val, y_val_pred, group_val = sslmodel.predict(
+            self.model, val_loader, self.device, output_logits=True
+        )
         y_val_pred_sf = softmax(y_val_pred, axis=1)
 
-        self.hmms.fit(y_val_pred_sf, y_val, t_val, 1/sslmodel.SAMPLE_RATE)
+        self.hmms.fit(y_val_pred_sf, y_val, t_val, 1 / sslmodel.SAMPLE_RATE)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
-        self.model.to('cpu')
+        self.model.to("cpu")
         self.model_weights = self.model.state_dict()
 
         return self
@@ -177,25 +193,29 @@ class ActivityClassifier:
             if os.path.exists(hmm_params):
                 if self.verbose:
                     print(f"Loading hmm_params from {hmm_params}")
-            
-                hmm_params = dict(np.load(hmm_params, allow_pickle=True))  
-        
+
+                hmm_params = dict(np.load(hmm_params, allow_pickle=True))
+
             else:
-                raise FileNotFoundError("Path to file with saved hmm parameters cannot be found.")
-            
+                raise FileNotFoundError(
+                    "Path to file with saved hmm parameters cannot be found."
+                )
+
         elif hmm_params is None:
             hmm_params = dict()
-        
+
         elif not isinstance(hmm_params, dict):
-            raise TypeError("Invalid type for HMM parameters. Expected str, dict, or None.")
+            raise TypeError(
+                "Invalid type for HMM parameters. Expected str, dict, or None."
+            )
 
         self.hmms = hmm.HMM(**hmm_params)
 
     def save(self, output_path):
         classifier = copy.deepcopy(self)
         classifier.model = None
-        classifier.device = "cpu",
-        classifier.batch_size = 512,
+        classifier.device = "cpu"
+        classifier.batch_size = 512
 
         joblib.dump(classifier, output_path, compress=("lzma", 3))
 

@@ -22,6 +22,7 @@ from actinet.utils.utils import infer_freq
 
 BASE_URL = "https://zenodo.org/records/10625542/files/"
 
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -118,7 +119,11 @@ def main():
 
     check_md5 = args.classifier_path is None
     classifier: ActivityClassifier = load_classifier(
-        args.classifier_path or classifier_path, args.model_repo_path, check_md5, args.force_download, verbose
+        args.classifier_path or classifier_path,
+        args.model_repo_path,
+        check_md5,
+        args.force_download,
+        verbose,
     )
 
     classifier.verbose = verbose
@@ -162,17 +167,21 @@ def main():
     if verbose:
         print("\nSummary Stats\n---------------------")
         print(
-            json.dumps({
-                key: outputSummary[key]
-                for key in [
-                    "Filename",
-                    "Filesize(MB)",
-                    "WearTime(days)",
-                    "NonwearTime(days)",
-                    "ReadOK",
-                ]
-                + [f"{label}-overall-avg" for label in ["acc"] + classifier.labels]
-            }, indent=4, cls=NpEncoder)
+            json.dumps(
+                {
+                    key: outputSummary[key]
+                    for key in [
+                        "Filename",
+                        "Filesize(MB)",
+                        "WearTime(days)",
+                        "NonwearTime(days)",
+                        "ReadOK",
+                    ]
+                    + [f"{label}-overall-avg" for label in ["acc"] + classifier.labels]
+                },
+                indent=4,
+                cls=NpEncoder,
+            )
         )
 
     after = time.time()

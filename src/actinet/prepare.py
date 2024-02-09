@@ -19,19 +19,20 @@ def load_data(datafile, sample_rate=100, annot_type=str):
 
     Returns:
         pd.DataFrame: Processed data.
-        
+
     """
-    if '.parquet' in datafile:
+    if ".parquet" in datafile:
         data = pd.read_parquet(datafile)
         data.dropna(inplace=True)
-        
+
     else:
         data = pd.read_csv(
             datafile,
-            index_col=[0], parse_dates=True,
-            dtype={'x': 'f4', 'y': 'f4', 'z': 'f4', 'annotation': annot_type}
+            index_col=[0],
+            parse_dates=True,
+            dtype={"x": "f4", "y": "f4", "z": "f4", "annotation": annot_type},
         )
-        
+
     data, _ = actipy.process(data, sample_rate, verbose=False)
     return data
 
@@ -47,18 +48,18 @@ def resize(x, length, axis=1):
 
     Returns:
         ndarray: Resized data.
-        
+
     """
     length_orig = x.shape[axis]
     t_orig = np.linspace(0, 1, length_orig, endpoint=True)
     t_new = np.linspace(0, 1, length, endpoint=True)
-    x = interp1d(t_orig, x, kind="linear", axis=axis, assume_sorted=True)(
-        t_new
-    )
+    x = interp1d(t_orig, x, kind="linear", axis=axis, assume_sorted=True)(t_new)
     return x
 
 
-def make_windows(data, anno_dict, anno_label, winsec=30, sample_rate=100, resample_rate=30):
+def make_windows(
+    data, anno_dict, anno_label, winsec=30, sample_rate=100, resample_rate=30
+):
     """
     Create windows from the input data.
 
@@ -72,30 +73,34 @@ def make_windows(data, anno_dict, anno_label, winsec=30, sample_rate=100, resamp
 
     Returns:
         tuple: Tuple containing the windowed data, labels, and timestamps.
-        
+
     """
     X, Y, T = [], [], []
-    
-    for t, w in data.resample(f"{winsec}s", origin='start'):
-    
+
+    for t, w in data.resample(f"{winsec}s", origin="start"):
+
         if len(w) < 1:
             continue
-    
+
         t = t.to_numpy()
-    
-        x = w[['x', 'y', 'z']].to_numpy()
-        
-        annot = w['annotation']
-        
+
+        x = w[["x", "y", "z"]].to_numpy()
+
+        annot = w["annotation"]
+
         if pd.isna(annot).all():  # skip if annotation is NA
             continue
-    
+
         if not is_good_window(x, sample_rate, winsec):  # skip if bad window
             continue
-        
+
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Unable to sort modes")
-            y = anno_dict.loc[annot.dropna(), f"label:{anno_label}"].mode(dropna=False).iloc[0]
+            y = (
+                anno_dict.loc[annot.dropna(), f"label:{anno_label}"]
+                .mode(dropna=False)
+                .iloc[0]
+            )
 
         X.append(x)
         Y.append(y)
@@ -104,7 +109,7 @@ def make_windows(data, anno_dict, anno_label, winsec=30, sample_rate=100, resamp
     X = np.stack(X)
     Y = np.stack(Y)
     T = np.stack(T)
-    
+
     if resample_rate != sample_rate:
         X = resize(X, int(resample_rate * winsec))
 
@@ -122,7 +127,7 @@ def is_good_window(x, sample_rate, winsec):
 
     Returns:
         bool: True if the window is considered good, False otherwise.
-        
+
     """
     # Check window length is correct
     window_len = sample_rate * winsec
@@ -135,9 +140,17 @@ def is_good_window(x, sample_rate, winsec):
 
     return True
 
-        
-def load_all_and_make_windows(datafiles, annofile, out_dir=None, anno_label="Walmsley2020",
-                              sample_rate=100, winsec=30, resample_rate=30, n_jobs=1):
+
+def load_all_and_make_windows(
+    datafiles,
+    annofile,
+    out_dir=None,
+    anno_label="Walmsley2020",
+    sample_rate=100,
+    winsec=30,
+    resample_rate=30,
+    n_jobs=1,
+):
     """
     Load data from multiple files, create windows, and save the results.
 
@@ -149,30 +162,38 @@ def load_all_and_make_windows(datafiles, annofile, out_dir=None, anno_label="Wal
 
     Returns:
         tuple: Tuple containing the windowed data, labels, timestamps, and participant IDs.
-        
+
     """
+
     def worker(datafile):
-        X, Y, T = make_windows(load_data(datafile, sample_rate), anno_dict, anno_label,
-                               winsec, sample_rate, resample_rate)
-        pid = os.path.basename(datafile).split(".")[0]  # participant ID based on file name
+        X, Y, T = make_windows(
+            load_data(datafile, sample_rate),
+            anno_dict,
+            anno_label,
+            winsec,
+            sample_rate,
+            resample_rate,
+        )
+        pid = os.path.basename(datafile).split(".")[
+            0
+        ]  # participant ID based on file name
         pid = np.asarray([pid] * len(X))
         return X, Y, T, pid
-    
-    anno_dict = pd.read_csv(
-        annofile, 
-        index_col='annotation', 
-        dtype='string'
-    )
 
-    X, Y, T, P = zip(*Parallel(n_jobs=n_jobs)(
-        delayed(worker)(datafile) 
-            for datafile in tqdm(datafiles, desc='Load and making windows: ')))
+    anno_dict = pd.read_csv(annofile, index_col="annotation", dtype="string")
+
+    X, Y, T, P = zip(
+        *Parallel(n_jobs=n_jobs)(
+            delayed(worker)(datafile)
+            for datafile in tqdm(datafiles, desc="Load and making windows: ")
+        )
+    )
 
     X = np.vstack(X)
     Y = np.hstack(Y)
     T = np.hstack(T)
     P = np.hstack(P)
-    
+
     if out_dir:
         # Save arrays for future use
         os.makedirs(out_dir, exist_ok=True)
@@ -180,5 +201,5 @@ def load_all_and_make_windows(datafiles, annofile, out_dir=None, anno_label="Wal
         np.save(f"{out_dir}/Y.npy", Y)
         np.save(f"{out_dir}/T.npy", T)
         np.save(f"{out_dir}/pid.npy", P)
-    
+
     return X, Y, T, P
