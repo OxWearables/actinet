@@ -123,7 +123,7 @@ class ActivityClassifier:
         )
         y_val_pred_sf = softmax(y_val_pred, axis=1)
 
-        self.hmms.fit(y_val_pred_sf, y_val, t_val, 1 / sslmodel.SAMPLE_RATE)
+        self.hmms.fit(y_val_pred_sf, y_val, t_val, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
