@@ -6,7 +6,8 @@ from tqdm.auto import tqdm
 from joblib import Parallel, delayed
 import warnings
 import actipy
-from utils.utils import is_good_window
+
+from actinet.utils.utils import is_good_window
 
 from actinet.utils.utils import is_good_window, resize
 
