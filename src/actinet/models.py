@@ -217,11 +217,6 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
     if verbose:
         print("Defining windows...")
 
-    if fn is None:
-
-        def fn(x):
-            return x
-
     X, T = [], []
     for t, x in tqdm(
         data.resample(f"{window_sec}s", origin="start"),
