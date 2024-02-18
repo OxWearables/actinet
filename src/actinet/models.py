@@ -86,8 +86,6 @@ class ActivityClassifier:
         group_train = safe_indexer(groups, train_idx)
         group_val = safe_indexer(groups, val_idx)
 
-        t_val = safe_indexer(T, val_idx)
-
         train_dataset = sslmodel.NormalDataset(
             x_train, y_train, pid=group_train, augmentation=True
         )
@@ -109,21 +107,26 @@ class ActivityClassifier:
 
         self.load_model(model_repo_path)
 
-        sslmodel.train(
-            self.model, train_loader, val_loader, self.device, weights_path=weights_path
-        )
-        self.model.load_state_dict(torch.load(weights_path, self.device))
+        if self.model_weights is None:
+            sslmodel.train(
+                self.model,
+                train_loader,
+                val_loader,
+                self.device,
+                weights_path=weights_path,
+            )
+            self.model.load_state_dict(torch.load(weights_path, self.device))
 
         if self.verbose:
             print("Training HMM")
 
         # train HMM with predictions of the validation set
-        y_val, y_val_pred, group_val = sslmodel.predict(
+        y_val, y_val_pred, _ = sslmodel.predict(
             self.model, val_loader, self.device, output_logits=True
         )
         y_val_pred_sf = softmax(y_val_pred, axis=1)
 
-        self.hmms.fit(y_val_pred_sf, y_val, t_val, self.window_sec)
+        self.hmms.fit(y_val_pred_sf, y_val, Y, T, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
