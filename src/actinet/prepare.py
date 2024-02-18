@@ -78,6 +78,7 @@ def make_windows(
 
     """
     X, Y, T = [], [], []
+    acc_cols = ["x", "y", "z"]
 
     for t, w in data.resample(f"{winsec}s", origin="start"):
 
@@ -86,14 +87,14 @@ def make_windows(
 
         t = t.to_numpy()
 
-        x = w[["x", "y", "z"]].to_numpy()
+        x = w[acc_cols].to_numpy()
 
         annot = w["annotation"]
 
         if pd.isna(annot).all():  # skip if annotation is NA
             continue
 
-        if not is_good_window(x, sample_rate * winsec):  # skip if bad window
+        if not is_good_window(x, sample_rate * winsec, acc_cols):  # skip if bad window
             continue
 
         with warnings.catch_warnings():

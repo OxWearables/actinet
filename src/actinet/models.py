@@ -218,15 +218,17 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
         print("Defining windows...")
 
     X, T = [], []
+    acc_cols = ["x", "y", "z"]
+
     for t, x in tqdm(
         data.resample(f"{window_sec}s", origin="start"),
         mininterval=5,
         disable=not verbose,
     ):
-        if not is_good_window(x, window_len, ["x", "y", "z"]):
+        if not is_good_window(x, window_len, acc_cols):
             continue
 
-        X.append(x)
+        X.append(x[acc_cols])
         T.append(t)
 
     X = np.asarray(X)

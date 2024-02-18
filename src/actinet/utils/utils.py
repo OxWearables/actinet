@@ -40,25 +40,28 @@ def safe_indexer(array, indexes):
     return array[indexes] if array is not None else None
 
 
-def is_good_window(x, window_len, revelant_columns=["x", "y", "z"]):
+def is_good_window(x, window_len, columns):
     """
-    Check if a window is considered good based on its length and the presence of NaN values.
+    Check if a window is considered good based on its length, the presence of NaN values in specified columns.
 
     Args:
-        x (ndarray): Window data.
+        x (pd.DataFrame): Window data.
         window_len (int): The index length of the data.
-        revelant_columns (list): List of relevant columns to check for NaN values.
+        columns (list): List of relevant columns to check for NaN values.
 
     Returns:
         bool: True if the window is considered good, False otherwise.
 
     """
+    if not all(col in x.columns for col in columns):
+        return False
+
     # Check window length is correct
-    if len(x[revelant_columns]) != window_len:
+    if len(x[columns]) != window_len:
         return False
 
     # Check no nans
-    if pd.isna(x[revelant_columns]).any(axis=None):
+    if pd.isna(x[columns]).any(axis=None):
 
         return False
 
