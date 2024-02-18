@@ -99,6 +99,10 @@ def main():
         print(f"Done! ({round(after - before,2)}s)")
 
         return
+    
+    else:
+        if not args.filepath:
+            raise ValueError("Please provide a file to process.")
 
     # Load file
     data, info = read(
@@ -150,7 +154,7 @@ def main():
             print("Output plot written to:", plotFile)
 
     # Summary
-    summary = getActivitySummary(Y, classifier.labels, True, True, verbose)
+    summary = getActivitySummary(Y, list(classifier.labels), True, True, verbose)
 
     # Join the actipy processing info, with acitivity summary data
     outputSummary = {**summary, **info}
@@ -177,7 +181,7 @@ def main():
                         "NonwearTime(days)",
                         "ReadOK",
                     ]
-                    + [f"{label}-overall-avg" for label in ["acc"] + classifier.labels]
+                    + [f"{label}-overall-avg" for label in ["acc"] + list(classifier.labels)]
                 },
                 indent=4,
                 cls=NpEncoder,

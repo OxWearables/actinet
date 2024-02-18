@@ -36,22 +36,22 @@ class HMM:
             )
         )
 
-    def fit(self, y_prob, y_true, t=None, interval=None):
+    def fit(self, emission_y_prob, emission_y_true, Y, T=None, interval=None):
         """https://en.wikipedia.org/wiki/Hidden_Markov_model
         :param y_prob: Observation probabilities
         :param y_true: Ground truth labels
         """
 
         if self.labels is None:
-            self.labels = np.unique(y_true)
+            self.labels = np.unique(Y)
 
-        prior = np.mean(y_true.reshape(-1, 1) == self.labels, axis=0)
+        prior = np.mean(Y.reshape(-1, 1) == self.labels, axis=0)
 
         emission = np.vstack(
-            [np.mean(y_prob[y_true == label], axis=0) for label in self.labels]
+            [np.mean(emission_y_prob[emission_y_true == label], axis=0) for label in self.labels]
         )
 
-        transition = calculate_transition_matrix(y_true, t, interval)
+        transition = calculate_transition_matrix(Y, T, interval)
 
         self.prior = prior
         self.emission = emission

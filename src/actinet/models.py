@@ -12,7 +12,7 @@ from scipy.special import softmax
 
 from actinet import hmm
 from actinet import sslmodel
-from actinet.utils.utils import safe_indexer
+from actinet.utils.utils import safe_indexer, is_good_window
 
 
 class ActivityClassifier:
@@ -86,8 +86,6 @@ class ActivityClassifier:
         group_train = safe_indexer(groups, train_idx)
         group_val = safe_indexer(groups, val_idx)
 
-        t_val = safe_indexer(T, val_idx)
-
         train_dataset = sslmodel.NormalDataset(
             x_train, y_train, pid=group_train, augmentation=True
         )
@@ -109,21 +107,26 @@ class ActivityClassifier:
 
         self.load_model(model_repo_path)
 
-        sslmodel.train(
-            self.model, train_loader, val_loader, self.device, weights_path=weights_path
-        )
-        self.model.load_state_dict(torch.load(weights_path, self.device))
+        if self.model_weights is None:
+            sslmodel.train(
+                self.model,
+                train_loader,
+                val_loader,
+                self.device,
+                weights_path=weights_path,
+            )
+            self.model.load_state_dict(torch.load(weights_path, self.device))
 
         if self.verbose:
             print("Training HMM")
 
         # train HMM with predictions of the validation set
-        y_val, y_val_pred, group_val = sslmodel.predict(
+        y_val, y_val_pred, _ = sslmodel.predict(
             self.model, val_loader, self.device, output_logits=True
         )
         y_val_pred_sf = softmax(y_val_pred, axis=1)
 
-        self.hmms.fit(y_val_pred_sf, y_val, t_val, self.window_sec)
+        self.hmms.fit(y_val_pred_sf, y_val, Y, T, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
@@ -132,24 +135,12 @@ class ActivityClassifier:
         return self
 
     def predict_from_frame(self, data):
-
-        def fn(chunk):
-            """Process the chunk. Apply padding if length is not enough."""
-            n = len(chunk)
-            x = chunk[["x", "y", "z"]].to_numpy()
-            if n == self.window_len:
-                x = x
-            elif n > self.window_len:
-                x = x[: self.window_len]
-            elif n < self.window_len and n > self.window_len / 2:
-                m = self.window_len - n
-                x = np.pad(x, ((0, m), (0, 0)), mode="wrap")
-            else:
-                x = np.full((self.window_len, 3), fill_value=np.nan)
-            return x
-
         X, T = make_windows(
-            data, self.window_sec, fn=fn, return_index=True, verbose=self.verbose
+            data,
+            self.window_sec,
+            self.window_len,
+            return_index=True,
+            verbose=self.verbose,
         )
 
         Y = raw_to_df(X, self._predict(X), T, self.labels, reindex=False)
@@ -220,7 +211,7 @@ class ActivityClassifier:
         joblib.dump(classifier, output_path, compress=("lzma", 3))
 
 
-def make_windows(data, window_sec, fn=None, return_index=False, verbose=True):
+def make_windows(data, window_sec, window_len, return_index=False, verbose=True):
     """Split data into windows"""
 
     if verbose:
@@ -237,7 +228,9 @@ def make_windows(data, window_sec, fn=None, return_index=False, verbose=True):
         mininterval=5,
         disable=not verbose,
     ):
-        x = fn(x)
+        if not is_good_window(x, window_len, ["x", "y", "z"]):
+            continue
+
         X.append(x)
         T.append(t)
 

@@ -38,3 +38,28 @@ def date_parser(t):
 
 def safe_indexer(array, indexes):
     return array[indexes] if array is not None else None
+
+
+def is_good_window(x, window_len, revelant_columns=["x", "y", "z"]):
+    """
+    Check if a window is considered good based on its length and the presence of NaN values.
+
+    Args:
+        x (ndarray): Window data.
+        window_len (int): The index length of the data.
+        revelant_columns (list): List of relevant columns to check for NaN values.
+
+    Returns:
+        bool: True if the window is considered good, False otherwise.
+
+    """
+    # Check window length is correct
+    if len(x[revelant_columns]) != window_len:
+        return False
+
+    # Check no nans
+    if pd.isna(x[revelant_columns]).any(axis=None):
+
+        return False
+
+    return True

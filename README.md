@@ -55,7 +55,7 @@ $ actinet -f sample.csv
 Some systems may face issues with Java when running the script. If this is your case, try fixing OpenJDK to version 8:
 
 ```console
-conda install -n actinet openjdk=8
+conda create -n actinet openjdk=8
 ```
 
 ### Offline usage
