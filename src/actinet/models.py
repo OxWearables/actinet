@@ -342,7 +342,7 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
         else:
             x = np.full((window_len, 3), np.nan)
 
-        X.append(x)
+        X.append(x[acc_cols])
         T.append(t)
 
     X = np.asarray(X)
