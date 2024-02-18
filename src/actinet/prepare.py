@@ -6,6 +6,7 @@ from tqdm.auto import tqdm
 from joblib import Parallel, delayed
 import warnings
 import actipy
+from utils.utils import is_good_window
 
 from actinet.utils.utils import is_good_window, resize
 
@@ -93,7 +94,7 @@ def make_windows(
         if pd.isna(annot).all():  # skip if annotation is NA
             continue
 
-        if not is_good_window(x, sample_rate, winsec):  # skip if bad window
+        if not is_good_window(x, sample_rate * winsec):  # skip if bad window
             continue
 
         with warnings.catch_warnings():
@@ -116,31 +117,6 @@ def make_windows(
         X = resize(X, int(resample_rate * winsec))
 
     return X, Y, T
-
-
-def is_good_window(x, sample_rate, winsec):
-    """
-    Check if a window is considered good based on its length and the presence of NaN values.
-
-    Args:
-        x (ndarray): Window data.
-        sample_rate (int): Sampling rate of the data.
-        winsec (int): Length of the window in seconds.
-
-    Returns:
-        bool: True if the window is considered good, False otherwise.
-
-    """
-    # Check window length is correct
-    window_len = sample_rate * winsec
-    if len(x) != window_len:
-        return False
-
-    # Check no nans
-    if np.isnan(x).any():
-        return False
-
-    return True
 
 
 def load_all_and_make_windows(
