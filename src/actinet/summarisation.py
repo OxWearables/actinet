@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
+import scipy.stats as stats
 
 from actinet.utils.utils import date_parser, toScreen
 from actinet import circadian
@@ -81,7 +82,7 @@ def _summarise(
     """
 
     data = data.copy()
-    freq = to_offset(pd.infer_freq(data.index))
+    freq = to_offset(infer_freq(data.index))
 
     # Get start day
     startTime = data.index[0]
@@ -244,6 +245,13 @@ def imputeMissing(data, extrapolate=True):
     )
 
     return data
+
+
+def infer_freq(x):
+    """Like pd.infer_freq but more forgiving"""
+    freq, _ = stats.mode(np.diff(x), keepdims=False)
+    freq = pd.Timedelta(freq)
+    return freq
 
 
 def calculateECDF(x, summary):
