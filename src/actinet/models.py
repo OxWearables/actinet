@@ -6,13 +6,13 @@ import joblib
 import torch
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
-from sklearn.model_selection import GroupShuffleSplit
+from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import LabelEncoder
 from scipy.special import softmax
 
 from actinet import hmm
 from actinet import sslmodel
-from actinet.utils.utils import safe_indexer, is_good_window
+from actinet.utils.utils import safe_indexer
 
 
 class ActivityClassifier:
@@ -63,6 +63,7 @@ class ActivityClassifier:
         T=None,
         weights_path="models/weights.pt",
         model_repo_path=None,
+        n_splits=5,
     ):
         sslmodel.verbose = self.verbose
 
@@ -71,62 +72,76 @@ class ActivityClassifier:
         if self.verbose:
             print("Training SSL")
 
-        # prepare training and validation sets
-        folds = GroupShuffleSplit(1, test_size=0.2, random_state=41).split(
-            X, Y, groups=groups
-        )
-        train_idx, val_idx = next(folds)
+        y_prob_splits = []
+        y_true_splits = []
+        t_splits = []
 
-        x_train = X[train_idx]
-        x_val = X[val_idx]
+        for i, (train_idx, val_idx) in enumerate(
+            StratifiedGroupKFold(n_splits).split(X, Y, groups)
+        ):
+            if self.verbose:
+                print(f"Training split {i+1}/{n_splits}")
 
-        y_train = Y[train_idx]
-        y_val = Y[val_idx]
+            x_train = X[train_idx]
+            x_val = X[val_idx]
 
-        group_train = safe_indexer(groups, train_idx)
-        group_val = safe_indexer(groups, val_idx)
+            y_train = Y[train_idx]
+            y_val = Y[val_idx]
 
-        train_dataset = sslmodel.NormalDataset(
-            x_train, y_train, pid=group_train, augmentation=True
-        )
-        val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val)
+            group_train = safe_indexer(groups, train_idx)
+            group_val = safe_indexer(groups, val_idx)
 
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=1,
-        )
+            t_val = safe_indexer(T, val_idx)
 
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=1,
-        )
-
-        self.load_model(model_repo_path)
-
-        if self.model_weights is None:
-            sslmodel.train(
-                self.model,
-                train_loader,
-                val_loader,
-                self.device,
-                weights_path=weights_path,
+            train_dataset = sslmodel.NormalDataset(
+                x_train, y_train, pid=group_train, augmentation=True
             )
-            self.model.load_state_dict(torch.load(weights_path, self.device))
+            val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val)
 
-        if self.verbose:
-            print("Training HMM")
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=self.batch_size,
+                shuffle=True,
+                num_workers=1,
+            )
 
-        # train HMM with predictions of the validation set
-        y_val, y_val_pred, _ = sslmodel.predict(
-            self.model, val_loader, self.device, output_logits=True
-        )
-        y_val_pred_sf = softmax(y_val_pred, axis=1)
+            val_loader = DataLoader(
+                val_dataset,
+                batch_size=self.batch_size,
+                shuffle=False,
+                num_workers=1,
+            )
 
-        self.hmms.fit(y_val_pred_sf, y_val, Y, T, self.window_sec)
+            self.load_model(model_repo_path)
+
+            if self.model_weights is None:
+                sslmodel.train(
+                    self.model,
+                    train_loader,
+                    val_loader,
+                    self.device,
+                    weights_path=weights_path,
+                )
+                self.model.load_state_dict(torch.load(weights_path, self.device))
+
+            if self.verbose:
+                print("Training HMM")
+
+            # train HMM with predictions of the validation set
+            y_val, y_val_pred, _ = sslmodel.predict(
+                self.model, val_loader, self.device, output_logits=True
+            )
+            y_val_pred_sf = softmax(y_val_pred, axis=1)
+
+            y_true_splits.append(y_val)
+            y_prob_splits.append(y_val_pred_sf)
+            t_splits.append(t_val)
+
+        y_prob_splits = np.vstack(y_prob_splits)
+        y_true_splits = np.hstack(y_true_splits)
+        t_splits = np.hstack(t_splits)
+
+        self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
@@ -151,9 +166,14 @@ class ActivityClassifier:
         if self.model is None:
             raise Exception("Model has not been loaded for ActivityClassifier.")
 
+        # check X quality
+        ok = np.flatnonzero(~np.asarray([np.isnan(x).any() for x in X]))
+
+        X_ = X[ok]
+
         sslmodel.verbose = self.verbose
 
-        dataset = sslmodel.NormalDataset(X)
+        dataset = sslmodel.NormalDataset(X_)
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -161,13 +181,16 @@ class ActivityClassifier:
             num_workers=0,
         )
 
-        _, y_pred, _ = sslmodel.predict(
+        _, Y_, _ = sslmodel.predict(
             self.model, dataloader, self.device, output_logits=False
         )
 
-        y_pred = self.hmms.predict(y_pred)
+        Y_ = self.hmms.predict(Y_)
 
-        return y_pred
+        Y = np.full(len(X), fill_value=np.nan)
+        Y[ok] = Y_
+
+        return Y
 
     def load_model(self, model_repo_path=None):
         self.model = sslmodel.get_sslnet(
@@ -225,10 +248,19 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
         mininterval=5,
         disable=not verbose,
     ):
-        if not is_good_window(x, window_len, acc_cols):
-            continue
+        n = len(x)
+        x = x[acc_cols].to_numpy()
 
-        X.append(x[acc_cols])
+        if n == window_len:
+            x = x
+        elif n > window_len:
+            x = x[:window_len]
+        elif n < window_len and n > window_len / 2:
+            x = np.pad(x, ((0, window_len - n), (0, 0)), mode="wrap")
+        else:
+            x = np.full((window_len, 3), np.nan)
+
+        X.append(x)
         T.append(t)
 
     X = np.asarray(X)
@@ -240,7 +272,7 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
     return X
 
 
-def raw_to_df(data, labels, time, classes, label_proba=False, reindex=True, freq="30S"):
+def raw_to_df(data, labels, time, classes, reindex=True, freq="30S"):
     """
     Construct a DataFrome from the raw data, prediction labels and time Numpy arrays.
 
@@ -250,7 +282,6 @@ def raw_to_df(data, labels, time, classes, label_proba=False, reindex=True, freq
     :param time: Numpy time array, shape (rows, )
     :param classes: Array with the categorical class labels.
                     The index of this array should correspond to the labels value when label_proba==False.
-    :param label_proba: If True, assume 'labels' contains the raw class probabilities.
     :param reindex: Reindex the dataframe to fill missing values
     :param freq: Reindex frequency
     :return: Dataframe
@@ -262,9 +293,13 @@ def raw_to_df(data, labels, time, classes, label_proba=False, reindex=True, freq
     a_matrix = np.zeros(len(time), dtype=np.float32)
 
     for i, data in enumerate(data):
-        if not label_proba:
-            label = int(labels[i])
-            label_matrix[i, label] = 1
+        if np.isnan(labels[i]):
+            label_matrix[i, :] = np.nan
+            a_matrix[i] = np.nan
+            continue
+
+        label = int(labels[i])
+        label_matrix[i, label] = 1
 
         x = data[:, 0]
         y = data[:, 1]
@@ -274,16 +309,10 @@ def raw_to_df(data, labels, time, classes, label_proba=False, reindex=True, freq
         enmo[enmo < 0] = 0
         a_matrix[i] = np.mean(enmo)
 
-    if label_proba:
-        datadict = {
-            **{"time": time, "acc": a_matrix},
-            **{classes[i]: label_matrix[:, i] for i in range(len(classes))},
-        }
-    else:
-        datadict = {
-            **{"time": time, "acc": a_matrix},
-            **{classes[i]: label_matrix[:, i] for i in range(len(classes))},
-        }
+    datadict = {
+        **{"time": time, "acc": a_matrix},
+        **{classes[i]: label_matrix[:, i] for i in range(len(classes))},
+    }
 
     df = pd.DataFrame(datadict)
     df = df.set_index("time")
