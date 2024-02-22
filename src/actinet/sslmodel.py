@@ -340,7 +340,7 @@ def train(
     :param DataLoader val_loader: validation data loader
     :param str device: pytorch map device
     :param class_weights: Array of training class weights to use with weighted cross entropy loss.
-                        Leave empty to use unweighted loss.
+                        Leave empty to use unweighted loss. Set to "balanced" to use inverse class weights.
     :param weights_path: save location for the trained weights (state_dict)
     :param num_epoch: number of training epochs
     :param learning_rate: Adam learning rate
@@ -349,7 +349,11 @@ def train(
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, amsgrad=True)
 
     if class_weights is not None:
-        class_weights = torch.FloatTensor(class_weights).to(device)
+        if class_weights == "balanced":
+            class_weights = get_inverse_class_weights(train_loader.dataset.y)
+        else:
+            class_weights = torch.FloatTensor(class_weights).to(device)
+
         loss_fn = nn.CrossEntropyLoss(weight=class_weights)
     else:
         loss_fn = nn.CrossEntropyLoss()
@@ -429,3 +433,22 @@ def _validate_model(model, val_loader, device, loss_fn):
     losses = np.array(losses)
     acces = np.array(acces)
     return np.mean(losses), np.mean(acces)
+
+
+def get_inverse_class_weights(y):
+    """Return a list with inverse class frequencies in y"""
+    import collections
+
+    counter = collections.Counter(y)
+    for i in range(len(counter)):
+        if i not in counter.keys():
+            counter[i] = 1
+
+    num_samples = len(y)
+    weights = [0] * len(counter)
+    for idx in counter.keys():
+        weights[idx] = 1.0 / (counter[idx] / num_samples)
+    print("Inverse class weights: ")
+    print(weights)
+
+    return weights
