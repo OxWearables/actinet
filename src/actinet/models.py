@@ -63,6 +63,7 @@ class ActivityClassifier:
         T=None,
         weights_path="models/weights.pt",
         model_repo_path=None,
+        n_splits=5,
     ):
         sslmodel.verbose = self.verbose
 
@@ -71,62 +72,76 @@ class ActivityClassifier:
         if self.verbose:
             print("Training SSL")
 
-        # prepare training and validation sets
-        folds = GroupShuffleSplit(1, test_size=0.2, random_state=41).split(
-            X, Y, groups=groups
-        )
-        train_idx, val_idx = next(folds)
+        y_prob_splits = []
+        y_true_splits = []
+        t_splits = []
 
-        x_train = X[train_idx]
-        x_val = X[val_idx]
+        for i, (train_idx, val_idx) in enumerate(
+            StratifiedGroupKFold(n_splits).split(X, Y, groups)
+        ):
+            if self.verbose:
+                print(f"Training split {i+1}/{n_splits}")
 
-        y_train = Y[train_idx]
-        y_val = Y[val_idx]
+            x_train = X[train_idx]
+            x_val = X[val_idx]
 
-        group_train = safe_indexer(groups, train_idx)
-        group_val = safe_indexer(groups, val_idx)
+            y_train = Y[train_idx]
+            y_val = Y[val_idx]
 
-        train_dataset = sslmodel.NormalDataset(
-            x_train, y_train, pid=group_train, augmentation=True
-        )
-        val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val)
+            group_train = safe_indexer(groups, train_idx)
+            group_val = safe_indexer(groups, val_idx)
 
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=1,
-        )
+            t_val = safe_indexer(T, val_idx)
 
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=1,
-        )
-
-        self.load_model(model_repo_path)
-
-        if self.model_weights is None:
-            sslmodel.train(
-                self.model,
-                train_loader,
-                val_loader,
-                self.device,
-                weights_path=weights_path,
+            train_dataset = sslmodel.NormalDataset(
+                x_train, y_train, pid=group_train, augmentation=True
             )
-            self.model.load_state_dict(torch.load(weights_path, self.device))
+            val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val)
 
-        if self.verbose:
-            print("Training HMM")
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=self.batch_size,
+                shuffle=True,
+                num_workers=1,
+            )
 
-        # train HMM with predictions of the validation set
-        y_val, y_val_pred, _ = sslmodel.predict(
-            self.model, val_loader, self.device, output_logits=True
-        )
-        y_val_pred_sf = softmax(y_val_pred, axis=1)
+            val_loader = DataLoader(
+                val_dataset,
+                batch_size=self.batch_size,
+                shuffle=False,
+                num_workers=1,
+            )
 
-        self.hmms.fit(y_val_pred_sf, y_val, Y, T, self.window_sec)
+            self.load_model(model_repo_path)
+
+            if self.model_weights is None:
+                sslmodel.train(
+                    self.model,
+                    train_loader,
+                    val_loader,
+                    self.device,
+                    weights_path=weights_path,
+                )
+                self.model.load_state_dict(torch.load(weights_path, self.device))
+
+            if self.verbose:
+                print("Training HMM")
+
+            # train HMM with predictions of the validation set
+            y_val, y_val_pred, _ = sslmodel.predict(
+                self.model, val_loader, self.device, output_logits=True
+            )
+            y_val_pred_sf = softmax(y_val_pred, axis=1)
+
+            y_true_splits.append(y_val)
+            y_prob_splits.append(y_val_pred_sf)
+            t_splits.append(t_val)
+
+        y_prob_splits = np.vstack(y_prob_splits)
+        y_true_splits = np.hstack(y_true_splits)
+        t_splits = np.hstack(t_splits)
+
+        self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
@@ -342,7 +357,7 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
         else:
             x = np.full((window_len, 3), np.nan)
 
-        X.append(x[acc_cols])
+        X.append(x)
         T.append(t)
 
     X = np.asarray(X)
