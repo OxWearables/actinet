@@ -87,7 +87,7 @@ def make_windows(
 
         t = t.to_numpy()
 
-        x = w[acc_cols].to_numpy()
+        x = w[acc_cols]
 
         annot = w["annotation"]
 
@@ -105,7 +105,7 @@ def make_windows(
                 .iloc[0]
             )
 
-        X.append(x)
+        X.append(x.to_numpy())
         Y.append(y)
         T.append(t)
 

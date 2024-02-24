@@ -350,9 +350,9 @@ def train(
 
     if class_weights is not None:
         if class_weights == "balanced":
-            class_weights = get_inverse_class_weights(train_loader.dataset.y)
-        else:
-            class_weights = torch.FloatTensor(class_weights).to(device)
+            class_weights = get_inverse_class_weights(train_loader.dataset.y.numpy())
+
+        class_weights = torch.FloatTensor(class_weights).to(device)
 
         loss_fn = nn.CrossEntropyLoss(weight=class_weights)
     else:

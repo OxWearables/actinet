@@ -121,11 +121,9 @@ class ActivityClassifier:
                     val_loader,
                     self.device,
                     weights_path=weights_path,
+                    class_weights="balanced",
                 )
                 self.model.load_state_dict(torch.load(weights_path, self.device))
-
-            if self.verbose:
-                print("Training HMM")
 
             # train HMM with predictions of the validation set
             y_val, y_val_pred, _ = sslmodel.predict(
@@ -140,6 +138,9 @@ class ActivityClassifier:
         y_prob_splits = np.vstack(y_prob_splits)
         y_true_splits = np.hstack(y_true_splits)
         t_splits = np.hstack(t_splits)
+
+        if self.verbose:
+            print("Training HMM")
 
         self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
