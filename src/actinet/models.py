@@ -12,7 +12,7 @@ from scipy.special import softmax
 
 from actinet import hmm
 from actinet import sslmodel
-from actinet.utils.utils import safe_indexer
+from actinet.utils.utils import safe_indexer, resize, infer_freq
 
 
 class ActivityClassifier:
@@ -32,7 +32,6 @@ class ActivityClassifier:
         self.batch_size = batch_size
         self.window_sec = window_sec
         self.labels = labels
-        self.window_len = int(np.ceil(self.window_sec * sslmodel.SAMPLE_RATE))
         self.verbose = verbose
 
         self.model_weights = (
@@ -125,6 +124,9 @@ class ActivityClassifier:
                 )
                 self.model.load_state_dict(torch.load(weights_path, self.device))
 
+            if self.verbose:
+                print("Training HMM")
+
             # train HMM with predictions of the validation set
             y_val, y_val_pred, _ = sslmodel.predict(
                 self.model, val_loader, self.device, output_logits=True
@@ -139,9 +141,6 @@ class ActivityClassifier:
         y_true_splits = np.hstack(y_true_splits)
         t_splits = np.hstack(t_splits)
 
-        if self.verbose:
-            print("Training HMM")
-
         self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
@@ -150,20 +149,21 @@ class ActivityClassifier:
 
         return self
 
-    def predict_from_frame(self, data):
+    def predict_from_frame(self, data, sample_freq, hmm_smothing=True):
+        sample_freq = sample_freq or infer_freq(data.index)
         X, T = make_windows(
             data,
             self.window_sec,
-            self.window_len,
+            self.window_sec * sample_freq,
             return_index=True,
             verbose=self.verbose,
         )
 
-        Y = raw_to_df(X, self._predict(X), T, self.labels, reindex=False)
+        Y = raw_to_df(X, self._predict(X, hmm_smothing), T, self.labels, reindex=False)
 
         return Y
 
-    def _predict(self, X):
+    def _predict(self, X, hmm_smothing=True):
         if self.model is None:
             raise Exception("Model has not been loaded for ActivityClassifier.")
 
@@ -186,7 +186,8 @@ class ActivityClassifier:
             self.model, dataloader, self.device, output_logits=False
         )
 
-        Y_ = self.hmms.predict(Y_)
+        if hmm_smothing:
+            Y_ = self.hmms.predict(Y_)
 
         Y = np.full(len(X), fill_value=np.nan)
         Y[ok] = Y_
@@ -265,6 +266,8 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
         T.append(t)
 
     X = np.asarray(X)
+
+    X = resize(X, int(sslmodel.SAMPLE_RATE * window_sec))
 
     if return_index:
         T = pd.DatetimeIndex(T, name=data.index.name)

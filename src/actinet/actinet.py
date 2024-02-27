@@ -99,7 +99,7 @@ def main():
         print(f"Done! ({round(after - before,2)}s)")
 
         return
-    
+
     else:
         if not args.filepath:
             raise ValueError("Please provide a file to process.")
@@ -107,7 +107,7 @@ def main():
     # Load file
     data, info = read(
         args.filepath,
-        resample_hz=SAMPLE_RATE,
+        resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
     )
@@ -135,7 +135,7 @@ def main():
 
     if verbose:
         print("Running activity classifier...")
-    Y = classifier.predict_from_frame(data)
+    Y = classifier.predict_from_frame(data, args.sample_rate)
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
@@ -181,7 +181,10 @@ def main():
                         "NonwearTime(days)",
                         "ReadOK",
                     ]
-                    + [f"{label}-overall-avg" for label in ["acc"] + list(classifier.labels)]
+                    + [
+                        f"{label}-overall-avg"
+                        for label in ["acc"] + list(classifier.labels)
+                    ]
                 },
                 indent=4,
                 cls=NpEncoder,

@@ -3,6 +3,7 @@ import re
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy.interpolate import interp1d
 
 
 def infer_freq(x):
@@ -66,3 +67,23 @@ def is_good_window(x, window_len, columns):
         return False
 
     return True
+
+
+def resize(x, length, axis=1):
+    """
+    Resize the temporal length of the data using linear interpolation.
+
+    Args:
+        x (ndarray): Data to be resized.
+        length (int): New length of the data.
+        axis (int): Axis along which to perform the interpolation. Defaults to 1.
+
+    Returns:
+        ndarray: Resized data.
+
+    """
+    length_orig = x.shape[axis]
+    t_orig = np.linspace(0, 1, length_orig, endpoint=True)
+    t_new = np.linspace(0, 1, length, endpoint=True)
+    x = interp1d(t_orig, x, kind="linear", axis=axis, assume_sorted=True)(t_new)
+    return x
