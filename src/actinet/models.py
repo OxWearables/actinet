@@ -15,7 +15,6 @@ from actinet import sslmodel
 from actinet.utils.utils import safe_indexer, resize, infer_freq
 
 
-
 class ActivityClassifier:
     def __init__(
         self,
@@ -125,6 +124,9 @@ class ActivityClassifier:
                 )
                 self.model.load_state_dict(torch.load(weights_path, self.device))
 
+            if self.verbose:
+                print("Training HMM")
+
             # train HMM with predictions of the validation set
             y_val, y_val_pred, _ = sslmodel.predict(
                 self.model, val_loader, self.device, output_logits=True
@@ -138,9 +140,6 @@ class ActivityClassifier:
         y_prob_splits = np.vstack(y_prob_splits)
         y_true_splits = np.hstack(y_true_splits)
         t_splits = np.hstack(t_splits)
-
-        if self.verbose:
-            print("Training HMM")
 
         self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 

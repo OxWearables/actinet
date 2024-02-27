@@ -99,7 +99,7 @@ def main():
         print(f"Done! ({round(after - before,2)}s)")
 
         return
-    
+
     else:
         if not args.filepath:
             raise ValueError("Please provide a file to process.")
