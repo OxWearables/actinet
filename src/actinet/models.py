@@ -259,11 +259,13 @@ class ActivityClassifier:
             verbose=self.verbose,
         )
 
-        Y = raw_to_df(X, self.predict(X, hmm_smothing), T, self.labels, reindex=False)
+        Y = raw_to_df(
+            X, self.predict(X, hmm_smothing, T), T, self.labels, reindex=False
+        )
 
         return Y
 
-    def predict(self, X, hmm_smothing=True):
+    def predict(self, X, hmm_smothing=True, T=None):
         if self.model is None:
             raise Exception("Model has not been loaded for ActivityClassifier.")
 
@@ -289,7 +291,8 @@ class ActivityClassifier:
         )
 
         if hmm_smothing:
-            Y_ = self.hmms.predict(Y_)
+            interval = self.window_sec if T is not None else None
+            Y_ = self.hmms.predict(Y_, T, interval)
 
         Y = np.full(len(X), fill_value=np.nan)
         Y[ok] = Y_
