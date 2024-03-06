@@ -90,6 +90,7 @@ Thumbs.db
 pandas/io/*.dat
 pandas/io/*.json
 scikits
+data/*
 
 # Model files #
 ###############
@@ -131,3 +132,7 @@ doc/source/savefig/
 # Torch hub cache #
 ###################
 src/actinet/torch_hub_cache/*
+
+# Output files #
+################
+outputs/*

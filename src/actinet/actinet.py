@@ -22,6 +22,7 @@ from actinet.utils.utils import infer_freq
 
 BASE_URL = "https://zenodo.org/records/10625542/files/"
 
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -99,10 +100,14 @@ def main():
 
         return
 
+    else:
+        if not args.filepath:
+            raise ValueError("Please provide a file to process.")
+
     # Load file
     data, info = read(
         args.filepath,
-        resample_hz=SAMPLE_RATE,
+        resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
     )
@@ -118,7 +123,11 @@ def main():
 
     check_md5 = args.classifier_path is None
     classifier: ActivityClassifier = load_classifier(
-        args.classifier_path or classifier_path, args.model_repo_path, check_md5, args.force_download, verbose
+        args.classifier_path or classifier_path,
+        args.model_repo_path,
+        check_md5,
+        args.force_download,
+        verbose,
     )
 
     classifier.verbose = verbose
@@ -126,7 +135,7 @@ def main():
 
     if verbose:
         print("Running activity classifier...")
-    Y = classifier.predict_from_frame(data)
+    Y = classifier.predict_from_frame(data, args.sample_rate)
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
@@ -145,7 +154,7 @@ def main():
             print("Output plot written to:", plotFile)
 
     # Summary
-    summary = getActivitySummary(Y, classifier.labels, True, True, verbose)
+    summary = getActivitySummary(Y, list(classifier.labels), True, True, verbose)
 
     # Join the actipy processing info, with acitivity summary data
     outputSummary = {**summary, **info}
@@ -162,17 +171,24 @@ def main():
     if verbose:
         print("\nSummary Stats\n---------------------")
         print(
-            json.dumps({
-                key: outputSummary[key]
-                for key in [
-                    "Filename",
-                    "Filesize(MB)",
-                    "WearTime(days)",
-                    "NonwearTime(days)",
-                    "ReadOK",
-                ]
-                + [f"{label}-overall-avg" for label in ["acc"] + classifier.labels]
-            }, indent=4, cls=NpEncoder)
+            json.dumps(
+                {
+                    key: outputSummary[key]
+                    for key in [
+                        "Filename",
+                        "Filesize(MB)",
+                        "WearTime(days)",
+                        "NonwearTime(days)",
+                        "ReadOK",
+                    ]
+                    + [
+                        f"{label}-overall-avg"
+                        for label in ["acc"] + list(classifier.labels)
+                    ]
+                },
+                indent=4,
+                cls=NpEncoder,
+            )
         )
 
     after = time.time()

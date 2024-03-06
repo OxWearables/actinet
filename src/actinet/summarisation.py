@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
+import scipy.stats as stats
 
 from actinet.utils.utils import date_parser, toScreen
 from actinet import circadian
@@ -45,7 +46,11 @@ def getActivitySummary(
 
     # Main movement summaries
     summary = _summarise(
-        data, labels, intensityDistribution, circadianMetrics, verbose,
+        data,
+        labels,
+        intensityDistribution,
+        circadianMetrics,
+        verbose,
     )
 
     # Return physical activity summary
@@ -77,7 +82,7 @@ def _summarise(
     """
 
     data = data.copy()
-    freq = to_offset(pd.infer_freq(data.index))
+    freq = to_offset(infer_freq(data.index))
 
     # Get start day
     startTime = data.index[0]
@@ -166,12 +171,8 @@ def _summarise(
     # Calculate circadian metrics
     if circadianMetrics:
         toScreen("=== Calculating circadian metrics ===", verbose)
-        summary = circadian.calculatePSD(
-            data, epochPeriod, False, labels, summary
-        )
-        summary = circadian.calculatePSD(
-            data, epochPeriod, True, labels, summary
-        )
+        summary = circadian.calculatePSD(data, epochPeriod, False, labels, summary)
+        summary = circadian.calculatePSD(data, epochPeriod, True, labels, summary)
         summary = circadian.calculateFourierFreq(
             data, epochPeriod, False, labels, summary
         )
@@ -181,8 +182,6 @@ def _summarise(
         summary = circadian.calculateM10L5(data, epochPeriod, summary)
 
     return summary
-
-
 
 
 def imputeMissing(data, extrapolate=True):
@@ -246,6 +245,13 @@ def imputeMissing(data, extrapolate=True):
     )
 
     return data
+
+
+def infer_freq(x):
+    """Like pd.infer_freq but more forgiving"""
+    freq, _ = stats.mode(np.diff(x), keepdims=False)
+    freq = pd.Timedelta(freq)
+    return freq
 
 
 def calculateECDF(x, summary):

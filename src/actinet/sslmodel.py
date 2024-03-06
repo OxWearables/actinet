@@ -316,3 +316,139 @@ def predict(model, dataloader, device, output_logits=False):
             torch.flatten(predictions_list).numpy(),
             np.array(pid_list),
         )
+
+
+def train(
+    model,
+    train_loader,
+    val_loader,
+    device,
+    class_weights=None,
+    weights_path="weights.pt",
+    num_epoch=100,
+    learning_rate=0.0001,
+    patience=5,
+):
+    """
+    Iterate over the training dataloader and train a pytorch model.
+    After each epoch, validate model and early stop when validation loss function bottoms out.
+
+    Trained model weights will be saved to disk (weights_path).
+
+    :param nn.Module model: pytorch model
+    :param DataLoader train_loader: training data loader
+    :param DataLoader val_loader: validation data loader
+    :param str device: pytorch map device
+    :param class_weights: Array of training class weights to use with weighted cross entropy loss.
+                        Leave empty to use unweighted loss. Set to "balanced" to use inverse class weights.
+    :param weights_path: save location for the trained weights (state_dict)
+    :param num_epoch: number of training epochs
+    :param learning_rate: Adam learning rate
+    :param patience: early stopping patience
+    """
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, amsgrad=True)
+
+    if class_weights is not None:
+        if class_weights == "balanced":
+            class_weights = get_inverse_class_weights(train_loader.dataset.y.numpy())
+
+        class_weights = torch.FloatTensor(class_weights).to(device)
+
+        loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+    else:
+        loss_fn = nn.CrossEntropyLoss()
+
+    early_stopping = EarlyStopping(
+        patience=patience, path=weights_path, verbose=verbose, trace_func=print
+    )
+
+    for epoch in range(num_epoch):
+        model.train()
+        train_losses = []
+        train_acces = []
+        for x, y, _ in tqdm(train_loader, disable=not verbose):
+            x.requires_grad_(True)
+            x = x.to(device, dtype=torch.float)
+            true_y = y.to(device, dtype=torch.long)
+
+            optimizer.zero_grad()
+
+            logits = model(x)
+            loss = loss_fn(logits, true_y)
+            loss.backward()
+            optimizer.step()
+
+            pred_y = torch.argmax(logits, dim=1)
+            train_acc = torch.sum(pred_y == true_y)
+            train_acc = train_acc / (pred_y.size()[0])
+
+            train_losses.append(loss.cpu().detach())
+            train_acces.append(train_acc.cpu().detach())
+
+        val_loss, val_acc = _validate_model(model, val_loader, device, loss_fn)
+
+        epoch_len = len(str(num_epoch))
+        print_msg = (
+            f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] | "
+            + f"train_loss: {np.mean(train_losses):.3f} | "
+            + f"train_acc: {np.mean(train_acces):.3f} | "
+            + f"val_loss: {val_loss:.3f} | "
+            + f"val_acc: {val_acc:.2f}"
+        )
+
+        early_stopping(val_loss, model)
+
+        if verbose:
+            print(print_msg)
+
+        if early_stopping.early_stop:
+            if verbose:
+                print("Early stopping")
+                print(f"SSLNet weights saved to {weights_path}")
+            break
+
+    return model
+
+
+def _validate_model(model, val_loader, device, loss_fn):
+    """Iterate over a validation data loader and return mean model loss and accuracy."""
+    model.eval()
+    losses = []
+    acces = []
+    with torch.inference_mode():
+        for x, y, _ in val_loader:
+            x = x.to(device, dtype=torch.float)
+            true_y = y.to(device, dtype=torch.long)
+
+            logits = model(x)
+            loss = loss_fn(logits, true_y)
+
+            pred_y = torch.argmax(logits, dim=1)
+
+            val_acc = torch.sum(pred_y == true_y)
+            val_acc = val_acc / (list(pred_y.size())[0])
+
+            losses.append(loss.cpu().detach())
+            acces.append(val_acc.cpu().detach())
+    losses = np.array(losses)
+    acces = np.array(acces)
+    return np.mean(losses), np.mean(acces)
+
+
+def get_inverse_class_weights(y):
+    """Return a list with inverse class frequencies in y"""
+    import collections
+
+    counter = collections.Counter(y)
+    for i in range(len(counter)):
+        if i not in counter.keys():
+            counter[i] = 1
+
+    num_samples = len(y)
+    weights = [0] * len(counter)
+    for idx in counter.keys():
+        weights[idx] = 1.0 / (counter[idx] / num_samples)
+    print("Inverse class weights: ")
+    print(weights)
+
+    return weights

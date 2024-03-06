@@ -27,31 +27,29 @@ class HMM:
             "Hidden Markov Model\n"
             "prior: {prior}\n"
             "emission: {emission}\n"
-            "transition: {transition}\n"
-            "labels: {labels}".format(
+            "transition: {transition}".format(
                 prior=self.prior,
                 emission=self.emission,
                 transition=self.transition,
-                labels=self.labels,
             )
         )
 
-    def train(self, y_prob, y_true, t=None, interval=None):
+    def fit(self, Y_prob, Y_true, T=None, interval=None):
         """https://en.wikipedia.org/wiki/Hidden_Markov_model
-        :param y_prob: Observation probabilities
-        :param y_true: Ground truth labels
+        :param Y_prob: Observation probabilities
+        :param Y_true: Ground truth labels
         """
 
         if self.labels is None:
-            self.labels = np.unique(y_true)
+            self.labels = np.unique(Y_true)
 
-        prior = np.mean(y_true.reshape(-1, 1) == self.labels, axis=0)
+        prior = np.mean(Y_true.reshape(-1, 1) == self.labels, axis=0)
 
         emission = np.vstack(
-            [np.mean(y_prob[y_true == label], axis=0) for label in self.labels]
+            [np.mean(Y_prob[Y_true == label], axis=0) for label in self.labels]
         )
 
-        transition = calculate_transition_matrix(y_true, t, interval)
+        transition = calculate_transition_matrix(Y_true, T, interval)
 
         self.prior = prior
         self.emission = emission
@@ -193,4 +191,9 @@ def calculate_transition_matrix(Y, t=None, interval=None):
     trans_mat = df.groupby([0, "shift"]).count().unstack().fillna(0)
 
     # normalise by occurences and save values to get the transition matrix
-    return trans_mat.div(trans_mat.sum(axis=1), axis=0).values
+    trans_mat = trans_mat.div(trans_mat.sum(axis=1), axis=0).values
+
+    if trans_mat.size == 0:
+        raise Exception("No transitions found in data")
+
+    return trans_mat
