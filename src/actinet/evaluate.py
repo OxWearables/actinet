@@ -92,8 +92,12 @@ def evaluate_models(
         skf.split(X_rf, Y_encoded_rf, groups_rf)
     ):
         # Ensure the same train and test split for groups are used in both models in each fold
-        train_index_actinet = groups_actinet == np.unique(groups_rf[train_index_rf])
-        test_index_actinet = groups_actinet == np.unique(groups_rf[test_index_rf])
+        train_index_actinet = np.isin(
+            groups_actinet, np.unique(groups_rf[train_index_rf])
+        )
+        test_index_actinet = np.isin(
+            groups_actinet, np.unique(groups_rf[test_index_rf])
+        )
 
         # Analysis of actinet model
         X_train_actinet, X_test_actinet = (
@@ -116,7 +120,7 @@ def evaluate_models(
             groups_train_actinet,
             t_train_actinet,
             weights_path.format(fold),
-            n_splits=1,
+            n_splits=5,
         )
         y_pred_actinet = actinet_classifier.predict(
             X_test_actinet, True, t_test_actinet
