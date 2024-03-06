@@ -11,7 +11,13 @@ from actinet.utils.utils import is_good_window, resize
 from actinet.utils.utils import is_good_window, resize
 
 
-def load_data(datafile, sample_rate=100, annot_type=str):
+def load_data(
+    datafile,
+    sample_rate=100,
+    annot_type=str,
+    lowpass_hz=None,
+    resample_rate=None,
+):
     """
     Load data from a file and process it using actipy.
 
@@ -36,12 +42,23 @@ def load_data(datafile, sample_rate=100, annot_type=str):
             dtype={"x": "f4", "y": "f4", "z": "f4", "annotation": annot_type},
         )
 
-    data, _ = actipy.process(data, sample_rate, verbose=False)
+    data, _ = actipy.process(
+        data,
+        sample_rate,
+        verbose=False,
+        lowpass_hz=lowpass_hz,
+        resample_hz=resample_rate,
+    )
     return data
 
 
 def make_windows(
-    data, anno_dict, anno_label, winsec=30, sample_rate=100, resample_rate=30
+    data,
+    anno_dict,
+    anno_label,
+    winsec=30,
+    sample_rate=100,
+    resample_rate=30,
 ):
     """
     Create windows from the input data.
@@ -108,6 +125,8 @@ def load_all_and_make_windows(
     sample_rate=100,
     winsec=30,
     resample_rate=30,
+    lowpass_hz=None,
+    downsampling_method="nn",
     n_jobs=1,
 ):
     """
@@ -125,14 +144,36 @@ def load_all_and_make_windows(
     """
 
     def worker(datafile):
-        X, Y, T = make_windows(
-            load_data(datafile, sample_rate),
-            anno_dict,
-            anno_label,
-            winsec,
-            sample_rate,
-            resample_rate,
-        )
+        if downsampling_method == "nn":
+            X, Y, T = make_windows(
+                load_data(
+                    datafile,
+                    sample_rate,
+                    resample_rate=resample_rate,
+                    lowpass_hz=lowpass_hz,
+                ),
+                anno_dict,
+                anno_label,
+                winsec,
+                resample_rate,
+                resample_rate,
+            )
+        elif downsampling_method == "linear":
+            X, Y, T = make_windows(
+                load_data(
+                    datafile,
+                    sample_rate,
+                    lowpass_hz=lowpass_hz,
+                ),
+                anno_dict,
+                anno_label,
+                winsec,
+                sample_rate,
+                resample_rate,
+            )
+        else:
+            raise ValueError("Invalid downsampling method")
+
         pid = os.path.basename(datafile).split(".")[
             0
         ]  # participant ID based on file name
@@ -154,11 +195,14 @@ def load_all_and_make_windows(
     P = np.hstack(P)
 
     if out_dir:
+        out_path = os.path.join(
+            out_dir, f"downsampling_{downsampling_method}_lowpass_{lowpass_hz}"
+        )
         # Save arrays for future use
-        os.makedirs(out_dir, exist_ok=True)
-        np.save(f"{out_dir}/X.npy", X)
-        np.save(f"{out_dir}/Y.npy", Y)
-        np.save(f"{out_dir}/T.npy", T)
-        np.save(f"{out_dir}/pid.npy", P)
+        os.makedirs(out_path, exist_ok=True)
+        np.save(f"{out_path}/X.npy", X)
+        np.save(f"{out_path}/Y.npy", Y)
+        np.save(f"{out_path}/T.npy", T)
+        np.save(f"{out_path}/pid.npy", P)
 
     return X, Y, T, P

@@ -6,7 +6,7 @@ import joblib
 import torch
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
-from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.model_selection import StratifiedGroupKFold, GroupShuffleSplit
 from sklearn.preprocessing import LabelEncoder
 from scipy.special import softmax
 
@@ -75,9 +75,14 @@ class ActivityClassifier:
         y_true_splits = []
         t_splits = []
 
-        for i, (train_idx, val_idx) in enumerate(
-            StratifiedGroupKFold(n_splits).split(X, Y, groups)
-        ):
+        if n_splits < 3:
+            splitter = GroupShuffleSplit(n_splits=n_splits)
+            split_iterator = splitter.split(X, Y, groups)
+        else:
+            splitter = StratifiedGroupKFold(n_splits)
+            split_iterator = splitter.split(X, Y, groups)
+
+        for i, (train_idx, val_idx) in enumerate(split_iterator):
             if self.verbose:
                 print(f"Training split {i+1}/{n_splits}")
 
@@ -113,7 +118,7 @@ class ActivityClassifier:
 
             self.load_model(model_repo_path)
 
-            if self.model_weights is None:
+            if self.model_weights is None or not os.path.exists(weights_path):
                 sslmodel.train(
                     self.model,
                     train_loader,
@@ -123,9 +128,6 @@ class ActivityClassifier:
                     class_weights="balanced",
                 )
                 self.model.load_state_dict(torch.load(weights_path, self.device))
-
-            if self.verbose:
-                print("Training HMM")
 
             # train HMM with predictions of the validation set
             y_val, y_val_pred, _ = sslmodel.predict(
@@ -140,6 +142,9 @@ class ActivityClassifier:
         y_prob_splits = np.vstack(y_prob_splits)
         y_true_splits = np.hstack(y_true_splits)
         t_splits = np.hstack(t_splits)
+
+        if self.verbose:
+            print("Training HMM")
 
         self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
@@ -254,13 +259,15 @@ class ActivityClassifier:
             verbose=self.verbose,
         )
 
-        Y = raw_to_df(X, self._predict(X, hmm_smothing), T, self.labels, reindex=False)
+        Y = raw_to_df(X, self.predict(X, hmm_smothing), T, self.labels, reindex=False)
 
         return Y
 
-    def _predict(self, X, hmm_smothing=True):
+    def predict(self, X, hmm_smothing=True):
         if self.model is None:
             raise Exception("Model has not been loaded for ActivityClassifier.")
+
+        self.model.to(self.device)
 
         # check X quality
         ok = np.flatnonzero(~np.asarray([np.isnan(x).any() for x in X]))
@@ -339,6 +346,7 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
 
     X, T = [], []
     acc_cols = ["x", "y", "z"]
+    ssl_window_len = int(sslmodel.SAMPLE_RATE * window_sec)
 
     for t, x in tqdm(
         data.resample(f"{window_sec}s", origin="start"),
@@ -362,7 +370,8 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
 
     X = np.asarray(X)
 
-    X = resize(X, int(sslmodel.SAMPLE_RATE * window_sec))
+    if window_len != ssl_window_len:
+        X = resize(X, ssl_window_len)
 
     if return_index:
         T = pd.DatetimeIndex(T, name=data.index.name)
