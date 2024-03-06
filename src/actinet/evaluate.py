@@ -91,6 +91,8 @@ def evaluate_models(
     for fold, (train_index_rf, test_index_rf) in enumerate(
         skf.split(X_rf, Y_encoded_rf, groups_rf)
     ):
+        if verbose:
+            print(f"======== Evalating Fold {fold+1} ========")
         # Ensure the same train and test split for groups are used in both models in each fold
         train_index_actinet = np.isin(
             groups_actinet, np.unique(groups_rf[train_index_rf])
