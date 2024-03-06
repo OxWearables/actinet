@@ -199,7 +199,9 @@ def main():
     print(f"Done! ({round(after - before,2)}s)")
 
 
-def read(filepath, resample_hz="uniform", sample_rate=None, verbose=True):
+def read(
+    filepath, resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
+):
 
     p = pathlib.Path(filepath)
     ftype = p.suffixes[0].lower()
@@ -230,7 +232,7 @@ def read(filepath, resample_hz="uniform", sample_rate=None, verbose=True):
         data, info = actipy.process(
             data,
             sample_rate,
-            lowpass_hz=None,
+            lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
             detect_nonwear=True,
             resample_hz=resample_hz,
@@ -251,7 +253,7 @@ def read(filepath, resample_hz="uniform", sample_rate=None, verbose=True):
 
         data, info = actipy.read_device(
             filepath,
-            lowpass_hz=None,
+            lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
             detect_nonwear=True,
             resample_hz=resample_hz,
