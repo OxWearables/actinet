@@ -5,10 +5,12 @@ from tqdm.auto import tqdm
 from joblib import Parallel, delayed
 import warnings
 import actipy
+from glob import glob
+import subprocess
 
 from actinet.utils.utils import is_good_window, resize
 
-from actinet.utils.utils import is_good_window, resize
+ACC_COLS = ["x", "y", "z"]
 
 
 def load_data(
@@ -76,7 +78,6 @@ def make_windows(
 
     """
     X, Y, T = [], [], []
-    acc_cols = ["x", "y", "z"]
 
     for t, w in data.resample(f"{winsec}s", origin="start"):
 
@@ -85,14 +86,14 @@ def make_windows(
 
         t = t.to_numpy()
 
-        x = w[acc_cols]
+        x = w[ACC_COLS]
 
         annot = w["annotation"]
 
         if pd.isna(annot).all():  # skip if annotation is NA
             continue
 
-        if not is_good_window(x, sample_rate * winsec, acc_cols):  # skip if bad window
+        if not is_good_window(x, sample_rate * winsec, ACC_COLS):  # skip if bad window
             continue
 
         with warnings.catch_warnings():
@@ -196,8 +197,128 @@ def load_all_and_make_windows(
 
     if out_dir:
         out_path = os.path.join(
-            out_dir, f"downsampling_{downsampling_method}_lowpass_{lowpass_hz}"
+            out_dir, f"prepared/downsampling_{downsampling_method}_lowpass_{lowpass_hz}"
         )
+        # Save arrays for future use
+        os.makedirs(out_path, exist_ok=True)
+        np.save(f"{out_path}/X.npy", X)
+        np.save(f"{out_path}/Y.npy", Y)
+        np.save(f"{out_path}/T.npy", T)
+        np.save(f"{out_path}/pid.npy", P)
+
+    return X, Y, T, P
+
+
+def make_labels(
+    data,
+    anno_dict,
+    anno_label,
+    sample_rate=100,
+    winsec=30,
+):
+    Y, T = [], []
+    for t, w in data.resample(f"{winsec}s", origin="start"):
+        if len(w) < 1:
+            continue
+
+        t = t.to_numpy()
+
+        annot = w["annotation"]
+
+        if pd.isna(annot).all():  # skip if annotation is NA
+            y = np.nan
+
+        elif not is_good_window(
+            w, sample_rate * winsec, ACC_COLS
+        ):  # skip if bad window
+            y = np.nan
+
+        else:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Unable to sort modes")
+                y = (
+                    anno_dict.loc[annot.dropna(), f"label:{anno_label}"]
+                    .mode(dropna=False)
+                    .iloc[0]
+                )
+
+        Y.append(y)
+        T.append(t)
+
+    Y = np.stack(Y)
+    T = np.stack(T)
+
+    return Y, T
+
+
+def extract_accelerometer_features(n_jobs):
+    def process_file(file_number):
+        filename = f"P{file_number:03}.csv.gz"
+
+        if len(glob(f"data/capture24/bbaa/P{file_number:03}*")) != 4:
+            command = f'accProcess data/capture24/{filename} --csvTimeFormat "yyyy-MM-dd HH:mm:ss.SSSSSS" --csvTimeXYZTempColsIndex "0,1,2,3" -o "data/capture24/bbaa" --activityClassification False --deleteIntermediateFiles False'
+            process = subprocess.run(command, shell=True, capture_output=True)
+
+            return process
+
+    Parallel(n_jobs=n_jobs)(
+        delayed(process_file)(file_number) for file_number in tqdm(range(1, 152))
+    )
+
+
+def prepare_participant_accelerometer_data(pid, annotations_file, verbose=False):
+    raw_file_name = f"data/capture24/P{pid:03}.csv.gz"
+    features_file_name = f"data/capture24/bbaa/P{pid:03}-epoch.csv.gz"
+
+    raw_file = pd.read_csv(
+        raw_file_name,
+        index_col="time",
+        parse_dates=True,
+        dtype={"x": "f4", "y": "f4", "z": "f4", "annotation": str},
+    )
+    features_file = pd.read_csv(features_file_name, index_col="time")
+
+    if verbose:
+        print(
+            f"First accelerometer timestamp: {features_file.index[0]}\n"
+            + f"First actipy timestamp: {raw_file.index[0]}\n"
+            + f"Last accelerometer timestamp: {features_file.index[-1]}\n"
+            + f"Last actipy timestamp: {raw_file.index[-1]}\n"
+        )
+
+    Y, T = make_labels(
+        raw_file,
+        pd.read_csv(annotations_file, index_col="annotation", dtype="string"),
+        "Walmsley2020",
+    )
+
+    X = features_file.to_numpy()
+    Y, T = Y[: len(X)], T[: len(X)]
+    P = np.array([f"P{pid:03}"] * len(X))
+
+    mask = ~pd.isna(Y)
+    X, Y, T, P = X[mask], Y[mask], T[mask], P[mask]
+
+    return X, Y, T, P
+
+
+def prepare_accelerometer_data(annotation_file, out_dir, n_jobs):
+    X, Y, T, P = zip(
+        *Parallel(n_jobs=n_jobs)(
+            delayed(prepare_participant_accelerometer_data)(
+                file_number, annotation_file
+            )
+            for file_number in tqdm(range(1, 152))
+        )
+    )
+
+    X = np.vstack(X)
+    Y = np.hstack(Y)
+    T = np.hstack(T)
+    P = np.hstack(P)
+
+    if out_dir:
+        out_path = os.path.join(out_dir, f"prepared/accelerometer")
         # Save arrays for future use
         os.makedirs(out_path, exist_ok=True)
         np.save(f"{out_path}/X.npy", X)
