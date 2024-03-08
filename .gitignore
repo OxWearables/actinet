@@ -23,6 +23,11 @@
 .cache/
 .vscode/
 
+# Completed notebooks #
+#######################
+EvaluateModel.ipynb
+TrainModel.ipynb
+
 # Compiled source #
 ###################
 *.a
