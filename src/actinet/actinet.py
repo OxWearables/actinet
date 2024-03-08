@@ -16,7 +16,6 @@ from actinet import __classifier_version__
 from actinet import __classifier_md5__
 from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
-from actinet.sslmodel import SAMPLE_RATE
 from actinet.summarisation import getActivitySummary
 from actinet.utils.utils import infer_freq
 
@@ -99,10 +98,6 @@ def main():
         print(f"Done! ({round(after - before,2)}s)")
 
         return
-
-    else:
-        if not args.filepath:
-            raise ValueError("Please provide a file to process.")
 
     else:
         if not args.filepath:
