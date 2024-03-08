@@ -1,6 +1,11 @@
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import classification_report, accuracy_score, f1_score
+from sklearn.metrics import (
+    classification_report,
+    accuracy_score,
+    f1_score,
+    cohen_kappa_score,
+)
 import numpy as np
 import pandas as pd
 import os
@@ -88,20 +93,19 @@ def evaluate_models(
     results_rf = []
     results_actinet = []
 
-    for fold, (train_index_rf, test_index_rf) in enumerate(
+    for fold, (train_index, test_index) in enumerate(
         skf.split(X_rf, Y_encoded_rf, groups_rf)
     ):
         if verbose:
             print(f"======== Evalating Fold {fold+1} ========")
         # Ensure the same train and test split for groups are used in both models in each fold
-        train_index_actinet = np.isin(
-            groups_actinet, np.unique(groups_rf[train_index_rf])
-        )
-        test_index_actinet = np.isin(
-            groups_actinet, np.unique(groups_rf[test_index_rf])
-        )
+        train_index_actinet = np.isin(groups_actinet, np.unique(groups_rf[train_index]))
+        test_index_actinet = np.isin(groups_actinet, np.unique(groups_rf[test_index]))
 
-        # Analysis of actinet model
+        train_index_rf = np.isin(groups_rf, np.unique(groups_rf[train_index]))
+        test_index_rf = np.isin(groups_rf, np.unique(groups_rf[test_index]))
+
+        # Train test split for actinet model
         X_train_actinet, X_test_actinet = (
             X_actinet[train_index_actinet],
             X_actinet[test_index_actinet],
@@ -116,6 +120,17 @@ def evaluate_models(
         t_train_actinet = safe_indexer(T_actinet, train_index_actinet)
         t_test_actinet = safe_indexer(T_actinet, test_index_actinet)
 
+        # Train test split for accelerometer model
+        X_train_rf, X_test_rf = X_rf[train_index_rf], X_rf[test_index_rf]
+        y_train_rf, y_test_rf = (
+            Y_encoded_rf[train_index_rf],
+            Y_encoded_rf[test_index_rf],
+        )
+        t_train_rf = safe_indexer(T_rf, train_index_rf)
+        t_test_rf = safe_indexer(T_rf, test_index_rf)
+
+        groups_test_rf = groups_rf[test_index_rf]
+
         actinet_classifier.fit(
             X_train_actinet,
             y_train_actinet,
@@ -126,20 +141,9 @@ def evaluate_models(
         )
         y_pred_actinet = actinet_classifier.predict(
             X_test_actinet, True, t_test_actinet
-        )
+        ).astype(int)
 
         # Analysis of accelerometer random forest model
-        X_train_rf, X_test_rf = X_rf[train_index_rf], X_rf[test_index_rf]
-        y_train_rf, y_test_rf = (
-            Y_encoded_rf[train_index_rf],
-            Y_encoded_rf[test_index_rf],
-        )
-
-        t_train_rf = safe_indexer(T_rf, train_index_rf)
-        t_test_rf = safe_indexer(T_rf, test_index_rf)
-
-        groups_test_rf = groups_rf[test_index_rf]
-
         rf_classifier.fit(
             X_train_rf,
             y_train_rf,
@@ -159,31 +163,33 @@ def evaluate_models(
             print(
                 f"Actinet test scores for fold {fold+1}\n"
                 + f"Accuracy: {accuracy_score(y_test_actinet, y_pred_actinet):.3f}, "
-                + f"Macro F1: {f1_score(y_test_actinet, y_pred_actinet, average='macro'):.3f}"
+                + f"Macro F1: {f1_score(y_test_actinet, y_pred_actinet, average='macro'):.3f}, "
+                + f"Kappa: {cohen_kappa_score(y_test_actinet, y_pred_actinet):.3f}"
             )
             print(
                 f"Accelerometer test scores for fold {fold+1}\n"
                 + f"Accuracy: {accuracy_score(y_test_rf, y_pred_rf):.3f}, "
-                + f"Macro F1: {f1_score(y_test_rf, y_pred_rf, average='macro'):.3f}"
+                + f"Macro F1: {f1_score(y_test_rf, y_pred_rf, average='macro'):.3f}, "
+                + f"Kappa: {cohen_kappa_score(y_test_rf, y_pred_rf):.3f}"
             )
 
         Y_preds_actinet[test_index_actinet] = y_pred_actinet
         Y_preds_rf[test_index_rf] = y_pred_rf
 
-        results_actinet = results_actinet.append(
+        results_actinet.append(
             {
-                "fold": [fold] * len(test_index_actinet),
+                "fold": [fold] * len(y_pred_actinet),
                 "group": groups_test_actinet,
                 "Y_pred": le.inverse_transform(y_pred_actinet),
                 "Y_true": le.inverse_transform(y_test_actinet),
             }
         )
-        results_rf = results_rf.append(
+        results_rf.append(
             {
-                "fold": [fold] * len(test_index_rf),
+                "fold": [fold] * len(y_pred_rf),
                 "group": groups_test_rf,
-                "Y_pred": y_pred_rf,
-                "Y_true": y_test_rf,
+                "Y_pred": le.inverse_transform(y_pred_rf),
+                "Y_true": le.inverse_transform(y_test_rf),
             }
         )
 
@@ -193,17 +199,17 @@ def evaluate_models(
     # Report performance across all folds
     if verbose:
         print("Actinet performance:")
-        print(classification_report(Y_rf, Y_preds_rf))
+        print(classification_report(Y_actinet, Y_preds_actinet))
         print("Accelerometer performance:")
         print(classification_report(Y_rf, Y_preds_rf))
 
-    # Save results to CSV files
+    # Save results to pickle files
     results_actinet = pd.DataFrame(results_actinet)
     results_rf = pd.DataFrame(results_rf)
 
     if out_dir is not None:
         os.makedirs(out_dir, exist_ok=True)
-        results_actinet.to_csv(f"{out_dir}/actinet_results.csv", index=False)
-        results_rf.to_csv(f"{out_dir}/rf_results.csv", index=False)
+        results_actinet.to_pickle(f"{out_dir}/actinet_results.pkl")
+        results_rf.to_pickle(f"{out_dir}/rf_results.pkl")
 
     return results_actinet, results_rf

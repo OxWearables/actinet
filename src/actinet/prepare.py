@@ -296,7 +296,7 @@ def prepare_participant_accelerometer_data(pid, annotations_file, verbose=False)
     Y, T = Y[: len(X)], T[: len(X)]
     P = np.array([f"P{pid:03}"] * len(X))
 
-    mask = ~pd.isna(Y)
+    mask = ~(pd.isna(Y) | (Y == "nan"))
     X, Y, T, P = X[mask], Y[mask], T[mask], P[mask]
 
     return X, Y, T, P
