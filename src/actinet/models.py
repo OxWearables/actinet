@@ -275,6 +275,7 @@ class ActivityClassifier:
         ok = np.flatnonzero(~np.asarray([np.isnan(x).any() for x in X]))
 
         X_ = X[ok]
+        T_ = safe_indexer(T, ok)
 
         sslmodel.verbose = self.verbose
 
@@ -291,8 +292,8 @@ class ActivityClassifier:
         )
 
         if hmm_smothing:
-            interval = self.window_sec if T is not None else None
-            Y_ = self.hmms.predict(Y_, T, interval)
+            interval = self.window_sec if T_ is not None else None
+            Y_ = self.hmms.predict(Y_, T_, interval)
 
         Y = np.full(len(X), fill_value=np.nan)
         Y[ok] = Y_
