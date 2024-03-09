@@ -76,7 +76,7 @@ class ActivityClassifier:
         t_splits = []
 
         if n_splits < 3:
-            splitter = GroupShuffleSplit(n_splits=n_splits)
+            splitter = GroupShuffleSplit(n_splits=n_splits, random_state=42)
             split_iterator = splitter.split(X, Y, groups)
         else:
             splitter = StratifiedGroupKFold(n_splits)
