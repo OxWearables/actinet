@@ -155,7 +155,7 @@ class ActivityClassifier:
         return self
 
     def predict_from_frame(self, data, sample_freq, hmm_smothing=True):
-        sample_freq = sample_freq or infer_freq(data.index).total_seconds()
+        sample_freq = sample_freq or 1 / (infer_freq(data.index).total_seconds())
         X, T = make_windows(
             data,
             self.window_sec,
