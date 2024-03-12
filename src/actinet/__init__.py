@@ -4,8 +4,8 @@ __maintainer__ = "Shing Chan"
 __maintainer_email__ = "shing.chan@ndph.ox.ac.uk"
 __license__ = "See LICENSE file."
 
-__classifier_version__ = "ssl_ukb_c24_rw_20240204"
-__classifier_md5__ = "11c3f36348dae37da4f99bd6d810bbb2"
+__classifier_version__ = "ssl-ukb-c24-rw-20240308"
+__classifier_md5__ = "b0a345b5d98a179e3deb60625b980796"
 
 from . import _version
 

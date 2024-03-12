@@ -19,7 +19,7 @@ from actinet.models import ActivityClassifier
 from actinet.summarisation import getActivitySummary
 from actinet.utils.utils import infer_freq
 
-BASE_URL = "https://zenodo.org/records/10625542/files/"
+BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/actinet/models/"
 
 
 def main():
