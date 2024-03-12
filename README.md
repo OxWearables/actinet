@@ -170,11 +170,11 @@ This will collate all *-Info.json files found in outputs/ and generate a CSV fil
 
 ## Citing our work
 
-When using this tool, please consider citing the works listed in [CITATION.md](https://github.com/OxWearables/actinet/blob/main/CITATION.md).
+When using this tool, please consider citing the works listed in [CITATION.md](https://github.com/OxWearables/actinet/blob/master/CITATION.md).
 
 ## Licence
 
-See [LICENSE.md](https://github.com/OxWearables/actinet/blob/main/LICENSE.md).
+See [LICENSE.md](https://github.com/OxWearables/actinet/blob/master/LICENSE.md).
 
 ## Acknowledgements
 
