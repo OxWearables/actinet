@@ -159,7 +159,7 @@ class ActivityClassifier:
         X, T = make_windows(
             data,
             self.window_sec,
-            self.window_sec * sample_freq,
+            int(self.window_sec * sample_freq),
             return_index=True,
             verbose=self.verbose,
         )
