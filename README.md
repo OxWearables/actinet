@@ -38,16 +38,16 @@ You are all set! The next time that you want to use `actinet`, open the Anaconda
 
 ```bash
 # Process an AX3 file
-$ actinet -f sample.cwa
+$ actinet sample.cwa
 
 # Or an ActiGraph file
-$ actinet -f sample.gt3x
+$ actinet sample.gt3x
 
 # Or a GENEActiv file
-$ actinet -f sample.bin
+$ actinet sample.bin
 
 # Or a CSV file (see data format below)
-$ actinet -f sample.csv
+$ actinet sample.csv
 ```
 
 ### Troubleshooting
@@ -77,7 +77,7 @@ In addition, you can donwload/prepare a custom classifier file.
 Once this is downloaded to an appopriate location, you can run the actinet model using:
  
 ```console
-actinet -f sample.cwa -c /path/to/classifier.joblib.lzma -m /path/to/ssl-wearables
+actinet sample.cwa -c /path/to/classifier.joblib.lzma -m /path/to/ssl-wearables
 ```
 
 ### Output files
@@ -85,7 +85,7 @@ actinet -f sample.cwa -c /path/to/classifier.joblib.lzma -m /path/to/ssl-wearabl
 By default, output files will be stored in a folder named after the input file, `outputs/{filename}/`, created in the current working directory. You can change the output path with the `-o` flag:
 
 ```console
-$ actinet -f sample.cwa -o /path/to/some/folder/
+$ actinet sample.cwa -o /path/to/some/folder/
 
 <Output summary written to: /path/to/some/folder/sample-outputSummary.json>
 <Time series output written to: /path/to/some/folder/sample-timeSeries.csv.gz>
@@ -103,7 +103,7 @@ See [Data Dictionary](https://biobankaccanalysis.readthedocs.io/en/latest/datadi
 To plot the activity profiles, you can use the -p flag:
 
 ```console
-$ actinet -f sample.cwa -p
+$ actinet sample.cwa -p
 <Output plot written to: data/sample-timeSeries-plot.png>
 ```
 
@@ -138,9 +138,9 @@ To process multiple files you can create a text file in Notepad which includes o
 Example text file *commands.txt*:
 
 ```console
-actinet -f file1.cwa &
-actinet -f file2.cwa &
-actinet -f file3.cwa 
+actinet file1.cwa &
+actinet file2.cwa &
+actinet file3.cwa 
 :END
 ````
 
@@ -151,9 +151,9 @@ Once this file is created, run `cmd < commands.txt` from the terminal.
 Create a file *command.sh* with:
 
 ```console
-actinet -f file1.cwa
-actinet -f file2.cwa
-actinet -f file3.cwa
+actinet file1.cwa
+actinet file2.cwa
+actinet file3.cwa
 ```
 
 Then, run `bash command.sh` from the terminal.
