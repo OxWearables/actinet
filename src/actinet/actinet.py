@@ -28,7 +28,9 @@ def main():
         description="A tool to predict activities from accelerometer data using a self-supervised Resnet 18 model",
         add_help=True,
     )
-    parser.add_argument("--filepath", "-f", help="Enter file to be processed")
+    parser.add_argument(
+        "filepath", nargs="?", default="", help="Enter file to be processed"
+    )
     parser.add_argument(
         "--outdir",
         "-o",
