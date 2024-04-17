@@ -2,7 +2,8 @@
 
 A tool to extract meaningful health information from large accelerometer datasets.
 The software generates time-series and summary metrics useful for answering key questions such as how much time is spent in sleep, sedentary behaviour, or doing physical activity.
-The backbone of this repository is a self-supervised Resnet18 model.
+The backbone of this repository is the self-supervised learning of Hang et al.: https://www.nature.com/articles/s41746-024-01062-3
+
 
 ## Install
 
