@@ -12,12 +12,13 @@ import joblib
 
 import actipy
 
+from actinet import __version__
 from actinet import __classifier_version__
 from actinet import __classifier_md5__
 from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
 from actinet.summarisation import getActivitySummary
-from actinet.utils.utils import infer_freq
+from actinet.utils.utils import infer_freq, drop_first_last_days, flag_wear_below_days, calculate_wear_stats
 
 BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/actinet/models/"
 
@@ -63,6 +64,20 @@ def main():
         default=None,
     )
     parser.add_argument(
+        "--exclude-first-last", 
+        "-e",
+        help="Exclude first, last or both days of data. Default: None (no exclusion)",
+        type=str, 
+        choices=['first', 'last', 'both'], 
+        default=None
+    ) 
+    parser.add_argument(
+        "--exclude-wear-below", 
+        "-w",
+        help="Exclude days with wear time below threshold. Pass values as strings, e.g.: '12H', '30min'. Default: None (no exclusion)",
+        type=str, 
+        default=None)
+    parser.add_argument(
         "--plot-activity",
         "-p",
         action="store_true",
@@ -105,13 +120,30 @@ def main():
         if not args.filepath:
             raise ValueError("Please provide a file to process.")
 
+    # Info contains high-level summary of the data and results
+    info = {}
+    info['ActiNetVersion'] = __version__
+    info['ActiNetArgs'] = vars(args)
+
     # Load file
-    data, info = read(
+    data, info_read = read(
         args.filepath,
         resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
     )
+    info.update(info_read)
+
+    # Exclusion: first/last days
+    if args.exclude_first_last is not None:
+        data = drop_first_last_days(data, args.exclude_first_last)
+  
+    # Exclusion: days with wear time below threshold
+    if args.exclude_wear_below is not None:
+        data = flag_wear_below_days(data, args.exclude_wear_below)
+   
+    # Update wear time stats after exclusions
+    info.update(calculate_wear_stats(data))
 
     # Output paths
     basename = resolve_path(args.filepath)[1]
