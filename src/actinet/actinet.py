@@ -122,8 +122,6 @@ def main():
 
     # Info contains high-level summary of the data and results
     info = {}
-    info['ActiNetVersion'] = __version__
-    info['ActiNetArgs'] = vars(args)
 
     # Load file
     data, info_read = read(
