@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
+import os
 from scipy import stats
 from sklearn.metrics import accuracy_score, f1_score, cohen_kappa_score, balanced_accuracy_score, confusion_matrix
 import warnings
@@ -57,14 +58,17 @@ def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
     y_true = np.hstack(model_results.loc[model_results["Model"]=="actinet", 'True'])
     y_pred_bbaa = np.hstack(model_results.loc[model_results["Model"]=="accelerometer", 'Predicted'])
     y_pred_actinet = np.hstack(model_results.loc[model_results["Model"]=="actinet", 'Predicted'])
+
+    population = len(model_results['Participant'].unique())
     
-    return y_true, y_pred_bbaa, y_pred_actinet
+    return y_true, y_pred_bbaa, y_pred_actinet, population
 
 
 def plot_and_save_fig(fig, save_path=None):
     """Displays and optionally saves the figure as a PDF."""
     plt.show()
     if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         fig.savefig(save_path, format='pdf', dpi=800, bbox_inches='tight')
 
 
@@ -75,7 +79,7 @@ def generate_confusion_matrices(results_df, group_by=None, save_path=None):
         fig.suptitle("Confusion matrices for full Capture-24 population using 5-fold group cross-validation", 
                      fontsize=16)
         
-        y_true, y_pred_bbaa, y_pred_actinet = build_confusion_matrix_data(results_df)
+        y_true, y_pred_bbaa, y_pred_actinet, _ = build_confusion_matrix_data(results_df)
         
         plot_confusion_matrix(y_true, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=14)
         plot_confusion_matrix(y_true, y_pred_actinet, 'actinet', ax=axs[1], fontsize=14)
@@ -90,12 +94,12 @@ def generate_confusion_matrices(results_df, group_by=None, save_path=None):
 
         subfigs = fig.subfigures(nrows=len(unique_groups), ncols=1)
         
-        for i, (group, subfig) in enumerate(zip(unique_groups, subfigs)):
-            subfig.suptitle(f"{group_by}: {group}", fontsize=14)
-            axs = subfig.subplots(nrows=1, ncols=2, sharey=True)
-
-            y_true, y_pred_bbaa, y_pred_actinet =\
+        for group, subfig in zip(unique_groups, subfigs):
+            y_true, y_pred_bbaa, y_pred_actinet, population =\
                 build_confusion_matrix_data(results_df, **{group_by.replace(' ', '_').lower(): group})
+
+            subfig.suptitle(f"{group_by}: {group} (n = {population})", fontsize=14)
+            axs = subfig.subplots(nrows=1, ncols=2, sharey=True)
 
             plot_confusion_matrix(y_true, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=14)
             plot_confusion_matrix(y_true, y_pred_actinet, 'actinet', ax=axs[1], fontsize=14)
@@ -169,3 +173,115 @@ def plot_boxplots(df, x, y='Macro F1', hue='Model'):
     ax.set_ylabel("Macro F1 Score")
     plt.title(f"Macro F1 by {x}")
     plt.show()
+
+
+def build_bland_altman_data(results: pd.DataFrame, activity, age_band=None, sex=None):
+    """Extracts incidence of predicted activity label for actinet and accelerometer based on filtering conditions."""    
+    model_results = results.copy()
+    if age_band is not None:
+        model_results = model_results[model_results['Age Band'] == age_band]
+    if sex is not None:
+        model_results = model_results[model_results["Sex"] == sex]
+
+    activity_bbaa_pred = [x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "accelerometer", "Pred_dict"]]
+    activity_actinet_pred = [x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "actinet", "Pred_dict"]]
+    
+    if activity == 'moderate-vigorous': # Convert hours to minutes
+        activity_bbaa_pred = [60*x for x in activity_bbaa_pred]
+        activity_actinet_pred = [60*x for x in activity_actinet_pred]
+
+    population = len(model_results['Participant'].unique())
+
+    return activity_bbaa_pred, activity_actinet_pred, population
+
+
+def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
+                      col1_label='accelerometer', col2_label='actinet',
+                      display_plot=False, show_y_label=False, ax=None,
+                      activity_type=None):
+    """Generates a Bland-Altman plot for two columns of data."""
+    dat = pd.DataFrame({'col1': col1, 'col2': col2})
+    pearson_cor = dat.corr().iloc[0, 1]
+    diffs = dat['col1'] - dat['col2']
+    mean_diff = np.mean(diffs)
+    sd_diff = np.std(diffs, ddof=1)
+    lower_loa = mean_diff - 1.96 * sd_diff
+    upper_loa = mean_diff + 1.96 * sd_diff
+    
+    mean_vals = (dat['col1'] + dat['col2']) / 2
+
+    if ax is None:
+        _, ax = plt.subplots(figsize=(10, 10), dpi=800)
+
+    ax.scatter(mean_vals, diffs, color='black', alpha=1)
+    ax.axhline(mean_diff, color='red', linestyle='-')
+    ax.axhline(lower_loa, color='blue', linestyle='--')
+    ax.axhline(upper_loa, color='blue', linestyle='--')
+    ax.text(0.8 * max(mean_vals), mean_diff, f'Mean Diff = {mean_diff:.2f}', va='bottom', color='red')
+    ax.text(0.8 * max(mean_vals), lower_loa, f'Lower LoA = {lower_loa:.2f}', va='bottom', color='blue')
+    ax.text(0.8 * max(mean_vals), upper_loa, f'Upper LoA = {upper_loa:.2f}', va='bottom', color='blue')
+    
+    if activity_type in ['sleep', 'sedentary', 'light']:
+        unit_label = '[hours]'
+    elif activity_type == 'moderate-vigorous':
+        unit_label = '[minutes]'
+    else:
+        unit_label = ''
+    
+    ax.set_title(f'{plot_label.capitalize()} Activity | Pearson correlation: {pearson_cor:.3f}')
+
+    ax.set_xlabel(f'({col1_label} + {col2_label}) / 2 {unit_label}')
+    
+    if show_y_label:
+        ax.set_ylabel(f'{col1_label} - {col2_label} {unit_label}')
+    
+    ax.tick_params(axis='both', which='both', labelsize=14)
+
+    if display_plot and ax is None:
+        plt.show()
+    
+    if ax is None:
+        os.makedirs(output_dir, exist_ok=True)
+        plot_path = os.path.join(output_dir, f'ba_{plot_label}_{col1_label}_vs_{col2_label}.png')
+        plt.savefig(plot_path, bbox_inches='tight')
+        plt.close()
+
+
+def generate_bland_altman_plots(results_df, activities=['sleep', 'sedentary', 'light', 'moderate-vigorous'], 
+                               group_by=None, save_path=None):
+    """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
+    
+    if group_by is None:  # Full population
+        fig, axs = plt.subplots(2, 2, figsize=(15, 10), dpi=800, sharey=False)
+        fig.suptitle("Bland-Altman plots for full Capture-24 population", fontsize=20)
+        axs = axs.flatten()
+        
+        for i, activity in enumerate(activities):
+            activity_bbaa_pred, activity_actinet_pred, _ = build_bland_altman_data(results_df, activity)
+            bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity.capitalize(),
+                              ax=axs[i], show_y_label=True, activity_type=activity)
+        
+        plot_and_save_fig(fig, save_path=save_path)
+   
+    else:
+        unique_groups = results_df[group_by].cat.categories
+        
+        for group in unique_groups:
+            fig, axs = plt.subplots(2, 2, figsize=(15, 10), dpi=800, sharey=False)
+            axs = axs.flatten()
+            
+            for i, activity in enumerate(activities):
+                activity_bbaa_pred, activity_actinet_pred, population = build_bland_altman_data(
+                    results_df, activity, **{group_by.replace(' ', '_').lower(): group})
+                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity.capitalize(),
+                                  ax=axs[i], show_y_label=True, activity_type=activity)
+            
+            fig.suptitle(f"Bland-Altman plots for different {group_by.lower()} in Capture-24 population\n" +
+                         f"{group_by}: {group} (n={population})", fontsize=20)
+
+            group_filename = f"{group_by.lower().replace(' ', '_')}_{group}.pdf"
+            save_path_group = f"{save_path}/{group_filename}" if save_path else group_filename
+            
+            plot_and_save_fig(fig, save_path=save_path_group)
+            
+            plt.close(fig)
