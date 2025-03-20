@@ -9,6 +9,7 @@ import hashlib
 import numpy as np
 import pandas as pd
 import joblib
+import sys
 
 import actipy
 
@@ -148,7 +149,36 @@ def main():
     # Output paths
     basename = resolve_path(args.filepath)[1]
     outdir = os.path.join(args.outdir, basename)
+    outputSummaryFile = f"{outdir}/{basename}-outputSummary.json"
     os.makedirs(outdir, exist_ok=True)
+
+     # If no data, save info and exit
+    if len(data) == 0 or data.isna().any(axis=1).all():  # TODO: check na only on x,y,z cols?
+        # Save info as outputSummary.json
+        with open(outputSummaryFile, "w") as f:
+            json.dump(info, f, indent=4, cls=NpEncoder)
+
+        # Print
+        if verbose:
+            print("\nSummary Stats\n---------------------")
+            print(
+                json.dumps(
+                    {
+                        key: info[key]
+                        for key in [
+                            "Filename",
+                            "Filesize(MB)",
+                            "WearTime(days)",
+                            "NonwearTime(days)",
+                            "ReadOK"
+                        ]
+                    },
+                    indent=4,
+                    cls=NpEncoder,
+                )
+            )
+        print("No data to process. Exiting early...")
+        sys.exit(0)
 
     # Run classifier
     if verbose:
@@ -193,7 +223,6 @@ def main():
     outputSummary = {**summary, **info}
 
     # Save output summary
-    outputSummaryFile = f"{outdir}/{basename}-outputSummary.json"
     with open(outputSummaryFile, "w") as f:
         json.dump(outputSummary, f, indent=4, cls=NpEncoder)
 
@@ -357,6 +386,8 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if pd.isnull(obj):  # handles pandas NAType
+            return np.nan
         return json.JSONEncoder.default(self, obj)
 
 
