@@ -9,6 +9,8 @@ import warnings
 
 warnings.simplefilter("ignore", UserWarning)
 
+ACTIVITY_LABELS = ['sleep', 'sedentary', 'light', 'moderate-vigorous']
+
 
 class DivDict(dict):
     """Dictionary subclass that allows division by a number."""
@@ -29,22 +31,24 @@ def calculate_metrics(y_true, y_pred):
 
 def plot_confusion_matrix(y_true, y_pred, title="", ax=None, figsize=(8, 8), fontsize=20):
     """Plots a confusion matrix with heatmap annotations."""
-    unique_classes = np.unique(np.concatenate((y_true, y_pred)))
-    cm = confusion_matrix(y_true, y_pred, labels=unique_classes, normalize='true') 
+    cm = confusion_matrix(y_true, y_pred, labels=ACTIVITY_LABELS)
+    cm_norm = cm.astype('float') / cm.sum(axis=1, keepdims=True)
+    
+    annotations = np.array([[f'{p:.3f}\n({n:,})' for p, n in zip(row_norm, row)] for row_norm, row in zip(cm_norm, cm)])
     
     if ax is None:
         _, ax = plt.subplots(figsize=figsize, dpi=800)
 
-    sns.heatmap(cm, annot=True, fmt='.3f', cmap="Blues", cbar=False, 
-                annot_kws={"size": fontsize*0.8}, ax=ax)
+    sns.heatmap(cm_norm, annot=annotations, fmt='', cmap="Blues", cbar=False, 
+                annot_kws={"size": fontsize*0.9}, ax=ax)
     ax.set_title(title, fontsize=fontsize)
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
-    ax.set_xticks(np.arange(len(unique_classes)) + 0.5)
-    ax.set_yticks(np.arange(len(unique_classes)) + 0.5)
-    ax.set_xticklabels(unique_classes, fontsize=fontsize*0.7)
-    ax.set_yticklabels(unique_classes, fontsize=fontsize*0.7)
+    ax.set_xticks(np.arange(len(ACTIVITY_LABELS)) + 0.5)
+    ax.set_yticks(np.arange(len(ACTIVITY_LABELS)) + 0.5)
+    ax.set_xticklabels(ACTIVITY_LABELS, fontsize=fontsize*0.8)
+    ax.set_yticklabels(ACTIVITY_LABELS, fontsize=fontsize*0.8)
 
 
 def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
@@ -55,13 +59,14 @@ def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
     if sex is not None:
         model_results = model_results[model_results["Sex"] == sex]
 
-    y_true = np.hstack(model_results.loc[model_results["Model"]=="actinet", 'True'])
+    y_true_bbaa = np.hstack(model_results.loc[model_results["Model"]=="accelerometer", 'True'])
     y_pred_bbaa = np.hstack(model_results.loc[model_results["Model"]=="accelerometer", 'Predicted'])
+    y_true_actinet = np.hstack(model_results.loc[model_results["Model"]=="actinet", 'True'])
     y_pred_actinet = np.hstack(model_results.loc[model_results["Model"]=="actinet", 'Predicted'])
 
     population = len(model_results['Participant'].unique())
     
-    return y_true, y_pred_bbaa, y_pred_actinet, population
+    return y_true_bbaa, y_pred_bbaa, y_true_actinet, y_pred_actinet, population
 
 
 def plot_and_save_fig(fig, save_path=None):
@@ -72,37 +77,37 @@ def plot_and_save_fig(fig, save_path=None):
         fig.savefig(save_path, format='pdf', dpi=800, bbox_inches='tight')
 
 
-def generate_confusion_matrices(results_df, group_by=None, save_path=None):
+def generate_confusion_matrices(results_df, group_by=None, save_path=None, fontsize=20):
     """Generates and plots confusion matrices for different subgroups.""" 
     if group_by is None:  # Full population
         fig, axs = plt.subplots(1, 2, sharey=True, figsize=(12, 6), dpi=800)
-        fig.suptitle("Confusion matrices for full Capture-24 population using 5-fold group cross-validation", 
-                     fontsize=16)
+        fig.suptitle("Confusion matrices for full Capture-24 population\nusing 5-fold group cross-validation", 
+                     fontsize=fontsize)
         
-        y_true, y_pred_bbaa, y_pred_actinet, _ = build_confusion_matrix_data(results_df)
+        y_true_bbaa, y_pred_bbaa, y_true_actinet, y_pred_actinet, _ = build_confusion_matrix_data(results_df)
         
-        plot_confusion_matrix(y_true, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=14)
-        plot_confusion_matrix(y_true, y_pred_actinet, 'actinet', ax=axs[1], fontsize=14)
-        
+        plot_confusion_matrix(y_true_bbaa, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=fontsize*0.8)
+        plot_confusion_matrix(y_true_actinet, y_pred_actinet, 'actinet', ax=axs[1], fontsize=fontsize*0.8)
+        fig.tight_layout()
         plot_and_save_fig(fig, save_path)
     
     else:
         unique_groups = results_df[group_by].cat.categories
         fig = plt.figure(figsize=(12, 6*len(unique_groups)), dpi=800, constrained_layout=True)
         fig.suptitle(f"Confusion matrices for different {group_by.lower()} in " +
-                     "Capture-24 population\nusing 5-fold group cross-validation", fontsize=16)
+                     "Capture-24 population\nusing 5-fold group cross-validation", fontsize=fontsize)
 
         subfigs = fig.subfigures(nrows=len(unique_groups), ncols=1)
         
         for group, subfig in zip(unique_groups, subfigs):
-            y_true, y_pred_bbaa, y_pred_actinet, population =\
+            y_true_bbaa, y_pred_bbaa, y_true_actinet, y_pred_actinet, population =\
                 build_confusion_matrix_data(results_df, **{group_by.replace(' ', '_').lower(): group})
 
-            subfig.suptitle(f"{group_by}: {group} (n = {population})", fontsize=14)
+            subfig.suptitle(f"{group_by}: {group} (n = {population})", fontsize=fontsize*0.9)
             axs = subfig.subplots(nrows=1, ncols=2, sharey=True)
 
-            plot_confusion_matrix(y_true, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=14)
-            plot_confusion_matrix(y_true, y_pred_actinet, 'actinet', ax=axs[1], fontsize=14)
+            plot_confusion_matrix(y_true_bbaa, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=fontsize*0.8)
+            plot_confusion_matrix(y_true_actinet, y_pred_actinet, 'actinet', ax=axs[1], fontsize=fontsize*0.8)
         
         plot_and_save_fig(fig, save_path)
 
@@ -247,7 +252,7 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
         plt.close()
 
 
-def generate_bland_altman_plots(results_df, activities=['sleep', 'sedentary', 'light', 'moderate-vigorous'], 
+def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, 
                                group_by=None, save_path=None):
     """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
     
