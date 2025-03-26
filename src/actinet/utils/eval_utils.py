@@ -9,7 +9,13 @@ import warnings
 
 warnings.simplefilter("ignore", UserWarning)
 
-ACTIVITY_LABELS = ['sleep', 'sedentary', 'light', 'moderate-vigorous']
+ACTIVITY_LABELS_DICT = {
+    'sleep': 'Sleep',
+    'sedentary': 'Sedentary Behaviour',
+    'light': 'Light Activity',
+    'moderate-vigorous': 'Moderate-Vigorous Activity'
+}
+ACTIVITY_LABELS = list(ACTIVITY_LABELS_DICT.keys())
 
 
 class DivDict(dict):
@@ -190,10 +196,6 @@ def build_bland_altman_data(results: pd.DataFrame, activity, age_band=None, sex=
 
     activity_bbaa_pred = [x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "accelerometer", "Pred_dict"]]
     activity_actinet_pred = [x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "actinet", "Pred_dict"]]
-    
-    if activity == 'moderate-vigorous': # Convert hours to minutes
-        activity_bbaa_pred = [60*x for x in activity_bbaa_pred]
-        activity_actinet_pred = [60*x for x in activity_actinet_pred]
 
     population = len(model_results['Participant'].unique())
 
@@ -202,8 +204,7 @@ def build_bland_altman_data(results: pd.DataFrame, activity, age_band=None, sex=
 
 def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
                       col1_label='accelerometer', col2_label='actinet',
-                      display_plot=False, show_y_label=False, ax=None,
-                      activity_type=None):
+                      display_plot=False, show_y_label=False, ax=None, fontsize=20):
     """Generates a Bland-Altman plot for two columns of data."""
     dat = pd.DataFrame({'col1': col1, 'col2': col2})
     pearson_cor = dat.corr().iloc[0, 1]
@@ -222,23 +223,16 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
     ax.axhline(mean_diff, color='red', linestyle='-')
     ax.axhline(lower_loa, color='blue', linestyle='--')
     ax.axhline(upper_loa, color='blue', linestyle='--')
-    ax.text(0.8 * max(mean_vals), mean_diff, f'Mean Diff = {mean_diff:.2f}', va='bottom', color='red')
-    ax.text(0.8 * max(mean_vals), lower_loa, f'Lower LoA = {lower_loa:.2f}', va='bottom', color='blue')
-    ax.text(0.8 * max(mean_vals), upper_loa, f'Upper LoA = {upper_loa:.2f}', va='bottom', color='blue')
+    ax.text(0.8 * max(mean_vals), mean_diff, f'Mean Diff = {mean_diff:.2f}', va='bottom', color='red', fontsize=fontsize*0.8)
+    ax.text(0.8 * max(mean_vals), lower_loa, f'Lower LoA = {lower_loa:.2f}', va='bottom', color='blue', fontsize=fontsize*0.8)
+    ax.text(0.8 * max(mean_vals), upper_loa, f'Upper LoA = {upper_loa:.2f}', va='bottom', color='blue', fontsize=fontsize*0.8)
     
-    if activity_type in ['sleep', 'sedentary', 'light']:
-        unit_label = '[hours]'
-    elif activity_type == 'moderate-vigorous':
-        unit_label = '[minutes]'
-    else:
-        unit_label = ''
-    
-    ax.set_title(f'{plot_label.capitalize()} Activity | Pearson correlation: {pearson_cor:.3f}')
+    ax.set_title(f'{ACTIVITY_LABELS_DICT[plot_label]} [hours]\nPearson correlation: {pearson_cor:.3f}', fontsize=fontsize)
 
-    ax.set_xlabel(f'({col1_label} + {col2_label}) / 2 {unit_label}')
+    ax.set_xlabel(f'({col1_label} + {col2_label}) / 2', fontsize=fontsize*0.9)
     
     if show_y_label:
-        ax.set_ylabel(f'{col1_label} - {col2_label} {unit_label}')
+        ax.set_ylabel(f'{col1_label} - {col2_label}', fontsize=fontsize*0.9)
     
     ax.tick_params(axis='both', which='both', labelsize=14)
 
@@ -252,41 +246,43 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
         plt.close()
 
 
-def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, 
-                               group_by=None, save_path=None):
+def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, group_by=None, save_path=None, 
+                                fontsize=20, subset=""):
     """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
     
     if group_by is None:  # Full population
-        fig, axs = plt.subplots(2, 2, figsize=(15, 10), dpi=800, sharey=False)
-        fig.suptitle("Bland-Altman plots for full Capture-24 population", fontsize=20)
+        fig, axs = plt.subplots(1, 4, figsize=(15, 6), dpi=800, sharey=True)      
         axs = axs.flatten()
-        
+
         for i, activity in enumerate(activities):
-            activity_bbaa_pred, activity_actinet_pred, _ = build_bland_altman_data(results_df, activity)
-            bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity.capitalize(),
-                              ax=axs[i], show_y_label=True, activity_type=activity)
+            activity_bbaa_pred, activity_actinet_pred, population = build_bland_altman_data(results_df, activity)
+            bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
+                              ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8)
         
-        plot_and_save_fig(fig, save_path=save_path)
+        subset_in_title = f" {subset} " if subset else " "
+        fig.suptitle(f"Bland-Altman plots for Capture-24{subset_in_title}population (n={population})", 
+                     fontsize=fontsize)
    
     else:
         unique_groups = results_df[group_by].cat.categories
+        fig = plt.figure(figsize=(15, 6*len(unique_groups)), dpi=800, constrained_layout=True)
+        subfigs = fig.subfigures(nrows=len(unique_groups), ncols=1)
         
-        for group in unique_groups:
-            fig, axs = plt.subplots(2, 2, figsize=(15, 10), dpi=800, sharey=False)
-            axs = axs.flatten()
-            
+        for subfig, group in zip(subfigs, unique_groups):
+            axs = subfig.subplots(nrows=1, ncols=len(activities), sharex=False, sharey=True)
+
             for i, activity in enumerate(activities):
                 activity_bbaa_pred, activity_actinet_pred, population = build_bland_altman_data(
                     results_df, activity, **{group_by.replace(' ', '_').lower(): group})
-                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity.capitalize(),
-                                  ax=axs[i], show_y_label=True, activity_type=activity)
+                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
+                                  ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8)
             
-            fig.suptitle(f"Bland-Altman plots for different {group_by.lower()} in Capture-24 population\n" +
-                         f"{group_by}: {group} (n={population})", fontsize=20)
+            subfig.suptitle(f"{group_by}: {group} (n={population})", fontsize=fontsize*0.9)
+        
 
-            group_filename = f"{group_by.lower().replace(' ', '_')}_{group}.pdf"
-            save_path_group = f"{save_path}/{group_filename}" if save_path else group_filename
+        fig.suptitle(f"Bland-Altman plots for Capture-24 population by {group_by}", fontsize=fontsize)
+    
+    fig.tight_layout()
+    plot_and_save_fig(fig, save_path=save_path)
             
-            plot_and_save_fig(fig, save_path=save_path_group)
-            
-            plt.close(fig)
+    plt.close(fig)
