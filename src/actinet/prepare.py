@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import pandas as pd
 import os
@@ -199,12 +200,25 @@ def load_all_and_make_windows(
         out_path = os.path.join(
             out_dir, f"prepared/downsampling_{downsampling_method}_lowpass_{lowpass_hz}"
         )
+
+        info = {
+            "sample_rate": sample_rate,
+            "winsec": winsec,
+            "resample_rate": resample_rate,
+            "lowpass_hz": lowpass_hz,
+            "downsampling_method": downsampling_method,
+            "anno_label": anno_label,
+        }
+
         # Save arrays for future use
         os.makedirs(out_path, exist_ok=True)
         np.save(f"{out_path}/X.npy", X)
         np.save(f"{out_path}/Y.npy", Y)
         np.save(f"{out_path}/T.npy", T)
         np.save(f"{out_path}/pid.npy", P)
+
+        with open(f"{out_path}/info.json", "w") as f:
+            json.dump(info, f, indent=4)
 
     return X, Y, T, P
 
