@@ -1,5 +1,6 @@
 # ActiNet
 
+[![GitHub all releases](https://img.shields.io/github/release/OxWearables/actinet.svg)](https://github.com/OxWearables/actinet/releases/)
 [![DOI](https://zenodo.org/badge/751360921.svg)](https://doi.org/10.5281/zenodo.15310683)
 
 A tool to extract meaningful health information from large accelerometer datasets.
