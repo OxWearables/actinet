@@ -1,4 +1,6 @@
-# actinet
+# ActiNet
+
+[![DOI](https://zenodo.org/badge/751360921.svg)](https://doi.org/10.5281/zenodo.15310683)
 
 A tool to extract meaningful health information from large accelerometer datasets.
 The software generates time-series and summary metrics useful for answering key questions such as how much time is spent in sleep, sedentary behaviour, or doing physical activity.
