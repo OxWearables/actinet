@@ -5,8 +5,7 @@
 
 A tool to extract meaningful health information from large accelerometer datasets.
 The software generates time-series and summary metrics useful for answering key questions such as how much time is spent in sleep, sedentary behaviour, or doing physical activity.
-The backbone of this repository is the self-supervised learning of Hang et al.: https://www.nature.com/articles/s41746-024-01062-3
-
+The backbone of this repository is the self-supervised learning of Hang et al.: <https://www.nature.com/articles/s41746-024-01062-3>
 
 ## Install
 
@@ -68,18 +67,19 @@ To use this package offline, one must first download and install the relevant cl
 This repository offers two ways of doing this.
 
 Run the following code when you have internet access:
+
 ```console
 actinet --cache-classifier
 ```
- 
+
 Following this, the actinet classifier can be used as standard without internet access, without needing to specify the flags relating to the model repository.
- 
+
 Alternatively, you can download or git clone the ssl modules from the [ssl-wearables repository](https://github.com/OxWearables/ssl-wearables).
 
 In addition, you can donwload/prepare a custom classifier file.
 
 Once this is downloaded to an appopriate location, you can run the actinet model using:
- 
+
 ```console
 actinet sample.cwa -c /path/to/classifier.joblib.lzma -m /path/to/ssl-wearables
 ```
