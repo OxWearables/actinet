@@ -16,7 +16,7 @@ def main():
         long_description = fh.read()
 
     setup(
-        name="actinet",
+        name="ActiNet",
         version=versioneer.get_version(),  # Do not edit
         cmdclass=versioneer.get_cmdclass(),  # Do not edit
         python_requires=">=3.8, <4",

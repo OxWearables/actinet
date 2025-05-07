@@ -1,5 +1,5 @@
 name = "actinet"
-__author__ = "Shing Chan, Aidan Acquah, Charilaos Zisou, Aiden Doherty"
+__author__ = "Aidan Acquah, Shing Chan, Aiden Doherty"
 __maintainer__ = "Shing Chan"
 __maintainer_email__ = "shing.chan@ndph.ox.ac.uk"
 __license__ = "See LICENSE file."
