@@ -5,7 +5,8 @@ import pandas as pd
 
 class HMM:
     """
-    Implement a basic HMM model with parameter saving/loading.
+    Implement a basic hidden Markov model (HMM) with parameter saving/loading
+    https://en.wikipedia.org/wiki/Hidden_Markov_model.
     """
 
     def __init__(
@@ -35,9 +36,17 @@ class HMM:
         )
 
     def fit(self, Y_prob, Y_true, T=None, interval=None):
-        """https://en.wikipedia.org/wiki/Hidden_Markov_model
+        """
+        Fit a HMM to the provided data by calculating the prior, transition and emission matrices.
+
         :param Y_prob: Observation probabilities
+        :type Y_prob: numpy.ndarray
         :param Y_true: Ground truth labels
+        :type Y_true: numpy.ndarray
+        :param T: Time at each observation
+        :type T: numpy.ndarray, optional
+        :param interval: Expected time interval between observations in seconds
+        :type interval: int or float, optional
         """
 
         if self.labels is None:
@@ -56,6 +65,21 @@ class HMM:
         self.transition = transition
 
     def predict(self, y_obs, t=None, interval=None, uniform_prior=None):
+        """
+        Predict sequence of activities using viterbi algorithm, while restoring labels after gaps in data.
+
+        :param y_obs: Predicted observations
+        :type y_obs: numpy.ndarray
+        :param t: Time at each observation
+        :type t: numpy.ndarray, optional
+        :param interval: Expected time interval between observations in seconds
+        :type interval: int or float, optional
+        :param uniform_prior: Assume uniform priors.
+        :type uniform_prior: bool, optional
+
+        :return: Smoothed sequence of activities
+        :rtype: np.ndarray
+        """
         check_for_time_values_error(y_obs, t, interval)
 
         y_smooth = self.viterbi(y_obs, uniform_prior)
@@ -67,9 +91,12 @@ class HMM:
 
     def viterbi(self, y_obs, uniform_prior=None):
         """Perform HMM smoothing over observations via Viteri algorithm
-        https://en.wikipedia.org/wiki/Viterbi_algorithm
-        :param y_obs: Predicted observation
-        :param bool uniform_prior: Assume uniform priors.
+        https://en.wikipedia.org/wiki/Viterbi_algorithm.
+
+        :param y_obs: Predicted observations
+        :type y_obs: numpy.ndarray
+        :param uniform_prior: Assume uniform priors
+        :type uniform_prior: bool, optional
 
         :return: Smoothed sequence of activities
         :rtype: np.ndarray
@@ -114,7 +141,8 @@ class HMM:
         """
         Save model parameters to a Numpy npz file.
 
-        :param str path: npz file location
+        :param path: npz file location
+        :type path: str
         """
         os.makedirs(os.path.dirname(path), exist_ok=True)
         np.savez(
@@ -129,7 +157,8 @@ class HMM:
         """
         Load model parameters from a Numpy npz file.
 
-        :param str path: npz file location
+        :param path: npz file location
+        :type path: str
         """
         d = np.load(path, allow_pickle=True)
         self.prior = d["prior"]

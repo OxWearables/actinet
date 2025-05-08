@@ -71,6 +71,27 @@ These are limited to:
 - Pickle (.pkl/.pkl.gz)
 
 
+Visualisation
+=============
+
+The quickest way to visualise the activity intensty classification output is to run the model with the '-p' flag, saving the time-series-plot.png file. 
+
+.. code-block:: console
+
+    $ actinet data/sample.cwa.gz -p
+    <summary output written to outputs/sample/sample-summary.json>
+    <time-series output written to outputs/sample/sample-timeSeries.csv.gz>
+    <plot output written to outputs/sample/sample-timeSeries-plot.png>
+
+Alternatively, you can use the accPlot tool to visualise the time-series output.
+This tool offers more options for customisation.
+
+.. code-block:: console
+    
+    $ accPlot sample-timeSeries.csv.gz --showFirstNDays 4 --showFileName True --plotFile my_plot.png
+    <plot output written to my_plot.png>
+
+
 Offline usage
 =============
 

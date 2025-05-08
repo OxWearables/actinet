@@ -17,7 +17,7 @@ from actinet.utils.utils import safe_indexer, resize, infer_freq
 
 class ActivityClassifier:
     """
-    Implement a basic Activity Classifier with model saving/loading and optional HMM.
+    Implement a ResNet-18 based Activity Classifier with model saving/loading and optional HMM smoothing.
     """
     def __init__(
         self,
@@ -42,7 +42,7 @@ class ActivityClassifier:
         )
         self.model = None
 
-        self.load_hmm_params(hmm_params)
+        self._load_hmm_params(hmm_params)
 
     def __str__(self):
         return (
@@ -67,6 +67,24 @@ class ActivityClassifier:
         model_repo_path=None,
         n_splits=5,
     ):
+        """
+        Fit the ActivityClassifier to the provided data by training the model.
+
+        :param X: The training accelerometer data [x,y,z] with shape (rows, window_len, 3)
+        :type X: numpy.ndarray
+        :param Y: Ground truth labels of the training data with shape (rows, )
+        :type Y: numpy.ndarray
+        :param groups: Participant labels for the training data with shape (rows, )
+        :type groups: numpy.ndarray, optional
+        :param T: Time at each observation with shape (rows, )
+        :type T: numpy.ndarray, optional
+        :param weights_path: Path to save the model weights
+        :type weights_path: str, optional
+        :param model_repo_path: Path to the ssl-wearables model repository (https://github.com/OxWearables/ssl-wearables)
+        :type model_repo_path: str, optional
+        :param n_splits: Number of splits for cross-validation
+        :type n_splits: int, optional
+        """
         sslmodel.verbose = self.verbose
 
         Y = LabelEncoder().fit_transform(Y)
@@ -158,6 +176,16 @@ class ActivityClassifier:
         return self
 
     def predict_from_frame(self, data, sample_freq, hmm_smothing=True):
+        """
+        Use the ActivityClassifier to make predictions on input accelerometer data.
+
+        :param data: The training accelerometer data [x,y,z]
+        :type data: pandas.DataFrame
+        :param sample_freq: Sampling frequency of the accelerometer data
+        :type sample_freq: int or float
+        :param hmm_smothing: Whether to apply HMM smoothing to the predictions
+        :type hmm_smothing: bool, optional
+        """
         sample_freq = sample_freq or 1 / (infer_freq(data.index).total_seconds())
         X, T = make_windows(
             data,
@@ -174,6 +202,16 @@ class ActivityClassifier:
         return Y
 
     def predict(self, X, hmm_smothing=True, T=None):
+        """
+        Use the ActivityClassifier to make predictions on input accelerometer data.
+
+        :param X: The input accelerometer data [x,y,z] with shape (rows, window_len, 3)
+        :type X: numpy.ndarray
+        :param hmm_smothing: Whether to apply HMM smoothing to the predictions
+        :type hmm_smothing: bool, optional
+        :param T: Time at each observation with shape (rows, )
+        :type T: numpy.ndarray, optional
+        """
         if self.model is None:
             raise Exception("Model has not been loaded for ActivityClassifier.")
 
@@ -209,6 +247,12 @@ class ActivityClassifier:
         return Y
 
     def load_model(self, model_repo_path=None):
+        """
+        Load SSL model reposiotory from specified path. (https://github.com/OxWearables/ssl-wearables)
+
+        :param model_repo_path: Path to the ssl-wearables model repository
+        :type model_repo_path: str, optional
+        """
         self.model = sslmodel.get_sslnet(
             tag=self.repo_tag,
             local_repo_path=model_repo_path,
@@ -218,7 +262,7 @@ class ActivityClassifier:
         )
         self.model.to(self.device)
 
-    def load_hmm_params(self, hmm_params):
+    def _load_hmm_params(self, hmm_params):
         if isinstance(hmm_params, str):
             if os.path.exists(hmm_params):
                 if self.verbose:
@@ -242,6 +286,12 @@ class ActivityClassifier:
         self.hmms = hmm.HMM(**hmm_params)
 
     def save(self, output_path):
+        """
+        Save the ActivityClassifier model to a .lzma file.
+
+        :param output_path: lzma file location
+        :type output_path: str
+        """
         classifier = copy.deepcopy(self)
         classifier.model = None
         classifier.device = "cpu"
