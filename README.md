@@ -5,7 +5,6 @@
 
 A tool to extract meaningful health information from large accelerometer datasets.
 The software generates time-series and summary metrics useful for answering key questions such as how much time is spent in sleep, sedentary behaviour, or doing physical activity.
-The backbone of this repository is the self-supervised learning of Hang et al.: <https://www.nature.com/articles/s41746-024-01062-3>
 
 ## Install
 
@@ -41,7 +40,7 @@ You are all set! The next time that you want to use `actinet`, open the Anaconda
 
 ```bash
 # Process an AX3 file
-$ actinet sample.cwa
+$ actinet sample.cwa.gz
 
 # Or an ActiGraph file
 $ actinet sample.gt3x
@@ -53,6 +52,8 @@ $ actinet sample.bin
 $ actinet sample.csv
 ```
 
+See the [Usage](https://actinet.readthedocs.io/en/latest/usage.html) page for further uses of the tool.
+
 ### Troubleshooting
 
 Some systems may face issues with Java when running the script. If this is your case, try fixing OpenJDK to version 8:
@@ -61,32 +62,10 @@ Some systems may face issues with Java when running the script. If this is your 
 conda create -n actinet openjdk=8
 ```
 
-### Offline usage
-
-To use this package offline, one must first download and install the relevant classifier file and model modules.
-This repository offers two ways of doing this.
-
-Run the following code when you have internet access:
-
-```console
-actinet --cache-classifier
-```
-
-Following this, the actinet classifier can be used as standard without internet access, without needing to specify the flags relating to the model repository.
-
-Alternatively, you can download or git clone the ssl modules from the [ssl-wearables repository](https://github.com/OxWearables/ssl-wearables).
-
-In addition, you can donwload/prepare a custom classifier file.
-
-Once this is downloaded to an appopriate location, you can run the actinet model using:
-
-```console
-actinet sample.cwa -c /path/to/classifier.joblib.lzma -m /path/to/ssl-wearables
-```
-
 ### Output files
 
-By default, output files will be stored in a folder named after the input file, `outputs/{filename}/`, created in the current working directory. You can change the output path with the `-o` flag:
+By default, output files will be stored in a folder named after the input file, `outputs/{filename}/`, created in the current working directory.
+You can change the output path with the `-o` flag:
 
 ```console
 $ actinet sample.cwa -o /path/to/some/folder/
@@ -100,7 +79,7 @@ The following output files are created:
 - *Info.json* Summary info, as shown above.
 - *timeSeries.csv* Raw time-series of activity levels
 
-See [Data Dictionary](https://biobankaccanalysis.readthedocs.io/en/latest/datadict.html) for the list of output variables.
+See [Data Dictionary](https://actinet.readthedocs.io/en/latest/datadict.html) for the list of output variables.
 
 ### Plotting activity profiles
 
