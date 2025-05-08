@@ -16,6 +16,9 @@ from actinet.utils.utils import safe_indexer, resize, infer_freq
 
 
 class ActivityClassifier:
+    """
+    Implement a basic Activity Classifier with model saving/loading and optional HMM.
+    """
     def __init__(
         self,
         device="cpu",
