@@ -27,7 +27,7 @@ BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/actinet/models/"
 def main():
 
     parser = argparse.ArgumentParser(
-        description="A tool to predict activities from accelerometer data using a self-supervised Resnet 18 model",
+        description="A tool to predict activities from accelerometer data using a self-supervised ResNet-18 model",
         add_help=True,
     )
     parser.add_argument(
