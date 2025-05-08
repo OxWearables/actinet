@@ -16,12 +16,17 @@ CLI reference
 
 :code:`actinet-collate-outputs`
 ...............................
-.. program-output:: actinet-collate-outputs -h
+
+.. program-output:: actinet-collate-outputs -h 
 
 
 API reference
 -------------
 
 .. autoclass:: actinet.models.ActivityClassifier
+   :members:
+   :undoc-members:
 
 .. autoclass:: actinet.hmm.HMM
+   :members:
+   :undoc-members:

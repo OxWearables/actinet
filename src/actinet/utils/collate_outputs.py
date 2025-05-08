@@ -36,8 +36,9 @@ def collate_outputs(outputs, outfile="outputs.csv"):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("outputs")
-    parser.add_argument("--outfile", "-o", default="outputs.csv")
+    parser.add_argument("outputs", help="Directory containing JSON files.")
+    parser.add_argument("--outfile", "-o", default="outputs.csv",
+                        help="Output CSV filename.")
     args = parser.parse_args()
 
     return collate_outputs(outputs=args.outputs, outfile=args.outfile)
