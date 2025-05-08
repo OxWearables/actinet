@@ -59,7 +59,7 @@ before using the tool.
 
 
 Other accelerometer file formats
-================================
+--------------------------------
 
 Multiple accelerometer file formats can be processed by this model. 
 These are limited to:
@@ -72,7 +72,7 @@ These are limited to:
 
 
 Visualisation
-=============
+-------------
 
 The quickest way to visualise the activity intensty classification output is to run the model with the '-p' flag, saving the time-series-plot.png file. 
 
@@ -87,7 +87,7 @@ Alternatively, you can use the accPlot tool to visualise the time-series output.
 This tool offers more options for customisation.
 
 .. code-block:: console
-    
+
     $ accPlot sample-timeSeries.csv.gz --showFirstNDays 4 --showFileName True --plotFile my_plot.png
     <plot output written to my_plot.png>
 

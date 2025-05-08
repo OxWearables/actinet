@@ -1,6 +1,6 @@
 Name,Description,Type,Unit
 Filename,Accelerometer file name. Not for public display,string,N/A
-Filesize(MB),Accelerometer file size,integer,Megabytes
+Filesize(MB),Accelerometer file size,integer,megabytes
 Device,Accelerometer device type,string,N/A
 DeviceID,Accelerometer device ID,integer,N/A
 ActiNetVersion,Version of ActiNet package used,string,N/A
