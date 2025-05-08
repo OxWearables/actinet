@@ -86,6 +86,7 @@ def main():
             "console_scripts": [
                 "actinet=actinet.actinet:main",
                 "actinet-collate-outputs=actinet.utils.collate_outputs:main",
+                "accPlot=actinet.accPlot:main",
             ],
         },
     )
