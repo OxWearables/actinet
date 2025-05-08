@@ -5,7 +5,9 @@
 
 .. actinet documentation master file
 
+=======
 ActiNet
+=======
 
 A tool to extract meaningful health information from large accelerometer
 datasets. The software generates time-series and summary metrics useful for
