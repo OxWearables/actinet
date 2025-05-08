@@ -1,0 +1,575 @@
+Name,Description,Type,Unit
+Filename,Accelerometer file name. Not for public display,string,N/A
+Filesize(MB),Accelerometer file size,integer,Megabytes
+Device,Accelerometer device type,string,N/A
+DeviceID,Accelerometer device ID,integer,N/A
+ActiNetVersion,Version of ActiNet package used,string,N/A
+ActiNetArgs,Dictionary of arguments input to ActiNet deployment,dict,N/A
+ReadErrors,Number of read errors,integer,count
+SampleRate,Sampling rate of the accelerometer data,numeric,Hz
+ReadOk,Whether data was successfully read,boolean,N/A
+StartTime,Accelerometer start time,string,N/A
+EndTime,Accelerometer end time,string,N/A
+"FirstDay(0=mon,6=sun)","Accelerometer start day (0=mon, 6=sun)",integer,N/A
+NumTicks,Total number of tri-axial accelerometer readings,integer,count
+WearTime(days),Estimated total wear time,numeric,days  
+DataSpan(days),Time span between first and last timestamp in data index,numeric,days
+NumInterrupts,Number of interrupts in data,integer,count
+Covers24hOK,Whether device wear covers all 24 hours in the day,boolean,N/A
+CalibNumSamples,Number of static points used for accelerometer calibration,integer,count
+CalibErrorBefore(mg),Accelerometer miscalibration error before calibration,numeric,milligravity
+CalibErrorAfter(mg),Accelerometer miscalibration error after calibration,numeric,milligravity
+CalibNumIters,Number of iterations for calibration,integer,count
+CalibOk,Whether accelerometer calibration was successful,boolean,N/A
+NonwearTime(days),Total non-wear time,numeric,days
+NumNonwearEpisodes,Number of non-wear episodes,integer,count
+ResampleRate,Resampling frequency of accelerometer data,numeric,Hz
+WearStartTime,Timestamp of the first valid accelerometer reading,string,N/A
+WearEndTime,Timestamp of the last valid accelerometer reading,string,N/A
+day0-recorded-wearTime(hrs),Accelerometer wear time (day 0),numeric,hour
+day0-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 0),numeric,hour
+day0-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 0),numeric,hour
+day0-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 0),numeric,hour
+day0-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 0),numeric,hour
+day0-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 0),numeric,hour
+day0-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 0),numeric,hour
+day1-recorded-wearTime(hrs),Accelerometer wear time (day 1),numeric,hour
+day1-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 1),numeric,hour
+day1-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 1),numeric,hour
+day1-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 1),numeric,hour
+day1-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 1),numeric,hour
+day1-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 1),numeric,hour
+day1-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 1),numeric,hour
+day2-recorded-wearTime(hrs),Accelerometer wear time (day 2),numeric,hour
+day2-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 2),numeric,hour
+day2-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 2),numeric,hour
+day2-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 2),numeric,hour
+day2-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 2),numeric,hour
+day2-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 2),numeric,hour
+day2-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 2),numeric,hour
+day3-recorded-wearTime(hrs),Accelerometer wear time (day 3),numeric,hour
+day3-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 3),numeric,hour
+day3-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 3),numeric,hour
+day3-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 3),numeric,hour
+day3-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 3),numeric,hour
+day3-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 3),numeric,hour
+day3-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 3),numeric,hour
+day4-recorded-wearTime(hrs),Accelerometer wear time (day 4),numeric,hour
+day4-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 4),numeric,hour
+day4-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 4),numeric,hour
+day4-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 4),numeric,hour
+day4-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 4),numeric,hour
+day4-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 4),numeric,hour
+day4-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 4),numeric,hour
+day5-recorded-wearTime(hrs),Accelerometer wear time (day 5),numeric,hour
+day5-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 5),numeric,hour
+day5-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 5),numeric,hour
+day5-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 5),numeric,hour
+day5-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 5),numeric,hour
+day5-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 5),numeric,hour
+day5-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 5),numeric,hour
+day6-recorded-wearTime(hrs),Accelerometer wear time (day 6),numeric,hour
+day6-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 6),numeric,hour
+day6-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 6),numeric,hour
+day6-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 6),numeric,hour
+day6-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 6),numeric,hour
+day6-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 6),numeric,hour
+day6-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 6),numeric,hour
+day7-recorded-wearTime(hrs),Accelerometer wear time (day 7),numeric,hour
+day7-recorded-cutPointMVPA(hrs),Accelerometer-derived cut-point-based moderate-vigorous physical activity duration (day 7),numeric,hour
+day7-recorded-cutPointVPA(hrs),Accelerometer-derived cut-point-based vigorous physical activity duration (day 7),numeric,hour
+day7-recorded-light(hrs),Accelerometer-derived light physical activity duration (day 7),numeric,hour
+day7-recorded-moderate-vigorous(hrs),Accelerometer-derived moderate-vigorous physical activity duration (day 7),numeric,hour
+day7-recorded-sedentary(hrs),Accelerometer-derived sedentary behaviour duration (day 7),numeric,hour
+day7-recorded-sleep(hrs),Accelerometer-derived sleep duration (day 7),numeric,hour
+acc-overall-avg,Acceleration overall average,numeric,milligravity
+acc-overall-sd,Acceleration overall variation,numeric,milligravity
+wearTime-overall-avg,Accelerometer wear time overall proportion average,numeric,proportion of time
+wearTime-overall-sd,Accelerometer wear time overall proportion variation,numeric,proportion of time
+cutPointMVPA-overall-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity overall proportion average,numeric,proportion of time
+cutPointMVPA-overall-sd,Accelerometer-derived cut-point-based moderate-vigorous physical activity overall proportion variation,numeric,proportion of time
+cutPointVPA-overall-avg,Accelerometer-derived cut-point-based vigorous physical activity overall proportion average,numeric,proportion of time
+cutPointVPA-overall-sd,Accelerometer-derived cut-point-based vigorous physical activity overall proportion variation,numeric,proportion of time
+acc-week-avg,Acceleration week average,numeric,milligravity
+wearTime-week-avg,Accelerometer wear time week proportion average,numeric,proportion of time
+cutPointMVPA-week-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity week proportion average,numeric,proportion of time
+cutPointVPA-week-avg,Accelerometer-derived cut-point-based vigorous physical activity week proportion average,numeric,proportion of time
+acc-mon-avg,Acceleration Monday average,numeric,milligravity
+acc-tue-avg,Acceleration Tuesday average,numeric,milligravity
+acc-wed-avg,Acceleration Wednesday average,numeric,milligravity
+acc-thu-avg,Acceleration Thursday average,numeric,milligravity
+acc-fri-avg,Acceleration Friday average,numeric,milligravity
+acc-sat-avg,Acceleration Saturday average,numeric,milligravity
+acc-sun-avg,Acceleration Sunday average,numeric,milligravity
+wearTime-mon-avg,Accelerometer wear time Monday proportion average,numeric,proportion of time
+wearTime-tue-avg,Accelerometer wear time Tuesday proportion average,numeric,proportion of time
+wearTime-wed-avg,Accelerometer wear time Wednesday proportion average,numeric,proportion of time
+wearTime-thu-avg,Accelerometer wear time Thursday proportion average,numeric,proportion of time
+wearTime-fri-avg,Accelerometer wear time Friday proportion average,numeric,proportion of time
+wearTime-sat-avg,Accelerometer wear time Saturday proportion average,numeric,proportion of time
+wearTime-sun-avg,Accelerometer wear time Sunday proportion average,numeric,proportion of time
+cutPointMVPA-mon-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Monday proportion average,numeric,proportion of time
+cutPointMVPA-tue-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Tuesday proportion average,numeric,proportion of time
+cutPointMVPA-wed-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Wednesday proportion average,numeric,proportion of time
+cutPointMVPA-thu-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Thursday proportion average,numeric,proportion of time
+cutPointMVPA-fri-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Friday proportion average,numeric,proportion of time
+cutPointMVPA-sat-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Saturday proportion average,numeric,proportion of time
+cutPointMVPA-sun-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity Sunday proportion average,numeric,proportion of time
+cutPointVPA-mon-avg,Accelerometer-derived cut-point-based vigorous physical activity Monday proportion average,numeric,proportion of time
+cutPointVPA-tue-avg,Accelerometer-derived cut-point-based vigorous physical activity Tuesday proportion average,numeric,proportion of time
+cutPointVPA-wed-avg,Accelerometer-derived cut-point-based vigorous physical activity Wednesday proportion average,numeric,proportion of time
+cutPointVPA-thu-avg,Accelerometer-derived cut-point-based vigorous physical activity Thursday proportion average,numeric,proportion of time
+cutPointVPA-fri-avg,Accelerometer-derived cut-point-based vigorous physical activity Friday proportion average,numeric,proportion of time
+cutPointVPA-sat-avg,Accelerometer-derived cut-point-based vigorous physical activity Saturday proportion average,numeric,proportion of time
+cutPointVPA-sun-avg,Accelerometer-derived cut-point-based vigorous physical activity Sunday proportion average,numeric,proportion of time
+acc-hourOfDay-0-avg,Acceleration 00:00 - 00:59 average,numeric,milligravity
+acc-hourOfDay-1-avg,Acceleration 01:00 - 01:59 average,numeric,milligravity
+acc-hourOfDay-2-avg,Acceleration 02:00 - 02:59 average,numeric,milligravity
+acc-hourOfDay-3-avg,Acceleration 03:00 - 03:59 average,numeric,milligravity
+acc-hourOfDay-4-avg,Acceleration 04:00 - 04:59 average,numeric,milligravity
+acc-hourOfDay-5-avg,Acceleration 05:00 - 05:59 average,numeric,milligravity
+acc-hourOfDay-6-avg,Acceleration 06:00 - 06:59 average,numeric,milligravity
+acc-hourOfDay-7-avg,Acceleration 07:00 - 07:59 average,numeric,milligravity
+acc-hourOfDay-8-avg,Acceleration 08:00 - 08:59 average,numeric,milligravity
+acc-hourOfDay-9-avg,Acceleration 09:00 - 09:59 average,numeric,milligravity
+acc-hourOfDay-10-avg,Acceleration 10:00 - 10:59 average,numeric,milligravity
+acc-hourOfDay-11-avg,Acceleration 11:00 - 11:59 average,numeric,milligravity
+acc-hourOfDay-12-avg,Acceleration 12:00 - 12:59 average,numeric,milligravity
+acc-hourOfDay-13-avg,Acceleration 13:00 - 13:59 average,numeric,milligravity
+acc-hourOfDay-14-avg,Acceleration 14:00 - 14:59 average,numeric,milligravity
+acc-hourOfDay-15-avg,Acceleration 15:00 - 15:59 average,numeric,milligravity
+acc-hourOfDay-16-avg,Acceleration 16:00 - 16:59 average,numeric,milligravity
+acc-hourOfDay-17-avg,Acceleration 17:00 - 17:59 average,numeric,milligravity
+acc-hourOfDay-18-avg,Acceleration 18:00 - 18:59 average,numeric,milligravity
+acc-hourOfDay-19-avg,Acceleration 19:00 - 19:59 average,numeric,milligravity
+acc-hourOfDay-20-avg,Acceleration 20:00 - 20:59 average,numeric,milligravity
+acc-hourOfDay-21-avg,Acceleration 21:00 - 21:59 average,numeric,milligravity
+acc-hourOfDay-22-avg,Acceleration 22:00 - 22:59 average,numeric,milligravity
+acc-hourOfDay-23-avg,Acceleration 23:00 - 23:59 average,numeric,milligravity
+wearTime-hourOfDay-0-avg,Accelerometer wear time 00:00 - 00:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-1-avg,Accelerometer wear time 01:00 - 01:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-2-avg,Accelerometer wear time 02:00 - 02:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-3-avg,Accelerometer wear time 03:00 - 03:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-4-avg,Accelerometer wear time 04:00 - 04:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-5-avg,Accelerometer wear time 05:00 - 05:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-6-avg,Accelerometer wear time 06:00 - 06:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-7-avg,Accelerometer wear time 07:00 - 07:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-8-avg,Accelerometer wear time 08:00 - 08:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-9-avg,Accelerometer wear time 09:00 - 09:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-10-avg,Accelerometer wear time 10:00 - 10:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-11-avg,Accelerometer wear time 11:00 - 11:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-12-avg,Accelerometer wear time 12:00 - 12:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-13-avg,Accelerometer wear time 13:00 - 13:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-14-avg,Accelerometer wear time 14:00 - 14:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-15-avg,Accelerometer wear time 15:00 - 15:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-16-avg,Accelerometer wear time 16:00 - 16:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-17-avg,Accelerometer wear time 17:00 - 17:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-18-avg,Accelerometer wear time 18:00 - 18:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-19-avg,Accelerometer wear time 19:00 - 19:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-20-avg,Accelerometer wear time 20:00 - 20:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-21-avg,Accelerometer wear time 21:00 - 21:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-22-avg,Accelerometer wear time 22:00 - 22:59 proportion average,numeric,proportion of time
+wearTime-hourOfDay-23-avg,Accelerometer wear time 23:00 - 23:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-0-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 00:00 - 00:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-1-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 01:00 - 01:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-2-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 02:00 - 02:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-3-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 03:00 - 03:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-4-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 04:00 - 04:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-5-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 05:00 - 05:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-6-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 06:00 - 06:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-7-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 07:00 - 07:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-8-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 08:00 - 08:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-9-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 09:00 - 09:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-10-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 10:00 - 10:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-11-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 11:00 - 11:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-12-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 12:00 - 12:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-13-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 13:00 - 13:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-14-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 14:00 - 14:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-15-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 15:00 - 15:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-16-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 16:00 - 16:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-17-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 17:00 - 17:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-18-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 18:00 - 18:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-19-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 19:00 - 19:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-20-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 20:00 - 20:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-21-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 21:00 - 21:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-22-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 22:00 - 22:59 proportion average,numeric,proportion of time
+cutPointMVPA-hourOfDay-23-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 23:00 - 23:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-0-avg,Accelerometer-derived cut-point-based vigorous physical activity 00:00 - 00:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-1-avg,Accelerometer-derived cut-point-based vigorous physical activity 01:00 - 01:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-2-avg,Accelerometer-derived cut-point-based vigorous physical activity 02:00 - 02:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-3-avg,Accelerometer-derived cut-point-based vigorous physical activity 03:00 - 03:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-4-avg,Accelerometer-derived cut-point-based vigorous physical activity 04:00 - 04:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-5-avg,Accelerometer-derived cut-point-based vigorous physical activity 05:00 - 05:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-6-avg,Accelerometer-derived cut-point-based vigorous physical activity 06:00 - 06:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-7-avg,Accelerometer-derived cut-point-based vigorous physical activity 07:00 - 07:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-8-avg,Accelerometer-derived cut-point-based vigorous physical activity 08:00 - 08:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-9-avg,Accelerometer-derived cut-point-based vigorous physical activity 09:00 - 09:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-10-avg,Accelerometer-derived cut-point-based vigorous physical activity 10:00 - 10:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-11-avg,Accelerometer-derived cut-point-based vigorous physical activity 11:00 - 11:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-12-avg,Accelerometer-derived cut-point-based vigorous physical activity 12:00 - 12:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-13-avg,Accelerometer-derived cut-point-based vigorous physical activity 13:00 - 13:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-14-avg,Accelerometer-derived cut-point-based vigorous physical activity 14:00 - 14:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-15-avg,Accelerometer-derived cut-point-based vigorous physical activity 15:00 - 15:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-16-avg,Accelerometer-derived cut-point-based vigorous physical activity 16:00 - 16:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-17-avg,Accelerometer-derived cut-point-based vigorous physical activity 17:00 - 17:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-18-avg,Accelerometer-derived cut-point-based vigorous physical activity 18:00 - 18:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-19-avg,Accelerometer-derived cut-point-based vigorous physical activity 19:00 - 19:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-20-avg,Accelerometer-derived cut-point-based vigorous physical activity 20:00 - 20:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-21-avg,Accelerometer-derived cut-point-based vigorous physical activity 21:00 - 21:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-22-avg,Accelerometer-derived cut-point-based vigorous physical activity 22:00 - 22:59 proportion average,numeric,proportion of time
+cutPointVPA-hourOfDay-23-avg,Accelerometer-derived cut-point-based vigorous physical activity 23:00 - 23:59 proportion average,numeric,proportion of time
+acc-weekday-avg,Acceleration weekday average,numeric,milligravity
+acc-weekend-avg,Acceleration weekend average,numeric,milligravity
+wearTime-weekday-avg,Accelerometer wear time weekday proportion average,numeric,proportion of time
+wearTime-weekend-avg,Accelerometer wear time weekend proportion average,numeric,proportion of time
+cutPointMVPA-weekday-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity weekday proportion average,numeric,proportion of time
+cutPointMVPA-weekend-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity weekend proportion average,numeric,proportion of time
+cutPointVPA-weekday-avg,Accelerometer-derived cut-point-based vigorous physical activity weekday proportion average,numeric,proportion of time
+cutPointVPA-weekend-avg,Accelerometer-derived cut-point-based vigorous physical activity weekend proportion average,numeric,proportion of time
+acc-hourOfWeekday-0-avg,Acceleration 00:00 - 00:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-1-avg,Acceleration 01:00 - 01:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-2-avg,Acceleration 02:00 - 02:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-3-avg,Acceleration 03:00 - 03:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-4-avg,Acceleration 04:00 - 04:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-5-avg,Acceleration 05:00 - 05:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-6-avg,Acceleration 06:00 - 06:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-7-avg,Acceleration 07:00 - 07:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-8-avg,Acceleration 08:00 - 08:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-9-avg,Acceleration 09:00 - 09:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-10-avg,Acceleration 10:00 - 10:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-11-avg,Acceleration 11:00 - 11:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-12-avg,Acceleration 12:00 - 12:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-13-avg,Acceleration 13:00 - 13:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-14-avg,Acceleration 14:00 - 14:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-15-avg,Acceleration 15:00 - 15:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-16-avg,Acceleration 16:00 - 16:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-17-avg,Acceleration 17:00 - 17:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-18-avg,Acceleration 18:00 - 18:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-19-avg,Acceleration 19:00 - 19:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-20-avg,Acceleration 20:00 - 20:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-21-avg,Acceleration 21:00 - 21:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-22-avg,Acceleration 22:00 - 22:59 weekday average,numeric,milligravity
+acc-hourOfWeekday-23-avg,Acceleration 23:00 - 23:59 weekday average,numeric,milligravity
+acc-hourOfWeekend-0-avg,Acceleration 00:00 - 00:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-1-avg,Acceleration 01:00 - 01:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-2-avg,Acceleration 02:00 - 02:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-3-avg,Acceleration 03:00 - 03:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-4-avg,Acceleration 04:00 - 04:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-5-avg,Acceleration 05:00 - 05:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-6-avg,Acceleration 06:00 - 06:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-7-avg,Acceleration 07:00 - 07:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-8-avg,Acceleration 08:00 - 08:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-9-avg,Acceleration 09:00 - 09:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-10-avg,Acceleration 10:00 - 10:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-11-avg,Acceleration 11:00 - 11:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-12-avg,Acceleration 12:00 - 12:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-13-avg,Acceleration 13:00 - 13:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-14-avg,Acceleration 14:00 - 14:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-15-avg,Acceleration 15:00 - 15:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-16-avg,Acceleration 16:00 - 16:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-17-avg,Acceleration 17:00 - 17:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-18-avg,Acceleration 18:00 - 18:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-19-avg,Acceleration 19:00 - 19:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-20-avg,Acceleration 20:00 - 20:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-21-avg,Acceleration 21:00 - 21:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-22-avg,Acceleration 22:00 - 22:59 weekend average,numeric,milligravity
+acc-hourOfWeekend-23-avg,Acceleration 23:00 - 23:59 weekend average,numeric,milligravity
+wearTime-hourOfWeekday-0-avg,Accelerometer wear time 00:00 - 00:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-1-avg,Accelerometer wear time 01:00 - 01:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-2-avg,Accelerometer wear time 02:00 - 02:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-3-avg,Accelerometer wear time 03:00 - 03:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-4-avg,Accelerometer wear time 04:00 - 04:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-5-avg,Accelerometer wear time 05:00 - 05:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-6-avg,Accelerometer wear time 06:00 - 06:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-7-avg,Accelerometer wear time 07:00 - 07:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-8-avg,Accelerometer wear time 08:00 - 08:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-9-avg,Accelerometer wear time 09:00 - 09:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-10-avg,Accelerometer wear time 10:00 - 10:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-11-avg,Accelerometer wear time 11:00 - 11:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-12-avg,Accelerometer wear time 12:00 - 12:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-13-avg,Accelerometer wear time 13:00 - 13:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-14-avg,Accelerometer wear time 14:00 - 14:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-15-avg,Accelerometer wear time 15:00 - 15:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-16-avg,Accelerometer wear time 16:00 - 16:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-17-avg,Accelerometer wear time 17:00 - 17:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-18-avg,Accelerometer wear time 18:00 - 18:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-19-avg,Accelerometer wear time 19:00 - 19:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-20-avg,Accelerometer wear time 20:00 - 20:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-21-avg,Accelerometer wear time 21:00 - 21:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-22-avg,Accelerometer wear time 22:00 - 22:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekday-23-avg,Accelerometer wear time 23:00 - 23:59 weekday proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-0-avg,Accelerometer wear time 00:00 - 00:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-1-avg,Accelerometer wear time 01:00 - 01:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-2-avg,Accelerometer wear time 02:00 - 02:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-3-avg,Accelerometer wear time 03:00 - 03:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-4-avg,Accelerometer wear time 04:00 - 04:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-5-avg,Accelerometer wear time 05:00 - 05:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-6-avg,Accelerometer wear time 06:00 - 06:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-7-avg,Accelerometer wear time 07:00 - 07:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-8-avg,Accelerometer wear time 08:00 - 08:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-9-avg,Accelerometer wear time 09:00 - 09:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-10-avg,Accelerometer wear time 10:00 - 10:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-11-avg,Accelerometer wear time 11:00 - 11:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-12-avg,Accelerometer wear time 12:00 - 12:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-13-avg,Accelerometer wear time 13:00 - 13:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-14-avg,Accelerometer wear time 14:00 - 14:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-15-avg,Accelerometer wear time 15:00 - 15:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-16-avg,Accelerometer wear time 16:00 - 16:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-17-avg,Accelerometer wear time 17:00 - 17:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-18-avg,Accelerometer wear time 18:00 - 18:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-19-avg,Accelerometer wear time 19:00 - 19:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-20-avg,Accelerometer wear time 20:00 - 20:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-21-avg,Accelerometer wear time 21:00 - 21:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-22-avg,Accelerometer wear time 22:00 - 22:59 weekend proportion average,numeric,proportion of time
+wearTime-hourOfWeekend-23-avg,Accelerometer wear time 23:00 - 23:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-0-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 00:00 - 00:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-1-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 01:00 - 01:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-2-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 02:00 - 02:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-3-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 03:00 - 03:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-4-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 04:00 - 04:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-5-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 05:00 - 05:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-6-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 06:00 - 06:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-7-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 07:00 - 07:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-8-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 08:00 - 08:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-9-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 09:00 - 09:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-10-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 10:00 - 10:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-11-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 11:00 - 11:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-12-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 12:00 - 12:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-13-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 13:00 - 13:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-14-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 14:00 - 14:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-15-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 15:00 - 15:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-16-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 16:00 - 16:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-17-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 17:00 - 17:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-18-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 18:00 - 18:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-19-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 19:00 - 19:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-20-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 20:00 - 20:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-21-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 21:00 - 21:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-22-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 22:00 - 22:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekday-23-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 23:00 - 23:59 weekday proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-0-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 00:00 - 00:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-1-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 01:00 - 01:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-2-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 02:00 - 02:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-3-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 03:00 - 03:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-4-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 04:00 - 04:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-5-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 05:00 - 05:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-6-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 06:00 - 06:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-7-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 07:00 - 07:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-8-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 08:00 - 08:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-9-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 09:00 - 09:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-10-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 10:00 - 10:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-11-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 11:00 - 11:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-12-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 12:00 - 12:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-13-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 13:00 - 13:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-14-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 14:00 - 14:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-15-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 15:00 - 15:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-16-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 16:00 - 16:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-17-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 17:00 - 17:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-18-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 18:00 - 18:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-19-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 19:00 - 19:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-20-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 20:00 - 20:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-21-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 21:00 - 21:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-22-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 22:00 - 22:59 weekend proportion average,numeric,proportion of time
+cutPointMVPA-hourOfWeekend-23-avg,Accelerometer-derived cut-point-based moderate-vigorous physical activity 23:00 - 23:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-0-avg,Accelerometer-derived cut-point-based vigorous physical activity 00:00 - 00:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-1-avg,Accelerometer-derived cut-point-based vigorous physical activity 01:00 - 01:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-2-avg,Accelerometer-derived cut-point-based vigorous physical activity 02:00 - 02:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-3-avg,Accelerometer-derived cut-point-based vigorous physical activity 03:00 - 03:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-4-avg,Accelerometer-derived cut-point-based vigorous physical activity 04:00 - 04:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-5-avg,Accelerometer-derived cut-point-based vigorous physical activity 05:00 - 05:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-6-avg,Accelerometer-derived cut-point-based vigorous physical activity 06:00 - 06:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-7-avg,Accelerometer-derived cut-point-based vigorous physical activity 07:00 - 07:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-8-avg,Accelerometer-derived cut-point-based vigorous physical activity 08:00 - 08:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-9-avg,Accelerometer-derived cut-point-based vigorous physical activity 09:00 - 09:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-10-avg,Accelerometer-derived cut-point-based vigorous physical activity 10:00 - 10:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-11-avg,Accelerometer-derived cut-point-based vigorous physical activity 11:00 - 11:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-12-avg,Accelerometer-derived cut-point-based vigorous physical activity 12:00 - 12:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-13-avg,Accelerometer-derived cut-point-based vigorous physical activity 13:00 - 13:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-14-avg,Accelerometer-derived cut-point-based vigorous physical activity 14:00 - 14:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-15-avg,Accelerometer-derived cut-point-based vigorous physical activity 15:00 - 15:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-16-avg,Accelerometer-derived cut-point-based vigorous physical activity 16:00 - 16:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-17-avg,Accelerometer-derived cut-point-based vigorous physical activity 17:00 - 17:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-18-avg,Accelerometer-derived cut-point-based vigorous physical activity 18:00 - 18:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-19-avg,Accelerometer-derived cut-point-based vigorous physical activity 19:00 - 19:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-20-avg,Accelerometer-derived cut-point-based vigorous physical activity 20:00 - 20:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-21-avg,Accelerometer-derived cut-point-based vigorous physical activity 21:00 - 21:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-22-avg,Accelerometer-derived cut-point-based vigorous physical activity 22:00 - 22:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekday-23-avg,Accelerometer-derived cut-point-based vigorous physical activity 23:00 - 23:59 weekday proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-0-avg,Accelerometer-derived cut-point-based vigorous physical activity 00:00 - 00:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-1-avg,Accelerometer-derived cut-point-based vigorous physical activity 01:00 - 01:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-2-avg,Accelerometer-derived cut-point-based vigorous physical activity 02:00 - 02:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-3-avg,Accelerometer-derived cut-point-based vigorous physical activity 03:00 - 03:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-4-avg,Accelerometer-derived cut-point-based vigorous physical activity 04:00 - 04:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-5-avg,Accelerometer-derived cut-point-based vigorous physical activity 05:00 - 05:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-6-avg,Accelerometer-derived cut-point-based vigorous physical activity 06:00 - 06:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-7-avg,Accelerometer-derived cut-point-based vigorous physical activity 07:00 - 07:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-8-avg,Accelerometer-derived cut-point-based vigorous physical activity 08:00 - 08:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-9-avg,Accelerometer-derived cut-point-based vigorous physical activity 09:00 - 09:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-10-avg,Accelerometer-derived cut-point-based vigorous physical activity 10:00 - 10:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-11-avg,Accelerometer-derived cut-point-based vigorous physical activity 11:00 - 11:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-12-avg,Accelerometer-derived cut-point-based vigorous physical activity 12:00 - 12:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-13-avg,Accelerometer-derived cut-point-based vigorous physical activity 13:00 - 13:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-14-avg,Accelerometer-derived cut-point-based vigorous physical activity 14:00 - 14:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-15-avg,Accelerometer-derived cut-point-based vigorous physical activity 15:00 - 15:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-16-avg,Accelerometer-derived cut-point-based vigorous physical activity 16:00 - 16:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-17-avg,Accelerometer-derived cut-point-based vigorous physical activity 17:00 - 17:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-18-avg,Accelerometer-derived cut-point-based vigorous physical activity 18:00 - 18:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-19-avg,Accelerometer-derived cut-point-based vigorous physical activity 19:00 - 19:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-20-avg,Accelerometer-derived cut-point-based vigorous physical activity 20:00 - 20:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-21-avg,Accelerometer-derived cut-point-based vigorous physical activity 21:00 - 21:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-22-avg,Accelerometer-derived cut-point-based vigorous physical activity 22:00 - 22:59 weekend proportion average,numeric,proportion of time
+cutPointVPA-hourOfWeekend-23-avg,Accelerometer-derived cut-point-based vigorous physical activity 23:00 - 23:59 weekend proportion average,numeric,proportion of time
+acc-ecdf-1mg,Proportion of time when acceleration was ≤ 1 mg,numeric,N/A
+acc-ecdf-2mg,Proportion of time when acceleration was ≤ 2 mg,numeric,N/A
+acc-ecdf-3mg,Proportion of time when acceleration was ≤ 3 mg,numeric,N/A
+acc-ecdf-4mg,Proportion of time when acceleration was ≤ 4 mg,numeric,N/A
+acc-ecdf-5mg,Proportion of time when acceleration was ≤ 5 mg,numeric,N/A
+acc-ecdf-6mg,Proportion of time when acceleration was ≤ 6 mg,numeric,N/A
+acc-ecdf-7mg,Proportion of time when acceleration was ≤ 7 mg,numeric,N/A
+acc-ecdf-8mg,Proportion of time when acceleration was ≤ 8 mg,numeric,N/A
+acc-ecdf-9mg,Proportion of time when acceleration was ≤ 9 mg,numeric,N/A
+acc-ecdf-10mg,Proportion of time when acceleration was ≤ 10 mg,numeric,N/A
+acc-ecdf-11mg,Proportion of time when acceleration was ≤ 11 mg,numeric,N/A
+acc-ecdf-12mg,Proportion of time when acceleration was ≤ 12 mg,numeric,N/A
+acc-ecdf-13mg,Proportion of time when acceleration was ≤ 13 mg,numeric,N/A
+acc-ecdf-14mg,Proportion of time when acceleration was ≤ 14 mg,numeric,N/A
+acc-ecdf-15mg,Proportion of time when acceleration was ≤ 15 mg,numeric,N/A
+acc-ecdf-16mg,Proportion of time when acceleration was ≤ 16 mg,numeric,N/A
+acc-ecdf-17mg,Proportion of time when acceleration was ≤ 17 mg,numeric,N/A
+acc-ecdf-18mg,Proportion of time when acceleration was ≤ 18 mg,numeric,N/A
+acc-ecdf-19mg,Proportion of time when acceleration was ≤ 19 mg,numeric,N/A
+acc-ecdf-20mg,Proportion of time when acceleration was ≤ 20 mg,numeric,N/A
+acc-ecdf-25mg,Proportion of time when acceleration was ≤ 25 mg,numeric,N/A
+acc-ecdf-30mg,Proportion of time when acceleration was ≤ 30 mg,numeric,N/A
+acc-ecdf-35mg,Proportion of time when acceleration was ≤ 35 mg,numeric,N/A
+acc-ecdf-40mg,Proportion of time when acceleration was ≤ 40 mg,numeric,N/A
+acc-ecdf-45mg,Proportion of time when acceleration was ≤ 45 mg,numeric,N/A
+acc-ecdf-50mg,Proportion of time when acceleration was ≤ 50 mg,numeric,N/A
+acc-ecdf-55mg,Proportion of time when acceleration was ≤ 55 mg,numeric,N/A
+acc-ecdf-60mg,Proportion of time when acceleration was ≤ 60 mg,numeric,N/A
+acc-ecdf-65mg,Proportion of time when acceleration was ≤ 65 mg,numeric,N/A
+acc-ecdf-70mg,Proportion of time when acceleration was ≤ 70 mg,numeric,N/A
+acc-ecdf-75mg,Proportion of time when acceleration was ≤ 75 mg,numeric,N/A
+acc-ecdf-80mg,Proportion of time when acceleration was ≤ 80 mg,numeric,N/A
+acc-ecdf-85mg,Proportion of time when acceleration was ≤ 85 mg,numeric,N/A
+acc-ecdf-90mg,Proportion of time when acceleration was ≤ 90 mg,numeric,N/A
+acc-ecdf-95mg,Proportion of time when acceleration was ≤ 95 mg,numeric,N/A
+acc-ecdf-100mg,Proportion of time when acceleration was ≤ 100 mg,numeric,N/A
+acc-ecdf-125mg,Proportion of time when acceleration was ≤ 125 mg,numeric,N/A
+acc-ecdf-150mg,Proportion of time when acceleration was ≤ 150 mg,numeric,N/A
+acc-ecdf-175mg,Proportion of time when acceleration was ≤ 175 mg,numeric,N/A
+acc-ecdf-200mg,Proportion of time when acceleration was ≤ 200 mg,numeric,N/A
+acc-ecdf-225mg,Proportion of time when acceleration was ≤ 225 mg,numeric,N/A
+acc-ecdf-250mg,Proportion of time when acceleration was ≤ 250 mg,numeric,N/A
+acc-ecdf-275mg,Proportion of time when acceleration was ≤ 275 mg,numeric,N/A
+acc-ecdf-300mg,Proportion of time when acceleration was ≤ 300 mg,numeric,N/A
+acc-ecdf-325mg,Proportion of time when acceleration was ≤ 325 mg,numeric,N/A
+acc-ecdf-350mg,Proportion of time when acceleration was ≤ 350 mg,numeric,N/A
+acc-ecdf-375mg,Proportion of time when acceleration was ≤ 375 mg,numeric,N/A
+acc-ecdf-400mg,Proportion of time when acceleration was ≤ 400 mg,numeric,N/A
+acc-ecdf-425mg,Proportion of time when acceleration was ≤ 425 mg,numeric,N/A
+acc-ecdf-450mg,Proportion of time when acceleration was ≤ 450 mg,numeric,N/A
+acc-ecdf-475mg,Proportion of time when acceleration was ≤ 475 mg,numeric,N/A
+acc-ecdf-500mg,Proportion of time when acceleration was ≤ 500 mg,numeric,N/A
+acc-ecdf-600mg,Proportion of time when acceleration was ≤ 600 mg,numeric,N/A
+acc-ecdf-700mg,Proportion of time when acceleration was ≤ 700 mg,numeric,N/A
+acc-ecdf-800mg,Proportion of time when acceleration was ≤ 800 mg,numeric,N/A
+acc-ecdf-900mg,Proportion of time when acceleration was ≤ 900 mg,numeric,N/A
+acc-ecdf-1000mg,Proportion of time when acceleration was ≤ 1000 mg,numeric,N/A
+acc-ecdf-1100mg,Proportion of time when acceleration was ≤ 1100 mg,numeric,N/A
+acc-ecdf-1200mg,Proportion of time when acceleration was ≤ 1200 mg,numeric,N/A
+acc-ecdf-1300mg,Proportion of time when acceleration was ≤ 1300 mg,numeric,N/A
+acc-ecdf-1400mg,Proportion of time when acceleration was ≤ 1400 mg,numeric,N/A
+acc-ecdf-1500mg,Proportion of time when acceleration was ≤ 1500 mg,numeric,N/A
+acc-ecdf-1600mg,Proportion of time when acceleration was ≤ 1600 mg,numeric,N/A
+acc-ecdf-1700mg,Proportion of time when acceleration was ≤ 1700 mg,numeric,N/A
+acc-ecdf-1800mg,Proportion of time when acceleration was ≤ 1800 mg,numeric,N/A
+acc-ecdf-1900mg,Proportion of time when acceleration was ≤ 1900 mg,numeric,N/A
+acc-ecdf-2000mg,Proportion of time when acceleration was ≤ 2000 mg,numeric,N/A
+PSD_sleep,Power spectral density of the sleep state over a 24h cycle,numeric,g2/s  
+PSD_acc,Power spectral density of the acceleration signal over a 24h cycle,numeric,g2/s  
+fourier-frequency_sleep,Dominant frequency (1/day) in the sleep state pattern using Fourier analysis,numeric,Hz  
+M10L5,Relative amplitude between most active 10h and least active 5h periods,numeric,g  
+<activity>-overall-avg,Accelerometer-derived <activity> overall proportion average,numeric,proportion of time
+<activity>-overall-sd,Accelerometer-derived <activity> overall proportion variation,numeric,proportion of time
+<activity>-week-avg,Accelerometer-derived <activity> week proportion average,numeric,proportion of time
+<activity>-weekday-avg,Accelerometer-derived <activity> weekday proportion average,numeric,proportion of time
+<activity>-weekend-avg,Accelerometer-derived <activity> weekend proportion average,numeric,proportion of time
+<activity>-mon-avg,Accelerometer-derived <activity> Monday proportion average,numeric,proportion of time
+<activity>-tue-avg,Accelerometer-derived <activity> Tuesday proportion average,numeric,proportion of time
+<activity>-wed-avg,Accelerometer-derived <activity> Wednesday proportion average,numeric,proportion of time
+<activity>-thu-avg,Accelerometer-derived <activity> Thursday proportion average,numeric,proportion of time
+<activity>-fri-avg,Accelerometer-derived <activity> Friday proportion average,numeric,proportion of time
+<activity>-sat-avg,Accelerometer-derived <activity> Saturday proportion average,numeric,proportion of time
+<activity>-sun-avg,Accelerometer-derived <activity> Sunday proportion average,numeric,proportion of time
+<activity>-hourOfDay-0-avg,Accelerometer-derived <activity> 00:00 - 00:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-1-avg,Accelerometer-derived <activity> 01:00 - 01:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-2-avg,Accelerometer-derived <activity> 02:00 - 02:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-3-avg,Accelerometer-derived <activity> 03:00 - 03:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-4-avg,Accelerometer-derived <activity> 04:00 - 04:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-5-avg,Accelerometer-derived <activity> 05:00 - 05:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-6-avg,Accelerometer-derived <activity> 06:00 - 06:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-7-avg,Accelerometer-derived <activity> 07:00 - 07:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-8-avg,Accelerometer-derived <activity> 08:00 - 08:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-9-avg,Accelerometer-derived <activity> 09:00 - 09:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-10-avg,Accelerometer-derived <activity> 10:00 - 10:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-11-avg,Accelerometer-derived <activity> 11:00 - 11:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-12-avg,Accelerometer-derived <activity> 12:00 - 12:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-13-avg,Accelerometer-derived <activity> 13:00 - 13:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-14-avg,Accelerometer-derived <activity> 14:00 - 14:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-15-avg,Accelerometer-derived <activity> 15:00 - 15:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-16-avg,Accelerometer-derived <activity> 16:00 - 16:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-17-avg,Accelerometer-derived <activity> 17:00 - 17:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-18-avg,Accelerometer-derived <activity> 18:00 - 18:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-19-avg,Accelerometer-derived <activity> 19:00 - 19:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-20-avg,Accelerometer-derived <activity> 20:00 - 20:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-21-avg,Accelerometer-derived <activity> 21:00 - 21:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-22-avg,Accelerometer-derived <activity> 22:00 - 22:59 proportion average,numeric,proportion of time
+<activity>-hourOfDay-23-avg,Accelerometer-derived <activity> 23:00 - 23:59 proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-0-avg,Accelerometer-derived <activity> 00:00 - 00:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-1-avg,Accelerometer-derived <activity> 01:00 - 01:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-2-avg,Accelerometer-derived <activity> 02:00 - 02:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-3-avg,Accelerometer-derived <activity> 03:00 - 03:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-4-avg,Accelerometer-derived <activity> 04:00 - 04:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-5-avg,Accelerometer-derived <activity> 05:00 - 05:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-6-avg,Accelerometer-derived <activity> 06:00 - 06:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-7-avg,Accelerometer-derived <activity> 07:00 - 07:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-8-avg,Accelerometer-derived <activity> 08:00 - 08:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-9-avg,Accelerometer-derived <activity> 09:00 - 09:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-10-avg,Accelerometer-derived <activity> 10:00 - 10:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-11-avg,Accelerometer-derived <activity> 11:00 - 11:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-12-avg,Accelerometer-derived <activity> 12:00 - 12:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-13-avg,Accelerometer-derived <activity> 13:00 - 13:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-14-avg,Accelerometer-derived <activity> 14:00 - 14:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-15-avg,Accelerometer-derived <activity> 15:00 - 15:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-16-avg,Accelerometer-derived <activity> 16:00 - 16:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-17-avg,Accelerometer-derived <activity> 17:00 - 17:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-18-avg,Accelerometer-derived <activity> 18:00 - 18:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-19-avg,Accelerometer-derived <activity> 19:00 - 19:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-20-avg,Accelerometer-derived <activity> 20:00 - 20:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-21-avg,Accelerometer-derived <activity> 21:00 - 21:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-22-avg,Accelerometer-derived <activity> 22:00 - 22:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekday-23-avg,Accelerometer-derived <activity> 23:00 - 23:59 weekday proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-0-avg,Accelerometer-derived <activity> 00:00 - 00:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-1-avg,Accelerometer-derived <activity> 01:00 - 01:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-2-avg,Accelerometer-derived <activity> 02:00 - 02:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-3-avg,Accelerometer-derived <activity> 03:00 - 03:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-4-avg,Accelerometer-derived <activity> 04:00 - 04:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-5-avg,Accelerometer-derived <activity> 05:00 - 05:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-6-avg,Accelerometer-derived <activity> 06:00 - 06:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-7-avg,Accelerometer-derived <activity> 07:00 - 07:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-8-avg,Accelerometer-derived <activity> 08:00 - 08:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-9-avg,Accelerometer-derived <activity> 09:00 - 09:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-10-avg,Accelerometer-derived <activity> 10:00 - 10:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-11-avg,Accelerometer-derived <activity> 11:00 - 11:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-12-avg,Accelerometer-derived <activity> 12:00 - 12:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-13-avg,Accelerometer-derived <activity> 13:00 - 13:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-14-avg,Accelerometer-derived <activity> 14:00 - 14:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-15-avg,Accelerometer-derived <activity> 15:00 - 15:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-16-avg,Accelerometer-derived <activity> 16:00 - 16:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-17-avg,Accelerometer-derived <activity> 17:00 - 17:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-18-avg,Accelerometer-derived <activity> 18:00 - 18:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-19-avg,Accelerometer-derived <activity> 19:00 - 19:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-20-avg,Accelerometer-derived <activity> 20:00 - 20:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-21-avg,Accelerometer-derived <activity> 21:00 - 21:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-22-avg,Accelerometer-derived <activity> 22:00 - 22:59 weekend proportion average,numeric,proportion of time
+<activity>-hourOfWeekend-23-avg,Accelerometer-derived <activity> 23:00 - 23:59 weekend proportion average,numeric,proportion of time
