@@ -39,7 +39,7 @@ Processing a CSV file
 
     $ actinet data/sample.csv.gz
 
-The CSV file must have at least four columns, named "time", "x", "y" and "z".
+The CSV file must have at least four columns, expected to be named "time", "x", "y" and "z".
 The "time" column should contain the date and time of each measurement as a string.
 The "x", "y" and "z" columns should contain the numeric tri-axial acceleration values.
 A template can be downloaded as follows:
@@ -54,9 +54,24 @@ A template can be downloaded as follows:
     2014-05-07 13:29:50.439+0100 [Europe/London],-0.514,0.07,1.671
     2014-05-07 13:29:50.449+0100 [Europe/London],-0.089,-0.805,-0.59
 
-If your CSV is in a different format, you should first convert it to this format,
-before using the tool.
+If the CSV file has a different header, use the option --txyz to specify the time and x-y-z columns, in that order.
+The --csvStartRow option can be used to specify the first row of data in the CSV file, starting from the header row.
 
+For example:
+.. code-block:: console
+SAMPLE CSV FILE
+
+HEADER_TIMESTAMP,temperature,X,Y,Z
+2013-10-21 10:00:08.000,26.3,-0.078923,0.396706,0.917759
+2013-10-21 10:00:08.010,26.2,-0.094370,0.381479,0.933580
+2013-10-21 10:00:08.020,26.2,-0.094370,0.366252,0.901938
+2013-10-21 10:00:08.030,26.2,-0.078923,0.411933,0.901938
+...
+
+Then run the command as follows:
+.. code-block:: console
+
+    $ actinet data/sample.csv.gz --txyz HEADER_TIMESTAMP,X,Y,Z --csvStartRow 3
 
 Other accelerometer file formats
 --------------------------------

@@ -82,7 +82,7 @@ def main():
         "--csvStartRow",
         help="Row number to start reading a CSV file. Default: 0",
         type=int,
-        default=0,
+        default=1,
     )
     parser.add_argument("--txyz",
                         help=("Use this option to specify the column names for time, x, y, z "
@@ -142,7 +142,7 @@ def main():
     data, info_read = read(
         args.filepath,
         args.txyz,
-        args.csvStartRow -1,  # -1 to convert to zero-based index
+        args.csvStartRow-1,  # -1 to convert to zero-based index
         resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
