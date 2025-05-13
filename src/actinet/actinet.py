@@ -79,6 +79,18 @@ def main():
         type=str, 
         default=None)
     parser.add_argument(
+        "--csvStartRow",
+        help="Row number to start reading a CSV file. Default: 0",
+        type=int,
+        default=0,
+    )
+    parser.add_argument("--txyz",
+                        help=("Use this option to specify the column names for time, x, y, z "
+                              "in the input file, in that order. Use a comma-separated string. "
+                              "Only needed for CSV files, can be ignored for other file types. "
+                              "Default: 'time,x,y,z'"),
+                        type=str, default="time,x,y,z")
+    parser.add_argument(
         "--plot-activity",
         "-p",
         action="store_true",
@@ -129,6 +141,8 @@ def main():
     # Load file
     data, info_read = read(
         args.filepath,
+        args.txyz,
+        args.csvStartRow -1,  # -1 to convert to zero-based index
         resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
@@ -258,7 +272,8 @@ def main():
 
 
 def read(
-    filepath, resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
+    filepath, usecols, skipRows=0, resample_hz="uniform", 
+    sample_rate=None, lowpass_hz=None, verbose=True
 ):
 
     p = pathlib.Path(filepath)
@@ -266,19 +281,24 @@ def read(
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
 
     if ftype in (".csv", ".pkl"):
-
         if ftype == ".csv":
+            tcol, xcol, ycol, zcol = usecols.split(',')
+            
             data = pd.read_csv(
                 filepath,
-                usecols=["time", "x", "y", "z"],
-                parse_dates=["time"],
-                index_col="time",
-                dtype={"x": "f4", "y": "f4", "z": "f4"},
+                usecols=[tcol, xcol, ycol, zcol],
+                parse_dates=[tcol],
+                index_col=tcol,
+                dtype={xcol: "f4", ycol: "f4", zcol: "f4"},
+                skiprows=skipRows,
             )
+
+            # rename to standard names
+            data = data.rename(columns={xcol: 'x', ycol: 'y', zcol: 'z'})
+            data.index.name = 'time'
+
         elif ftype == ".pkl":
             data = pd.read_pickle(filepath)
-        else:
-            raise ValueError(f"Unknown file format: {ftype}")
 
         if sample_rate in (None, False):
             freq = infer_freq(data.index)
@@ -318,6 +338,9 @@ def read(
             resample_hz=resample_hz,
             verbose=verbose,
         )
+
+    else:
+        raise ValueError(f"Unknown file format: {ftype}")
 
     if "ResampleRate" not in info:
         info["ResampleRate"] = info["SampleRate"]
