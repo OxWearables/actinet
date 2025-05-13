@@ -303,6 +303,7 @@ def read(
                 "Device": ftype,
                 "Filesize(MB)": fsize,
                 "SampleRate": sample_rate,
+                "ReadOK": 1,
             },
             **info,
         }
