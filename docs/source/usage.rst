@@ -56,22 +56,24 @@ A template can be downloaded as follows:
 
 If the CSV file has a different header, use the option --txyz to specify the time and x-y-z columns, in that order.
 The --csvStartRow option can be used to specify the first row of data in the CSV file, starting from the header row.
+The --csvDateFormat option can be used to specify the date format of the time column. 
+Further information on valid date format strings can be found in the `Python datetime documentation <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`_.
 
 For example:
 .. code-block:: console
 SAMPLE CSV FILE
 
 HEADER_TIMESTAMP,temperature,X,Y,Z
-2013-10-21 10:00:08.000,26.3,-0.078923,0.396706,0.917759
-2013-10-21 10:00:08.010,26.2,-0.094370,0.381479,0.933580
-2013-10-21 10:00:08.020,26.2,-0.094370,0.366252,0.901938
-2013-10-21 10:00:08.030,26.2,-0.078923,0.411933,0.901938
+21/10/2013 10:00:08.000,26.3,-0.078923,0.396706,0.917759
+21/10/2013 10:00:08.010,26.2,-0.094370,0.381479,0.933580
+21/10/2013 10:00:08.020,26.2,-0.094370,0.366252,0.901938
+21/10/2013 10:00:08.030,26.2,-0.078923,0.411933,0.901938
 ...
 
 Then run the command as follows:
 .. code-block:: console
 
-    $ actinet data/sample.csv.gz --txyz HEADER_TIMESTAMP,X,Y,Z --csvStartRow 3
+    $ actinet data/sample.csv.gz --txyz HEADER_TIMESTAMP,X,Y,Z --csvStartRow 3 --csvDateFormat "%d/%m/%Y %H:%M:%S.%f"
 
 Other accelerometer file formats
 --------------------------------

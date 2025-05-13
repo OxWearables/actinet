@@ -25,7 +25,6 @@ BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/actinet/models/"
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         description="A tool to predict activities from accelerometer data using a self-supervised ResNet-18 model",
         add_help=True,
@@ -44,6 +43,11 @@ def main():
         "-c",
         help="Enter custom acitivty classifier file to use",
         default=None,
+    )
+    parser.add_argument(
+        "--no-hmm",
+        action="store_true",
+        help="Disable HMM post-processing",
     )
     parser.add_argument(
         "--force-download",
@@ -80,7 +84,7 @@ def main():
         default=None)
     parser.add_argument(
         "--csvStartRow",
-        help="Row number to start reading a CSV file. Default: 0",
+        help="Row number to start reading a CSV file. Default: 1 (First row)",
         type=int,
         default=1,
     )
@@ -89,7 +93,15 @@ def main():
                               "in the input file, in that order. Use a comma-separated string. "
                               "Only needed for CSV files, can be ignored for other file types. "
                               "Default: 'time,x,y,z'"),
-                        type=str, default="time,x,y,z")
+                        type=str, default="time,x,y,z"
+    )
+    parser.add_argument('--csvDateFormat',
+                        default="%Y-%m-%d %H:%M:%S.%f",
+                        type=str, help=("Date time format for csv file ",
+                                        "when reading a csv file. Default: ,",
+                                        "'%Y-%m-%d %H:%M:%S.%f'. "
+                                        "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes.")
+    )
     parser.add_argument(
         "--plot-activity",
         "-p",
@@ -143,6 +155,7 @@ def main():
         args.filepath,
         args.txyz,
         args.csvStartRow-1,  # -1 to convert to zero-based index
+        args.csvDateFormat,
         resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
@@ -212,7 +225,7 @@ def main():
 
     if verbose:
         print("Running activity classifier...")
-    Y = classifier.predict_from_frame(data, args.sample_rate)
+    Y = classifier.predict_from_frame(data, args.sample_rate, not args.no_hmm)
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
@@ -272,10 +285,9 @@ def main():
 
 
 def read(
-    filepath, usecols, skipRows=0, resample_hz="uniform", 
-    sample_rate=None, lowpass_hz=None, verbose=True
+    filepath, usecols, skipRows=0, dateFormat=None, 
+    resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
 ):
-
     p = pathlib.Path(filepath)
     ftype = p.suffixes[0].lower()
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
@@ -288,6 +300,7 @@ def read(
                 filepath,
                 usecols=[tcol, xcol, ycol, zcol],
                 parse_dates=[tcol],
+                date_format=dateFormat,
                 index_col=tcol,
                 dtype={xcol: "f4", ycol: "f4", zcol: "f4"},
                 skiprows=skipRows,
