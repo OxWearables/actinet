@@ -89,18 +89,18 @@ def main():
         default=1,
     )
     parser.add_argument("--txyz",
-                        help=("Use this option to specify the column names for time, x, y, z "
-                              "in the input file, in that order. Use a comma-separated string. "
-                              "Only needed for CSV files, can be ignored for other file types. "
-                              "Default: 'time,x,y,z'"),
+                        help="Use this option to specify the column names for time, x, y, z " +
+                             "in the input file, in that order. Use a comma-separated string. " +
+                             "Only needed for CSV files, can be ignored for other file types. " +
+                             "Default: 'time,x,y,z'",
                         type=str, default="time,x,y,z"
     )
     parser.add_argument('--csvDateFormat',
                         default="%Y-%m-%d %H:%M:%S.%f",
-                        type=str, help=("Date time format for csv file ",
-                                        "when reading a csv file. Default: ,",
-                                        "'%Y-%m-%d %H:%M:%S.%f'. "
-                                        "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes.")
+                        type=str, 
+                        help="Date time format for csv file when reading a csv file. " +
+                             "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes." +
+                             "Default: '%Y-%m-%d %H:%M:%S.%f' (e.g. '2023-10-01 12:34:56.789')"
     )
     parser.add_argument(
         "--plot-activity",
