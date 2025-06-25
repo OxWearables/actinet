@@ -100,7 +100,7 @@ def main():
                         type=str, 
                         help="Date time format for csv file when reading a csv file. " +
                              "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes." +
-                             "Default: '%Y-%m-%d %H:%M:%S.%f' (e.g. '2023-10-01 12:34:56.789')"
+                             "Default: '%%Y-%%m-%%d %%H:%%M:%%S.%%f' (e.g. '2023-10-01 12:34:56.789')"
     )
     parser.add_argument(
         "--plot-activity",
