@@ -2,7 +2,7 @@ Data Dictionary
 ###############
 
 You can also
-`download the CSV file <https://github.com/activityMonitoring/biobankAccelerometerAnalysis/blob/master/docs/source/DataDictionary.csv>`_
+`download the CSV file <https://github.com/OxWearables/actinet/blob/master/docs/source/DataDictionary.csv>`_
 for the table below.
 
 .. csv-table:: List of output variables
