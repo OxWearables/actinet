@@ -181,8 +181,8 @@ def plot_boxplots(df, x, y='Macro F1', hue='Model'):
     with sns.color_palette("Set1"):
         sns.boxplot(data=df, x=x, y=y, hue=hue, ax=ax)
     ax.set_xlabel("Age Band")
-    ax.set_ylabel("Macro F1 Score")
-    plt.title(f"Macro F1 by {x}")
+    ax.set_ylabel(f"{y} Score")
+    plt.title(f"{y} by {x}")
     plt.show()
 
 
