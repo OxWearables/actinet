@@ -90,6 +90,45 @@ def resize(x, length, axis=1):
     return x
 
 
+def removeSpuriousSleep(Y, labels, period, sleepTol='1H'):
+    """
+    Remove spurious sleep epochs from activity classification.
+
+    :param numpy.ndarray Y: Model output
+    :param list labels: List of activity labels
+    :param int period: Time period between successive labels in seconds
+    :param str sleepTol: Minimum sleep duration, e.g. '1H'
+
+    :return: Numpy array of revised model output
+    :rtype: numpy.ndarray
+
+    """
+    label_map = {label: i for i, label in enumerate(labels)}
+
+    try:
+        sleep_code = label_map['sleep']
+        sedentary_code = label_map['sedentary']
+    except KeyError:
+        raise ValueError(f"'sleep' and 'sedentary' must be output labels for spurious sleep correction.")
+
+    Y_series = pd.Series(Y.copy())
+    sleep_mask = Y_series == sleep_code
+
+    if sleep_mask.sum() == 0:
+        return Y
+
+    sleepStreak = (
+        sleep_mask.ne(sleep_mask.shift())
+        .cumsum()
+        .pipe(lambda x: x.groupby(x).transform('count') * sleep_mask)
+    )
+
+    short_sleep = sleep_mask & (sleepStreak < (pd.Timedelta(sleepTol).total_seconds() / period))
+    Y_series.loc[short_sleep] = sedentary_code
+
+    return Y_series.values
+
+
 def drop_first_last_days(
     x: Union[pd.Series, pd.DataFrame],
     first_or_last='both'
