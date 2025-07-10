@@ -50,6 +50,11 @@ def main():
         help="Disable HMM post-processing",
     )
     parser.add_argument(
+        "--no-sleep-correction",
+        action="store_true",
+        help="Disable sleep correction in post-processing, converting all sleep periods under 1 hour to sedentary",
+    )
+    parser.add_argument(
         "--force-download",
         action="store_true",
         help="Force download of classifier file",
@@ -217,7 +222,7 @@ def main():
         args.model_repo_path,
         check_md5,
         args.force_download,
-        verbose,
+        verbose
     )
 
     classifier.verbose = verbose
@@ -225,7 +230,8 @@ def main():
 
     if verbose:
         print("Running activity classifier...")
-    Y = classifier.predict_from_frame(data, args.sample_rate, not args.no_hmm)
+    Y = classifier.predict_from_frame(data, args.sample_rate, not args.no_hmm,
+                                      not args.no_sleep_correction)
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
@@ -285,7 +291,7 @@ def main():
 
 
 def read(
-    filepath, usecols, skipRows=0, dateFormat=None, 
+    filepath, usecols=None, skipRows=0, dateFormat=None, 
     resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
 ):
     p = pathlib.Path(filepath)

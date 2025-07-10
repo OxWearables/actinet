@@ -12,7 +12,7 @@ from scipy.special import softmax
 
 from actinet import hmm
 from actinet import sslmodel
-from actinet.utils.utils import safe_indexer, resize, infer_freq
+from actinet.utils.utils import safe_indexer, resize, infer_freq, removeSpuriousSleep
 
 
 class ActivityClassifier:
@@ -175,7 +175,7 @@ class ActivityClassifier:
 
         return self
 
-    def predict_from_frame(self, data, sample_freq, hmm_smothing=True):
+    def predict_from_frame(self, data, sample_freq, hmm_smothing=True, remove_spurious_sleep=True):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -185,6 +185,8 @@ class ActivityClassifier:
         :type sample_freq: int or float
         :param hmm_smothing: Whether to apply HMM smoothing to the predictions
         :type hmm_smothing: bool, optional
+        :param remove_spurious_sleep: Whether to remove spurious sleep epochs from the predictions
+        :type remove_spurious_sleep: bool, optional
         """
         sample_freq = sample_freq or 1 / (infer_freq(data.index).total_seconds())
         X, T = make_windows(
@@ -196,12 +198,13 @@ class ActivityClassifier:
         )
 
         Y = raw_to_df(
-            X, self.predict(X, hmm_smothing, T), T, self.labels, reindex=False
+            X, self.predict(X, hmm_smothing, remove_spurious_sleep, T), 
+            T, self.labels, reindex=False
         )
 
         return Y
 
-    def predict(self, X, hmm_smothing=True, T=None):
+    def predict(self, X, hmm_smothing=True, remove_spurious_sleep=True, T=None):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -209,6 +212,8 @@ class ActivityClassifier:
         :type X: numpy.ndarray
         :param hmm_smothing: Whether to apply HMM smoothing to the predictions
         :type hmm_smothing: bool, optional
+        :param remove_spurious_sleep: Whether to remove spurious sleep epochs from the predictions
+        :type remove_spurious_sleep: bool, optional
         :param T: Time at each observation with shape (rows, )
         :type T: numpy.ndarray, optional
         """
@@ -243,6 +248,9 @@ class ActivityClassifier:
 
         Y = np.full(len(X), fill_value=np.nan)
         Y[ok] = Y_
+
+        if remove_spurious_sleep:
+            Y = removeSpuriousSleep(Y, self.labels, self.window_sec)
 
         return Y
 
