@@ -12,7 +12,8 @@ from scipy.special import softmax
 
 from actinet import hmm
 from actinet import sslmodel
-from actinet.utils.utils import safe_indexer, resize, infer_freq, removeSpuriousSleep
+from actinet.utils.utils import safe_indexer, resize, infer_freq
+from actinet.utils.sleep_utils import removeSpuriousSleep
 
 
 class ActivityClassifier:
@@ -175,7 +176,7 @@ class ActivityClassifier:
 
         return self
 
-    def predict_from_frame(self, data, sample_freq, hmm_smothing=True, remove_spurious_sleep=True):
+    def predict_from_frame(self, data, sample_freq, hmm_smothing=True, sleep_tolerance=None, remove_naps=True):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -185,8 +186,10 @@ class ActivityClassifier:
         :type sample_freq: int or float
         :param hmm_smothing: Whether to apply HMM smoothing to the predictions
         :type hmm_smothing: bool, optional
-        :param remove_spurious_sleep: Whether to remove spurious sleep epochs from the predictions
-        :type remove_spurious_sleep: bool, optional
+        :param sleep_tolerance: Time threshold for sleep periods to be considered valid (e.g., '30min')
+        :type sleep_tolerance: str, optional
+        :param remove_naps: Whether to remove nap periods from the predictions
+        :type remove_naps: bool, optional
         """
         sample_freq = sample_freq or 1 / (infer_freq(data.index).total_seconds())
         X, T = make_windows(
@@ -198,13 +201,13 @@ class ActivityClassifier:
         )
 
         Y = raw_to_df(
-            X, self.predict(X, hmm_smothing, remove_spurious_sleep, T), 
+            X, self.predict(X, hmm_smothing, sleep_tolerance, remove_naps, T), 
             T, self.labels, reindex=False
         )
 
         return Y
 
-    def predict(self, X, hmm_smothing=True, remove_spurious_sleep=True, T=None):
+    def predict(self, X, hmm_smothing=True, sleep_tol=None, remove_naps=False, T=None):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -212,8 +215,8 @@ class ActivityClassifier:
         :type X: numpy.ndarray
         :param hmm_smothing: Whether to apply HMM smoothing to the predictions
         :type hmm_smothing: bool, optional
-        :param remove_spurious_sleep: Whether to remove spurious sleep epochs from the predictions
-        :type remove_spurious_sleep: bool, optional
+        :param sleep_tol: Time threshold for sleep periods to be considered valid (e.g., '30min')
+        :type sleep_tol: str, optional
         :param T: Time at each observation with shape (rows, )
         :type T: numpy.ndarray, optional
         """
@@ -249,8 +252,7 @@ class ActivityClassifier:
         Y = np.full(len(X), fill_value=np.nan)
         Y[ok] = Y_
 
-        if remove_spurious_sleep:
-            Y = removeSpuriousSleep(Y, self.labels, self.window_sec)
+        Y = removeSpuriousSleep(Y, self.labels, self.window_sec, sleep_tol, remove_naps)
 
         return Y
 
