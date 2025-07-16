@@ -50,9 +50,15 @@ def main():
         help="Disable HMM post-processing",
     )
     parser.add_argument(
-        "--no-sleep-correction",
+        "--require-sleep-above",
+        help="Require sleep blocks to exceed a minimum duration, otherwise be classified as sedentary. Pass values as strings, e.g.: '2H', '30min'. Default: None (no requirement)",
+        type=str, 
+        default=None
+    )
+    parser.add_argument(
+        "--single-sleep-block",
         action="store_true",
-        help="Disable sleep correction in post-processing, converting all sleep periods under 1 hour to sedentary",
+        help="Recognise only one sleep block per day, all other sleep blocks will be converted to sedentary",
     )
     parser.add_argument(
         "--force-download",
@@ -231,7 +237,7 @@ def main():
     if verbose:
         print("Running activity classifier...")
     Y = classifier.predict_from_frame(data, args.sample_rate, not args.no_hmm,
-                                      not args.no_sleep_correction)
+                                      args.require_sleep_above, args.single_sleep_block)
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
