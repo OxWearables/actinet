@@ -96,6 +96,15 @@ This smoothing corrects erroneous predictions from the initial model that lacked
     Diagram of a Hidden Markov Model.
 
 
+Sleep correction
+================
+
+To improve the accuracy and reliability of sleep classification, we apply an optional post-hoc correction step.
+Firstly, we can exclude short sleep blocks, that fall below a specified duration threshold, such as 1 hour, as seen in the Biobank accelerometer analysis tool.
+Additionally, we can ensure that each day has only one sleep block, which is the longest sleep block in that day.
+For all blocks of sleep that do not meet these criteria, we convert them to sedentary activity.
+
+
 
 **************************
 Physical activity analysis
