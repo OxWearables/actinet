@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+SLEEP_GAP_TOLERANCE = 30 * 60  # 30 minutes
+SLEEP_BLOCK_PERIOD = 24 * 60 * 60  # 24 hours
+
 
 def removeSpuriousSleep(Y, labels, period, sleepTol='1H', removeNaps=False):
     """
@@ -77,11 +80,11 @@ def convertNaps(Y, period, sleep_code, sedentary_code):
     :rtype: numpy.ndarray
     """
 
-    sleep_blocks = find_blocks(Y, gap_tol=int(1800/period), # 30 minute gap tolerance
+    sleep_blocks = find_blocks(Y, gap_tol=int(SLEEP_GAP_TOLERANCE/period),
                                block_code=sleep_code)
 
     longest_blocks = select_longest_blocks_per_period(
-        sleep_blocks, len(Y), block_period=int(86400/period)  # 24 hours sleep block period
+        sleep_blocks, len(Y), block_period=int(SLEEP_BLOCK_PERIOD/period)
     )
 
     return convert_non_selected_block(Y, longest_blocks, sleep_code, sedentary_code)
