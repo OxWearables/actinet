@@ -21,7 +21,7 @@ from actinet.models import ActivityClassifier
 from actinet.summarisation import getActivitySummary
 from actinet.utils.utils import infer_freq, drop_first_last_days, flag_wear_below_days, calculate_wear_stats
 
-BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/actinet/models/"
+BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/models/actinet/"
 
 
 def main():
