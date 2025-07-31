@@ -169,7 +169,7 @@ class ActivityClassifier:
         if self.verbose:
             print("Training HMM")
 
-        self.hmms.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
+        self.hmm.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
@@ -248,7 +248,7 @@ class ActivityClassifier:
 
         if hmm_smothing:
             interval = self.window_sec if T_ is not None else None
-            Y_ = self.hmms.predict(Y_, T_, interval)
+            Y_ = self.hmm.predict(Y_, T_, interval)
 
         Y = np.full(len(X), fill_value=np.nan)
         Y[ok] = Y_
@@ -294,7 +294,7 @@ class ActivityClassifier:
                 "Invalid type for HMM parameters. Expected str, dict, or None."
             )
 
-        self.hmms = hmm.HMM(**hmm_params)
+        self.hmm = hmm.HMM(**hmm_params)
 
     def save(self, output_path):
         """
@@ -319,7 +319,7 @@ class RFActivityClassifier:
     def __init__(self, winsec=None, hmm_params=None, labels=None, **kwargs):
         self.model = BalancedRandomForestClassifier(oob_score=True, random_state=42, **kwargs)
         self.labels = labels
-        self.hmm = self.load_hmm_params(hmm_params)
+        self.hmm = self._load_hmm_params(hmm_params)
         self.winsec = winsec
 
     def __str__(self):
@@ -332,7 +332,7 @@ class RFActivityClassifier:
     def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
         y_pred = self.model.predict(X)
 
-        if hmm_smothing==True:
+        if hmm_smothing:
             y_pred = self.hmm.predict(y_pred, T, self.winsec)
 
         y_pred = removeSpuriousSleep(y_pred, self.labels, self.winsec, sleep_tol, remove_naps)
@@ -344,7 +344,7 @@ class RFActivityClassifier:
 
         joblib.dump(classifier, output_path, compress=("lzma", 3))
 
-    def load_hmm_params(self, hmm_params):
+    def _load_hmm_params(self, hmm_params):
         if isinstance(hmm_params, str):
             if os.path.exists(hmm_params):
                 if self.verbose:
@@ -364,9 +364,6 @@ class RFActivityClassifier:
             raise TypeError(
                 "Invalid type for HMM parameters. Expected str, dict, or None."
             )
-        
-        if self.labels is not None:
-            hmm_params["labels"] = self.labels
 
         return hmm.HMM(**hmm_params)
 
