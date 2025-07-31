@@ -7,6 +7,7 @@ import torch
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader
 from sklearn.model_selection import StratifiedGroupKFold, GroupShuffleSplit
+from imblearn.ensemble import BalancedRandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from scipy.special import softmax
 
@@ -201,24 +202,24 @@ class ActivityClassifier:
         )
 
         Y = raw_to_df(
-            X, self.predict(X, hmm_smothing, sleep_tolerance, remove_naps, T), 
+            X, self.predict(X, T, hmm_smothing, sleep_tolerance, remove_naps), 
             T, self.labels, reindex=False
         )
 
         return Y
 
-    def predict(self, X, hmm_smothing=True, sleep_tol=None, remove_naps=False, T=None):
+    def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
         :param X: The input accelerometer data [x,y,z] with shape (rows, window_len, 3)
         :type X: numpy.ndarray
+        :param T: Time at each observation with shape (rows, )
+        :type T: numpy.ndarray, optional
         :param hmm_smothing: Whether to apply HMM smoothing to the predictions
         :type hmm_smothing: bool, optional
         :param sleep_tol: Time threshold for sleep periods to be considered valid (e.g., '30min')
         :type sleep_tol: str, optional
-        :param T: Time at each observation with shape (rows, )
-        :type T: numpy.ndarray, optional
         """
         if self.model is None:
             raise Exception("Model has not been loaded for ActivityClassifier.")
@@ -308,6 +309,66 @@ class ActivityClassifier:
         classifier.batch_size = 512
 
         joblib.dump(classifier, output_path, compress=("lzma", 3))
+
+
+class RFActivityClassifier:
+    """
+    Implement a basic Balanced Random Forest classifier with optional HMM smoothing.
+    """
+
+    def __init__(self, winsec=None, hmm_params=None, labels=None, **kwargs):
+        self.model = BalancedRandomForestClassifier(oob_score=True, random_state=42, **kwargs)
+        self.labels = labels
+        self.hmm = self.load_hmm_params(hmm_params)
+        self.winsec = winsec
+
+    def __str__(self):
+        return str(self.model)
+
+    def fit(self, X, Y, T=None):
+        self.model.fit(X, Y)
+        self.hmm.fit(self.model.oob_decision_function_, Y, T, self.winsec)
+
+    def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
+        y_pred = self.model.predict(X)
+
+        if hmm_smothing==True:
+            y_pred = self.hmm.predict(y_pred, T, self.winsec)
+
+        y_pred = removeSpuriousSleep(y_pred, self.labels, self.winsec, sleep_tol, remove_naps)
+
+        return y_pred
+    
+    def save(self, output_path):
+        classifier = copy.deepcopy(self)
+
+        joblib.dump(classifier, output_path, compress=("lzma", 3))
+
+    def load_hmm_params(self, hmm_params):
+        if isinstance(hmm_params, str):
+            if os.path.exists(hmm_params):
+                if self.verbose:
+                    print(f"Loading hmm_params from {hmm_params}")
+
+                hmm_params = dict(np.load(hmm_params, allow_pickle=True))
+
+            else:
+                raise FileNotFoundError(
+                    "Path to file with saved hmm parameters cannot be found."
+                )
+
+        elif hmm_params is None:
+            hmm_params = dict()
+
+        elif not isinstance(hmm_params, dict):
+            raise TypeError(
+                "Invalid type for HMM parameters. Expected str, dict, or None."
+            )
+        
+        if self.labels is not None:
+            hmm_params["labels"] = self.labels
+
+        return hmm.HMM(**hmm_params)
 
 
 def make_windows(data, window_sec, window_len, return_index=False, verbose=True):

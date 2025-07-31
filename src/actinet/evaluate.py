@@ -9,9 +9,8 @@ from sklearn.metrics import (
 import numpy as np
 import pandas as pd
 import os
-from imblearn.ensemble import BalancedRandomForestClassifier
 
-from actinet.models import ActivityClassifier
+from actinet.models import ActivityClassifier, RFActivityClassifier
 from actinet.hmm import HMM
 from actinet.utils.utils import safe_indexer
 
@@ -68,7 +67,7 @@ def evaluate_preprocessing(
 
 def evaluate_models(
     actinet_classifier: ActivityClassifier,
-    rf_classifier: BalancedRandomForestClassifier,
+    rf_classifier: RFActivityClassifier,
     X_actinet,
     X_rf,
     Y_actinet,
@@ -77,6 +76,8 @@ def evaluate_models(
     groups_rf,
     T_actinet=None,
     T_rf=None,
+    sleep_tol='1H',
+    remove_naps=False,
     weights_path="models/weights.pt",
     out_dir=None,
     verbose=True,
@@ -140,23 +141,17 @@ def evaluate_models(
             n_splits=5,
         )
         y_pred_actinet = actinet_classifier.predict(
-            X_test_actinet, True, t_test_actinet
+            X_test_actinet, t_test_actinet, True, sleep_tol, remove_naps
         ).astype(int)
 
         # Analysis of accelerometer random forest model
         rf_classifier.fit(
             X_train_rf,
             y_train_rf,
+            t_train_rf,
         )
 
-        hmm_rf = HMM()
-        hmm_rf.fit(
-            rf_classifier.oob_decision_function_,
-            y_train_rf,
-            t_train_rf,
-            WINSEC,
-        )
-        y_pred_rf = hmm_rf.predict(rf_classifier.predict(X_test_rf), t_test_rf, WINSEC)
+        y_pred_rf = rf_classifier.predict(X_test_rf, t_test_rf, True, sleep_tol, remove_naps)
 
         # Display model performance for each fold
         if verbose:
