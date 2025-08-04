@@ -53,7 +53,7 @@ class ActivityClassifier:
             "window_length: {self.window_sec}\n"
             "batch_size: {self.batch_size}\n"
             "device: {self.device}\n"
-            "hmm: {self.hmms}\n"
+            "hmm: {self.hmm}\n"
             "model: {model}".format(
                 self=self, model=self.model or "Model has not been loaded."
             )
@@ -65,6 +65,7 @@ class ActivityClassifier:
         Y,
         groups=None,
         T=None,
+        ignore_transition_gaps=False,
         weights_path="models/weights.pt",
         model_repo_path=None,
         n_splits=5,
@@ -169,7 +170,11 @@ class ActivityClassifier:
         if self.verbose:
             print("Training HMM")
 
-        self.hmm.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
+        if ignore_transition_gaps:
+            # Ignore gaps in time when training HMM
+            self.hmm.fit(y_prob_splits, y_true_splits)
+        else:
+            self.hmm.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
@@ -325,9 +330,15 @@ class RFActivityClassifier:
     def __str__(self):
         return str(self.model)
 
-    def fit(self, X, Y, T=None):
+    def fit(self, X, Y, T=None, ignore_transition_gaps=False):
         self.model.fit(X, Y)
-        self.hmm.fit(self.model.oob_decision_function_, Y, T, self.winsec)
+
+        if ignore_transition_gaps:
+            # Ignore gaps in time when training HMM
+            self.hmm.fit(self.model.oob_decision_function_, Y)
+        
+        else:
+            self.hmm.fit(self.model.oob_decision_function_, Y, T, self.winsec)
 
     def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
         y_pred = self.model.predict(X)

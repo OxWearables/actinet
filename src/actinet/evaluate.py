@@ -137,18 +137,20 @@ def evaluate_models(
             y_train_actinet,
             groups_train_actinet,
             t_train_actinet,
+            True,
             weights_path.format(fold),
             n_splits=5,
         )
+
         y_pred_actinet = actinet_classifier.predict(
             X_test_actinet, t_test_actinet, True, sleep_tol, remove_naps
         ).astype(int)
 
-        # Analysis of accelerometer random forest model
         rf_classifier.fit(
             X_train_rf,
             y_train_rf,
             t_train_rf,
+            True
         )
 
         y_pred_rf = rf_classifier.predict(X_test_rf, t_test_rf, True, sleep_tol, remove_naps)
