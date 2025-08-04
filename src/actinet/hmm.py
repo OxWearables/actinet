@@ -166,6 +166,15 @@ class HMM:
         self.transition = d["transition"]
         self.labels = d["labels"]
 
+    def display(self, precision=3):
+        """
+        Print the model parameters in a readable format.
+
+        :param precision: Number of decimal places to print
+        :type precision: int
+        """
+        pretty_hmm_params(self, precision=precision)
+
 
 def check_for_time_values_error(Y, T, interval):
     # If truthy, T must be the same length as Y, and interval must also be truthy
@@ -226,3 +235,43 @@ def calculate_transition_matrix(Y, t=None, interval=None):
         raise Exception("No transitions found in data")
 
     return trans_mat
+
+
+def print_array(arr, precision=3):
+    """Prints all elements of a NumPy array to N decimal places."""
+    arr = np.array(arr)
+    with np.printoptions(precision=precision, suppress=True):
+        print(arr)
+
+
+def reorder_matrix(data, index_order):
+    """Reorder a 1D or 2D square array"""
+    arr = np.array(data)
+
+    if arr.ndim == 1:
+        return arr[index_order]
+    
+    elif arr.ndim == 2:
+        if arr.shape[0] != arr.shape[1]:
+            raise ValueError("2D input must be a square matrix.")
+        # Reorder rows and columns using the same index order
+        return arr[index_order][:, index_order]
+    
+    else:
+        raise ValueError("Input must be a 1D or 2D array.")
+
+
+def pretty_hmm_params(hmm: HMM, index_order=[3, 2, 0, 1], precision=3):
+    """Print the HMM parameters in a readable format, reordering them according to the provided index order."""
+
+    print("Prior:")
+    prior = reorder_matrix(hmm.prior, index_order)
+    print_array(prior, precision)
+
+    print("\nEmission:")
+    emission = reorder_matrix(hmm.emission, index_order)
+    print_array(emission, precision)
+
+    print("\nTransition:")
+    transition = reorder_matrix(hmm.transition, index_order)
+    print_array(transition, precision)
