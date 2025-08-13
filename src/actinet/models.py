@@ -30,6 +30,8 @@ class ActivityClassifier:
         labels=[],
         repo_tag="v1.0.0",
         hmm_params=None,
+        hmm_ignore_transition_gaps=False,
+        hmm_handle_sleep_transitions=False,
         verbose=False,
     ):
         self.device = device
@@ -44,7 +46,9 @@ class ActivityClassifier:
         )
         self.model = None
 
-        self._load_hmm_params(hmm_params)
+        self._load_hmm_params(hmm_params, 
+                              hmm_ignore_transition_gaps,
+                              hmm_handle_sleep_transitions)
 
     def __str__(self):
         return (
@@ -65,7 +69,6 @@ class ActivityClassifier:
         Y,
         groups=None,
         T=None,
-        ignore_transition_gaps=False,
         weights_path="models/weights.pt",
         model_repo_path=None,
         n_splits=5,
@@ -97,6 +100,7 @@ class ActivityClassifier:
 
         y_prob_splits = []
         y_true_splits = []
+        group_splits = []
         t_splits = []
 
         if n_splits < 3:
@@ -161,20 +165,24 @@ class ActivityClassifier:
 
             y_true_splits.append(y_val)
             y_prob_splits.append(y_val_pred_sf)
+            group_splits.append(group_val)
             t_splits.append(t_val)
 
         y_prob_splits = np.vstack(y_prob_splits)
         y_true_splits = np.hstack(y_true_splits)
+        group_splits = np.hstack(group_splits)
         t_splits = np.hstack(t_splits)
 
         if self.verbose:
             print("Training HMM")
 
-        if ignore_transition_gaps:
-            # Ignore gaps in time when training HMM
-            self.hmm.fit(y_prob_splits, y_true_splits)
-        else:
-            self.hmm.fit(y_prob_splits, y_true_splits, t_splits, self.window_sec)
+        self.hmm.fit(
+            y_prob_splits,
+            y_true_splits,
+            group_splits,
+            t_splits,
+            interval=self.window_sec
+        )
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
         self.model.to("cpu")
@@ -278,7 +286,8 @@ class ActivityClassifier:
         )
         self.model.to(self.device)
 
-    def _load_hmm_params(self, hmm_params):
+    def _load_hmm_params(self, hmm_params, handle_transition_gaps=False, 
+                         handle_sleep_transitions=False):
         if isinstance(hmm_params, str):
             if os.path.exists(hmm_params):
                 if self.verbose:
@@ -298,6 +307,9 @@ class ActivityClassifier:
             raise TypeError(
                 "Invalid type for HMM parameters. Expected str, dict, or None."
             )
+
+        hmm_params["handle_transition_gaps"] = handle_transition_gaps
+        hmm_params["handle_sleep_transitions"] = handle_sleep_transitions
 
         self.hmm = hmm.HMM(**hmm_params)
 
@@ -330,15 +342,19 @@ class RFActivityClassifier:
     def __str__(self):
         return str(self.model)
 
-    def fit(self, X, Y, T=None, ignore_transition_gaps=False):
+    def fit(self, X, Y, groups=None, T=None, ignore_transition_gaps=False,
+            correct_sleep_transitions=False):
         self.model.fit(X, Y)
 
-        if ignore_transition_gaps:
-            # Ignore gaps in time when training HMM
-            self.hmm.fit(self.model.oob_decision_function_, Y)
-        
-        else:
-            self.hmm.fit(self.model.oob_decision_function_, Y, T, self.winsec)
+        self.hmm.fit(self.model.oob_decision_function_, Y, groups, T, self.winsec,
+                     ignore_transition_gaps, correct_sleep_transitions)
+
+        #if ignore_transition_gaps:
+        #    # Ignore gaps in time when training HMM
+        #    self.hmm.fit(self.model.oob_decision_function_, Y)
+        # 
+        #else:
+        #    self.hmm.fit(self.model.oob_decision_function_, Y, T, self.winsec)
 
     def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
         y_pred = self.model.predict(X)
@@ -355,7 +371,8 @@ class RFActivityClassifier:
 
         joblib.dump(classifier, output_path, compress=("lzma", 3))
 
-    def _load_hmm_params(self, hmm_params):
+    def _load_hmm_params(self, hmm_params, handle_transition_gaps=False,
+                         handle_sleep_transitions=False):
         if isinstance(hmm_params, str):
             if os.path.exists(hmm_params):
                 if self.verbose:
@@ -375,6 +392,9 @@ class RFActivityClassifier:
             raise TypeError(
                 "Invalid type for HMM parameters. Expected str, dict, or None."
             )
+
+        hmm_params["handle_transition_gaps"] = handle_transition_gaps
+        hmm_params["handle_sleep_transitions"] = handle_sleep_transitions
 
         return hmm.HMM(**hmm_params)
 
