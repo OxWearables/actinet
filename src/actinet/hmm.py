@@ -162,6 +162,8 @@ class HMM:
             emission=self.emission,
             transition=self.transition,
             labels=self.labels,
+            handle_transition_gaps=self.handle_transition_gaps,
+            handle_sleep_transitions=self.handle_sleep_transitions
         )
 
     def load(self, path):
