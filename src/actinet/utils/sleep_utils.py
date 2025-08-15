@@ -4,6 +4,11 @@ import pandas as pd
 SLEEP_GAP_TOLERANCE = 30 * 60  # 30 minutes
 SLEEP_BLOCK_PERIOD = 24 * 60 * 60  # 24 hours
 
+HMM_LIGHT_CODE = 0
+HMM_MVPA_CODE = 1
+HMM_SEDENTARY_CODE = 2
+HMM_SLEEP_CODE = 3
+
 
 def removeSpuriousSleep(Y, labels, period, sleepTol='1H', removeNaps=False):
     """
@@ -173,3 +178,27 @@ def convert_non_selected_block(labels, selected_blocks, block_code='s', conv_cod
     labels[mask_to_change] = conv_code
 
     return labels
+
+
+def add_sleep_sedentary_transitions(df):
+    """ 
+    Adds a single transition from sleep to sedentary, and vice-versa, for each participant, if it does not exist.
+    """
+    df_copy = df.copy()
+
+    rows_to_append = []
+
+    for group in df_copy["group"].unique():
+        group_df = df_copy[df_copy["group"] == group]
+
+        if not ((group_df["label"] == HMM_SLEEP_CODE) & (group_df["shift"] == HMM_SEDENTARY_CODE)).any():
+            rows_to_append.append({"label": HMM_SLEEP_CODE, "shift": HMM_SEDENTARY_CODE, "group": group})
+
+        if not ((group_df["label"] == HMM_SEDENTARY_CODE) & (group_df["shift"] == HMM_SLEEP_CODE)).any():
+            rows_to_append.append({"label": HMM_SEDENTARY_CODE, "shift": HMM_SLEEP_CODE, "group": group})
+
+    if rows_to_append:
+        new_rows = pd.DataFrame(rows_to_append)
+        df = pd.concat([df, new_rows], ignore_index=True)
+
+    return df
