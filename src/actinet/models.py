@@ -46,10 +46,10 @@ class ActivityClassifier:
         )
         self.model = None
 
-        load_hmm_params(hmm_params, 
-                        hmm_ignore_transition_gaps,
-                        hmm_handle_sleep_transitions,
-                        self.verbose)
+        self.hmm = load_hmm_params(hmm_params, 
+                                   hmm_ignore_transition_gaps,
+                                   hmm_handle_sleep_transitions,
+                                   verbose)
 
     def __str__(self):
         return (
@@ -446,7 +446,7 @@ def raw_to_df(data, labels, time, classes, reindex=True, freq="30S"):
     return df
 
 
-def load_hmm_params(hmm_params, handle_transition_gaps, handle_sleep_transitions, verbose=False):
+def load_hmm_params(hmm_params, ignore_transition_gaps, handle_sleep_transitions, verbose=False):
     if isinstance(hmm_params, str):
         if os.path.exists(hmm_params):
             if verbose:
@@ -468,7 +468,7 @@ def load_hmm_params(hmm_params, handle_transition_gaps, handle_sleep_transitions
         )
     
     hmm_params.update({
-        "handle_transition_gaps": handle_transition_gaps,
+        "ignore_transition_gaps": ignore_transition_gaps,
         "handle_sleep_transitions": handle_sleep_transitions
     })
 
