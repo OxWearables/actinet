@@ -130,6 +130,7 @@ def evaluate_models(
         t_train_rf = safe_indexer(T_rf, train_index_rf)
         t_test_rf = safe_indexer(T_rf, test_index_rf)
 
+        groups_train_rf = groups_rf[train_index_rf]
         groups_test_rf = groups_rf[test_index_rf]
 
         actinet_classifier.fit(
@@ -137,9 +138,8 @@ def evaluate_models(
             y_train_actinet,
             groups_train_actinet,
             t_train_actinet,
-            True,
             weights_path.format(fold),
-            n_splits=5,
+            n_splits=1,
         )
 
         y_pred_actinet = actinet_classifier.predict(
@@ -149,8 +149,8 @@ def evaluate_models(
         rf_classifier.fit(
             X_train_rf,
             y_train_rf,
-            t_train_rf,
-            True
+            groups_train_rf,
+            t_train_rf
         )
 
         y_pred_rf = rf_classifier.predict(X_test_rf, t_test_rf, True, sleep_tol, remove_naps)
