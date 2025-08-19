@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
+import re
 import os
 from scipy import stats
 from sklearn.metrics import accuracy_score, f1_score, cohen_kappa_score, balanced_accuracy_score, confusion_matrix
@@ -286,3 +287,14 @@ def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, group_by
     plot_and_save_fig(fig, save_path=save_path)
             
     plt.close(fig)
+
+
+def convert_version(s: str) -> str:
+    """ Converts a version string from 'x.y.z+number' to 'vX-Y-Z+number'. """
+    match = re.match(r"(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?", s)
+    if not match:
+        raise ValueError(f"String '{s}' is not in the expected format")
+    
+    major, minor, patch, extra = match.groups()
+    base = f"v{major}-{minor}-{patch}"
+    return f"{base}+{extra}" if extra else base
