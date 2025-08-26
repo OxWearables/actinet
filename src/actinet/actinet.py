@@ -113,6 +113,11 @@ def main():
                              "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes." +
                              "Default: '%%Y-%%m-%%d %%H:%%M:%%S.%%f' (e.g. '2023-10-01 12:34:56.789')"
     )
+    parser.add_argument('--calibration-stdTol-min',
+                        default=None,
+                        type=float,
+                        help="Minimum standard deviation tolerance (g) for detecting stationary periods for calibration. Default: None"
+    )
     parser.add_argument(
         "--plot-activity",
         "-p",
@@ -167,6 +172,7 @@ def main():
         args.txyz,
         args.csvStartRow-1,  # -1 to convert to zero-based index
         args.csvDateFormat,
+        args.calibration_stdTol_min,
         resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
@@ -297,7 +303,7 @@ def main():
 
 
 def read(
-    filepath, usecols=None, skipRows=0, dateFormat=None, 
+    filepath, usecols=None, skipRows=0, dateFormat=None, calibration_stdTol_min=None,
     resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
 ):
     p = pathlib.Path(filepath)
@@ -337,6 +343,7 @@ def read(
             sample_rate,
             lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
+            calibrate_gravity_kwargs={'stdtol_min': calibration_stdTol_min},
             detect_nonwear=True,
             resample_hz=resample_hz,
             verbose=verbose,
@@ -359,6 +366,7 @@ def read(
             filepath,
             lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
+            calibrate_gravity_kwargs={'stdtol_min': calibration_stdTol_min},
             detect_nonwear=True,
             resample_hz=resample_hz,
             verbose=verbose,

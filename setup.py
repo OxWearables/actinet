@@ -50,7 +50,7 @@ def main():
         include_package_data=False,
         # Dependencies
         install_requires=[
-            "actipy>=3.0.5",
+            "actipy>=3.7.0",
             "numpy==1.24.*",
             "scipy==1.10.*",
             "pandas==2.0.*",
