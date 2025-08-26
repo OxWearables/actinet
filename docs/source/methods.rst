@@ -27,7 +27,8 @@ Calibration
 ===========
 To ensure different devices provide a similar output under similar conditions we calibrate the acceleration signals to local gravity using a procedure initially described by [vanHees2014]_ and run in UK Biobank [Doherty2017]_.
 
-Briefly, we identify stationary periods in ten second windows where all three axes have a standard deviation of less than 13mg. 
+Briefly, we identify stationary periods in ten second windows where all three axes have a standard deviation of less than 15mg, for a period of 90 minutes.
+We can also optionally require that this standard deviation is above a minimum threshold, to avoid identifying artificially imputed stationary periods, such as, when idle sleep mode in the active in the ActiGraph GT3X, as stationary.
 These stationary periods are then used to optimise the gain and offset for each axis (6 parameters) to fit a unit gravity sphere using ordinary least squares linear regression.
 
 
