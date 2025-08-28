@@ -343,7 +343,7 @@ def read(
             sample_rate,
             lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
-            calibrate_gravity_kwargs={'stdtol_min': calibration_stdTol_min},
+            calibrate_gravity_kwargs={'stdtol_min': calibration_stdtol_min},
             detect_nonwear=True,
             resample_hz=resample_hz,
             verbose=verbose,
