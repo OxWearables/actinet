@@ -94,7 +94,7 @@ def main():
         type=str, 
         default=None)
     parser.add_argument(
-        "--csvStartRow",
+        "--csv-start-row",
         help="Row number to start reading a CSV file. Default: 1 (First row)",
         type=int,
         default=1,
@@ -106,14 +106,14 @@ def main():
                              "Default: 'time,x,y,z'",
                         type=str, default="time,x,y,z"
     )
-    parser.add_argument('--csvDateFormat',
+    parser.add_argument('--csv-date-format',
                         default="%Y-%m-%d %H:%M:%S.%f",
                         type=str, 
                         help="Date time format for csv file when reading a csv file. " +
                              "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes." +
                              "Default: '%%Y-%%m-%%d %%H:%%M:%%S.%%f' (e.g. '2023-10-01 12:34:56.789')"
     )
-    parser.add_argument('--calibration-stdTol-min',
+    parser.add_argument('--calibration-stdtol-min',
                         default=None,
                         type=float,
                         help="Minimum standard deviation tolerance (g) for detecting stationary periods for calibration. Default: None"
@@ -170,9 +170,9 @@ def main():
     data, info_read = read(
         args.filepath,
         args.txyz,
-        args.csvStartRow-1,  # -1 to convert to zero-based index
-        args.csvDateFormat,
-        args.calibration_stdTol_min,
+        args.csv_start_row-1,  # -1 to convert to zero-based index
+        args.csv_date_format,
+        args.calibration_stdtol_min,
         resample_hz=None,
         sample_rate=args.sample_rate,
         verbose=verbose,
