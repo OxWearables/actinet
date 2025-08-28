@@ -303,7 +303,7 @@ def main():
 
 
 def read(
-    filepath, usecols=None, skipRows=0, dateFormat=None, calibration_stdTol_min=None,
+    filepath, usecols=None, skipRows=0, dateFormat=None, calibration_stdtol_min=None,
     resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
 ):
     p = pathlib.Path(filepath)
@@ -366,7 +366,7 @@ def read(
             filepath,
             lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
-            calibrate_gravity_kwargs={'stdtol_min': calibration_stdTol_min},
+            calibrate_gravity_kwargs={'stdtol_min': calibration_stdtol_min},
             detect_nonwear=True,
             resample_hz=resample_hz,
             verbose=verbose,
