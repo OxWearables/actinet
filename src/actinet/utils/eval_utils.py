@@ -187,7 +187,7 @@ def plot_boxplots(df, x, y='Macro F1', hue='Model'):
     plt.show()
 
 
-def build_bland_altman_data(results: pd.DataFrame, activity, age_band=None, sex=None):
+def extract_activity_predictions(results: pd.DataFrame, activity, age_band=None, sex=None, return_true_labels=False):
     """Extracts incidence of predicted activity label for actinet and accelerometer based on filtering conditions."""    
     model_results = results.copy()
     if age_band is not None:
@@ -195,21 +195,29 @@ def build_bland_altman_data(results: pd.DataFrame, activity, age_band=None, sex=
     if sex is not None:
         model_results = model_results[model_results["Sex"] == sex]
 
-    activity_bbaa_pred = [x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "accelerometer", "Pred_dict"]]
-    activity_actinet_pred = [x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "actinet", "Pred_dict"]]
+    activity_bbaa_pred = np.array([x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "accelerometer", "Pred_dict"]])
+    activity_actinet_pred = np.array([x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "actinet", "Pred_dict"]])
 
     population = len(model_results['Participant'].unique())
 
-    return activity_bbaa_pred, activity_actinet_pred, population
+    if return_true_labels:
+        activity_bbaa_true = np.array([x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "accelerometer",
+                                                                                     "True_dict"]])
+        activity_actinet_true = np.array([x.get(activity, 0) for x in model_results.loc[model_results["Model"] == "actinet", 
+                                                                                        "True_dict"]])
+        return activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, population
+    
+    else:
+        return activity_bbaa_pred, activity_actinet_pred, population
 
 
 def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
-                      col1_label='accelerometer', col2_label='actinet',
+                      col1_label='Baseline', col2_label='ActiNet',
                       display_plot=False, show_y_label=False, ax=None, fontsize=20):
     """Generates a Bland-Altman plot for two columns of data."""
     dat = pd.DataFrame({'col1': col1, 'col2': col2})
     pearson_cor = dat.corr().iloc[0, 1]
-    diffs = dat['col1'] - dat['col2']
+    diffs = dat['col2'] - dat['col1'] 
     mean_diff = np.mean(diffs)
     sd_diff = np.std(diffs, ddof=1)
     lower_loa = mean_diff - 1.96 * sd_diff
@@ -230,10 +238,10 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
     
     ax.set_title(f'{ACTIVITY_LABELS_DICT[plot_label]} [hours]\nPearson correlation: {pearson_cor:.3f}', fontsize=fontsize)
 
-    ax.set_xlabel(f'({col1_label} + {col2_label}) / 2', fontsize=fontsize*0.9)
+    ax.set_xlabel(f'({col2_label} + {col1_label}) / 2', fontsize=fontsize*0.9)
     
     if show_y_label:
-        ax.set_ylabel(f'{col1_label} - {col2_label}', fontsize=fontsize*0.9)
+        ax.set_ylabel(f'{col2_label} - {col1_label}', fontsize=fontsize*0.9)
     
     ax.tick_params(axis='both', which='both', labelsize=14)
 
@@ -248,45 +256,182 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
 
 
 def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, group_by=None, save_path=None, 
-                                fontsize=20, subset=""):
+                                fontsize=20, compare_to_true=False, subset=""):
     """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
-    
     if group_by is None:  # Full population
         fig, axs = plt.subplots(1, 4, figsize=(15, 6), dpi=800, sharey=True)      
         axs = axs.flatten()
 
         for i, activity in enumerate(activities):
-            activity_bbaa_pred, activity_actinet_pred, population = build_bland_altman_data(results_df, activity)
-            bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
-                              ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8)
-        
+            activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, population =\
+                 extract_activity_predictions(results_df, activity, return_true_labels=True)
+            
+            if compare_to_true=='bbaa':
+                bland_altman_plot(activity_bbaa_true, activity_bbaa_pred, activity,
+                                  ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
+                                  col1_label='Ground Truth', col2_label='Baseline')
+            elif compare_to_true=='actinet':
+                bland_altman_plot(activity_actinet_true, activity_actinet_pred, activity,
+                                  ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
+                                  col1_label='Ground Truth', col2_label='ActiNet')
+            elif compare_to_true is False:
+                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
+                                  ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
+                                  col1_label='Baseline', col2_label='ActiNet')
+            else:
+                raise ValueError("compare_to_true must be either False, 'bbaa' or 'actinet'")
+
         subset_in_title = f" {subset} " if subset else " "
         fig.suptitle(f"Bland-Altman plots for Capture-24{subset_in_title}population (n={population})", 
                      fontsize=fontsize)
-   
+
     else:
         unique_groups = results_df[group_by].cat.categories
         fig = plt.figure(figsize=(15, 6*len(unique_groups)), dpi=800, constrained_layout=True)
         subfigs = fig.subfigures(nrows=len(unique_groups), ncols=1)
-        
+
         for subfig, group in zip(subfigs, unique_groups):
             axs = subfig.subplots(nrows=1, ncols=len(activities), sharex=False, sharey=True)
 
             for i, activity in enumerate(activities):
-                activity_bbaa_pred, activity_actinet_pred, population = build_bland_altman_data(
-                    results_df, activity, **{group_by.replace(' ', '_').lower(): group})
-                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
-                                  ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8)
-            
+                activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, population =\
+                    extract_activity_predictions(results_df, activity, **{group_by.replace(' ', '_').lower(): group}, 
+                                                 return_true_labels=True)
+                if compare_to_true=='bbaa':
+                    bland_altman_plot(activity_bbaa_true, activity_bbaa_pred, activity,
+                                      ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
+                                      col1_label='Ground Truth', col2_label='Baseline')
+                elif compare_to_true=='actinet':
+                    bland_altman_plot(activity_actinet_true, activity_actinet_pred, activity,
+                                      ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
+                                      col1_label='Ground Truth', col2_label='ActiNet')
+                elif compare_to_true is False:
+                    bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
+                                      ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
+                                      col1_label='Baseline', col2_label='ActiNet')
+                else:
+                    raise ValueError("compare_to_true must be either False, 'bbaa' or 'actinet'")
+
             subfig.suptitle(f"{group_by}: {group} (n={population})", fontsize=fontsize*0.9)
-        
 
         fig.suptitle(f"Bland-Altman plots for Capture-24 population by {group_by}", fontsize=fontsize)
-    
+
     fig.tight_layout()
     plot_and_save_fig(fig, save_path=save_path)
             
     plt.close(fig)
+
+
+def build_mae_cell(true_values, pred_values):
+    """Builds a MAE cell for a given set of true and predicted values."""
+    mae = np.abs(true_values - pred_values)
+    return f"{np.mean(mae):.3f} ± {np.std(mae):.3f}"
+
+
+def build_pvalue_cell(true_values, pred_values):
+    """Builds a p-value cell for a given set of true and predicted values."""
+    _, p_value = stats.ttest_rel(true_values, pred_values)
+    if p_value < 0.001:
+        return "<0.001"
+    return f"{p_value:.3f}"
+
+
+def build_mae_table(df: pd.DataFrame, activities=ACTIVITY_LABELS):
+    df_maes = pd.DataFrame(columns=activities, index=['Baseline', 'ActiNet', 'p-value'], dtype=float)
+    for activity in activities:
+        activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, _ =\
+            extract_activity_predictions(df, activity, return_true_labels=True)
+        df_maes.loc['Baseline', activity] = build_mae_cell(activity_bbaa_true, activity_bbaa_pred)
+        df_maes.loc['ActiNet', activity] = build_mae_cell(activity_actinet_true, activity_actinet_pred)
+        df_maes.loc['p-value', activity] = build_pvalue_cell(activity_bbaa_true, activity_bbaa_pred)
+    return df_maes
+
+
+def plot_errors(df: pd.DataFrame, activities=ACTIVITY_LABELS, group_by=None, save_path=None, fontsize=12):
+    if group_by is None:
+        all_errors = []
+
+        for activity in activities:
+            activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, _ = \
+                extract_activity_predictions(df, activity, return_true_labels=True)
+            
+            bbaa_errors = activity_bbaa_pred - activity_bbaa_true
+            actinet_errors = activity_actinet_pred - activity_actinet_true
+
+            for err in bbaa_errors:
+                all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                                   'Error': err, 'Model': 'Baseline'})
+            for err in actinet_errors:
+                all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                                   'Error': err, 'Model': 'ActiNet'})
+
+        error_df = pd.DataFrame(all_errors)
+
+        fig, ax = plt.subplots(figsize=(2*len(activities), 4), dpi=1000)
+        with sns.color_palette("Set1"):
+            sns.boxplot(x="Activity", y="Error", hue="Model", data=error_df,
+                        width=0.5, showfliers=False, ax=ax)
+
+        ax.set_xlabel("Activity", fontsize=fontsize)
+        ax.set_ylabel("Error in total estimated activity [hours]\n(model - ground-truth)", fontsize=fontsize)
+        ax.axhline(0, color='red', linestyle='--', linewidth=1)
+        ax.grid(axis='y', alpha=0.7)
+
+        handles, labels = ax.get_legend_handles_labels()
+        n = len(set(error_df['Model']))
+        ax.legend(handles[:n], labels[:n], fontsize=fontsize*0.8)
+        plt.title("Box plots for the error distribution of activity recognition models' outputs\n" +\
+                  "evaluated on the full Capture-24 population", fontsize=fontsize)
+        fig.tight_layout()
+
+    else:
+        unique_groups = df[group_by].cat.categories
+        fig, axs = plt.subplots(nrows=len(unique_groups), ncols=1,
+                                figsize=(2*len(activities), 4*len(unique_groups)),
+                                dpi=1000, constrained_layout=True)
+        
+        if len(unique_groups) == 1:
+            axs = [axs]
+
+        for ax, group in zip(axs, unique_groups):
+            sub_df = df[df[group_by] == group]
+            all_errors = []
+
+            for activity in activities:
+                activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, _ = \
+                    extract_activity_predictions(sub_df, activity, return_true_labels=True)
+
+                bbaa_errors = activity_bbaa_pred - activity_bbaa_true
+                actinet_errors = activity_actinet_pred - activity_actinet_true
+
+                for err in bbaa_errors:
+                    all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                                       'Error': err, 'Model': 'Baseline'})
+                for err in actinet_errors:
+                    all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                                       'Error': err, 'Model': 'ActiNet'})
+
+            error_df = pd.DataFrame(all_errors)
+
+            with sns.color_palette("Set1"):
+                sns.boxplot(x="Activity", y="Error", hue="Model", data=error_df,
+                            width=0.5, showfliers=False, ax=ax)
+
+            ax.set_xlabel("Activity", fontsize=fontsize)
+            ax.set_ylabel("Error in total estimated activity [hours]\n(model - ground-truth)", fontsize=fontsize)
+            ax.axhline(0, color='red', linestyle='--', linewidth=1)
+            ax.grid(axis='y', alpha=0.7)
+            ax.set_title(f"{group_by}: {group}", fontsize=fontsize)
+
+            handles, labels = ax.get_legend_handles_labels()
+            n = len(set(error_df['Model']))
+            ax.legend(handles[:n], labels[:n], fontsize=fontsize*0.8)
+
+        plt.suptitle("Box plots for the error distribution of activity recognition models' outputs\n" +\
+                     f"evaluated on the Capture-24 population by {group_by}", fontsize=fontsize)
+    if save_path:
+        fig.savefig(save_path, bbox_inches='tight')
+    plt.show()
 
 
 def convert_version(s: str) -> str:
