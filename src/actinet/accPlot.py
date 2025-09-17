@@ -80,7 +80,7 @@ def main():  # noqa: C901
     if len(sys.argv) < 2:
         msg = "\nInvalid input, please enter at least 1 parameter, e.g."
         msg += "\npython accPlot.py timeSeries.csv.gz \n"
-        utils.toScreen(msg)
+        utils.to_screen(msg)
         parser.print_help()
         sys.exit(-1)
     args = parser.parse_args()
