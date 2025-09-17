@@ -5,11 +5,12 @@ import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import scipy.stats as stats
 
-from actinet.utils.utils import date_parser, toScreen
+from actinet.utils.utils import date_parser, to_screen
+from actinet.utils.summary_utils import *
 from actinet import circadian
 
 
-def getActivitySummary(
+def get_activity_summary(
     data,
     labels,
     intensityDistribution=False,
@@ -22,6 +23,7 @@ def getActivitySummary(
     1) calculate imputation values to replace nan PA metric values
     2) calculate empirical cumulative distribution function of vector magnitudes
     3) derive main movement summaries (overall, weekday/weekend, and hour)
+    4) derive daily summaries (daily enmo and daily activity)
 
     :param str data: Input csv.gz file or pandas dataframe of processed epoch data
     :param list(str) labels: Activity state labels
@@ -29,12 +31,11 @@ def getActivitySummary(
     :param bool circadianMetrics: Add circadian rhythm metrics to dict <summary>
     :param bool verbose: Print verbose output
 
-    :return: A summary of the activity.
-    :rtype: dict
+    :return: A summary of the activity and daily wear statistics.
+    :rtype: tuple(dict, pd.DataFrame)
 
     """
-
-    toScreen("=== Summarizing ===", verbose)
+    to_screen("=== Summarizing ===", verbose)
 
     if isinstance(data, str):
         data = pd.read_csv(
@@ -44,21 +45,42 @@ def getActivitySummary(
             date_parser=date_parser,
         )
 
+    # Impute missing values
+    data_imputed = _impute_missing(data, labels, verbose)
+
     # Main movement summaries
     summary = _summarise(
         data,
+        data_imputed,
         labels,
         intensityDistribution,
         circadianMetrics,
         verbose,
     )
 
-    # Return physical activity summary
-    return summary
+    # Daily summaries
+    daily_summary = _daily_summary(data, data_imputed, labels, verbose)
+
+    # Return physical activity summaries
+    return summary, daily_summary
+
+
+def _impute_missing(data, labels, verbose=False):
+    # In the following, we resample, pad and impute the data so that we have a
+    # multiple of 24h for the stats calculations
+    to_screen("=== Imputing missing values ===", verbose)
+    
+    cols = ["acc"] + labels
+    if "MET" in data.columns:
+        cols.append("MET")
+    data_imputed = impute_missing(data[cols].astype("float"))
+
+    return data_imputed
 
 
 def _summarise(
     data,
+    data_imputed,
     labels,
     intensityDistribution=False,
     circadianMetrics=False,
@@ -68,6 +90,7 @@ def _summarise(
     """Overall summary stats for each activity type to summary dict
 
     :param pandas.DataFrame data: Pandas dataframe of epoch data
+    :param pandas.DataFrame data_adjusted: Pandas dataframe of epoch data with imputed missing values
     :param list(str) labels: Activity state labels
     :param dict summary: Output dictionary containing all summary metrics
     :param bool intensityDistribution: Add intensity outputs to dict <summary>
@@ -103,22 +126,17 @@ def _summarise(
     if intensityDistribution:
         summary = calculateECDF(data["acc"], summary)
 
-    # In the following, we resample, pad and impute the data so that we have a
-    # multiple of 24h for the stats calculations
     tStart, tEnd = data.index[0], data.index[-1]
-    cols = ["acc"] + labels
-    if "MET" in data.columns:
-        cols.append("MET")
-    data = imputeMissing(data[cols].astype("float"))
 
     # Overall stats (no padding, i.e. only within recording period)
-    toScreen("=== Calculating overall statistics ===", verbose)
-    overallStats = data[tStart:tEnd].apply(["mean", "std"])
+    to_screen("=== Calculating overall statistics ===", verbose)
+    overallStats = data_imputed[tStart:tEnd].apply(["mean", "std"])
     for col in overallStats:
         summary[f"{col}-overall-avg"] = overallStats[col].loc["mean"]
         summary[f"{col}-overall-sd"] = overallStats[col].loc["std"]
 
-    dayOfWeekStats = data.groupby([data.index.weekday, data.index.hour]).mean()
+    dayOfWeekStats = data_imputed.groupby([data_imputed.index.weekday, 
+                                           data_imputed.index.hour]).mean()
     dayOfWeekStats.index = dayOfWeekStats.index.set_levels(
         dayOfWeekStats.index.levels[0]
         .to_series()
@@ -170,133 +188,24 @@ def _summarise(
 
     # Calculate circadian metrics
     if circadianMetrics:
-        toScreen("=== Calculating circadian metrics ===", verbose)
-        summary = circadian.calculatePSD(data, epochPeriod, False, labels, summary)
-        summary = circadian.calculatePSD(data, epochPeriod, True, labels, summary)
+        to_screen("=== Calculating circadian metrics ===", verbose)
+        summary = circadian.calculatePSD(data_imputed, epochPeriod, False, labels, summary)
+        summary = circadian.calculatePSD(data_imputed, epochPeriod, True, labels, summary)
         summary = circadian.calculateFourierFreq(
-            data, epochPeriod, False, labels, summary
+            data_imputed, epochPeriod, False, labels, summary
         )
         summary = circadian.calculateFourierFreq(
-            data, epochPeriod, False, labels, summary
+            data_imputed, epochPeriod, True, labels, summary
         )
-        summary = circadian.calculateM10L5(data, epochPeriod, summary)
+        summary = circadian.calculateM10L5(data_imputed, epochPeriod, summary)
 
     return summary
 
 
-def imputeMissing(data, extrapolate=True):
-    """Impute missing/nonwear segments
-
-    Impute non-wear data segments using the average of similar time-of-day values
-    with one minute granularity on different days of the measurement. This
-    imputation accounts for potential wear time diurnal bias where, for example,
-    if the device was systematically less worn during sleep in an individual,
-    the crude average vector magnitude during wear time would be a biased
-    overestimate of the true average. See
-    https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0169649#sec013
-
-    :param pandas.DataFrame e: Pandas dataframe of epoch data
-    :param bool verbose: Print verbose output
-
-    :return: Update DataFrame <e> columns nan values with time-of-day imputation
-    :rtype: void
-    """
-
-    if extrapolate:
-        # padding at the boundaries to have full 24h
-        data = data.reindex(
-            pd.date_range(
-                data.index[0].floor("D"),
-                data.index[-1].ceil("D"),
-                freq=to_offset(pd.infer_freq(data.index)),
-                inclusive="left",
-                name="time",
-            ),
-            method="nearest",
-            tolerance=pd.Timedelta("1m"),
-            limit=1,
-        )
-
-    def fillna(subframe):
-        # Transform will first pass the subframe column-by-column as a Series.
-        # After passing all columns, it will pass the entire subframe again as a DataFrame.
-        # Processing the entire subframe is optional (return value can be omitted). See 'Notes' in transform doc.
-        if isinstance(subframe, pd.Series):
-            x = subframe.to_numpy()
-            nan = np.isnan(x)
-            nanlen = len(x[nan])
-            if 0 < nanlen < len(x):  # check x contains a NaN and is not all NaN
-                x[nan] = np.nanmean(x)
-                return x  # will be cast back to a Series automatically
-            else:
-                return subframe
-
-    data = (
-        data
-        # first attempt imputation using same day of week
-        .groupby([data.index.weekday, data.index.hour, data.index.minute])
-        .transform(fillna)
-        # then try within weekday/weekend
-        .groupby([data.index.weekday >= 5, data.index.hour, data.index.minute])
-        .transform(fillna)
-        # finally, use all other days
-        .groupby([data.index.hour, data.index.minute])
-        .transform(fillna)
-    )
-
-    return data
-
-
-def infer_freq(x):
-    """Like pd.infer_freq but more forgiving"""
-    freq, _ = stats.mode(np.diff(x), keepdims=False)
-    freq = pd.Timedelta(freq)
-    return freq
-
-
-def calculateECDF(x, summary):
-    """Calculate activity intensity empirical cumulative distribution
-
-    The input data must not be imputed, as ECDF requires different imputation
-    where nan/non-wear data segments are IMPUTED FOR EACH INTENSITY LEVEL. Here,
-    the average of similar time-of-day values is imputed with one minute
-    granularity on different days of the measurement. Following intensity levels
-    are calculated:
-    1mg bins from 1-20mg
-    5mg bins from 25-100mg
-    25mg bins from 125-500mg
-    100mg bins from 500-2000mg
-
-    :param pandas.DataFrame e: Pandas dataframe of epoch data
-    :param str inputCol: Column to calculate intensity distribution on
-    :param dict summary: Output dictionary containing all summary metrics
-
-    :return: Updated summary file
-    :rtype: dict
-    """
-
-    levels = np.concatenate(
-        [
-            np.linspace(1, 20, 20),  # 1mg bins from 1-20mg
-            np.linspace(25, 100, 16),  # 5mg bins from 25-100mg
-            np.linspace(125, 500, 16),  # 25mg bins from 125-500mg
-            np.linspace(600, 2000, 15),  # 100mg bins from 500-2000mg
-        ]
-    ).astype("int")
-
-    whrnan = x.isna().to_numpy()
-    ecdf = x.to_numpy().reshape(-1, 1) <= levels.reshape(1, -1)
-    ecdf[whrnan] = np.nan
-
-    ecdf = (
-        pd.DataFrame(ecdf, index=x.index, columns=levels)
-        .groupby([x.index.hour, x.index.minute])
-        .mean()  # first average is across same time of day
-        .mean()  # second average is within each level
-    )
-
-    # Write to summary
-    for level, val in ecdf.items():
-        summary[f"{x.name}-ecdf-{level}mg"] = val
-
-    return summary
+def _daily_summary(data, data_imputed, labels, verbose=False):
+    to_screen("=== Daily summary ===", verbose)
+    daily_enmo = summarize_daily_enmo(data["acc"], data_imputed["acc"])
+    daily_activity = summarize_daily_activity(data[labels], data_imputed[labels], labels)
+    daily_summary = pd.concat([daily_enmo, daily_activity], axis=1)
+    daily_summary.index.name = "Date"
+    return daily_summary

@@ -18,7 +18,8 @@ from actinet import __classifier_version__
 from actinet import __classifier_md5__
 from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
-from actinet.summarisation import getActivitySummary
+from actinet.summarisation import get_activity_summary
+from actinet.utils.summary_utils import calculate_daily_wear_stats
 from actinet.utils.utils import infer_freq, drop_first_last_days, flag_wear_below_days, calculate_wear_stats
 
 BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/models/actinet/"
@@ -173,7 +174,7 @@ def main():
         args.csv_start_row-1,  # -1 to convert to zero-based index
         args.csv_date_format,
         args.calibration_stdtol_min,
-        resample_hz=None,
+        resample_hz="uniform",
         sample_rate=args.sample_rate,
         verbose=verbose,
     )
@@ -189,6 +190,8 @@ def main():
    
     # Update wear time stats after exclusions
     info.update(calculate_wear_stats(data))
+
+    daily_wear_stats = calculate_daily_wear_stats(data)
 
     # Output paths
     basename = resolve_path(args.filepath)[1]
@@ -262,7 +265,8 @@ def main():
             print("Output plot written to:", plotFile)
 
     # Summary
-    summary = getActivitySummary(Y, list(classifier.labels), True, True, verbose)
+    summary, daily_summary = get_activity_summary(Y, list(classifier.labels), 
+                                                  True, True, verbose)
 
     # Join the actipy processing info, with acitivity summary data
     outputSummary = {**summary, **info}
@@ -273,6 +277,11 @@ def main():
 
     if verbose:
         print("Output summary written to:", outputSummaryFile)
+
+    daily_summary = pd.concat([daily_wear_stats, daily_summary], axis=1)
+
+    daily_summary.insert(0, 'Filename', info['Filename'])  # add filename for reference
+    daily_summary.to_csv(f"{outdir}/{basename}-Daily.csv.gz")
 
     # Print
     if verbose:
