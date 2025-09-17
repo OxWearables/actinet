@@ -7,14 +7,17 @@ from scipy.interpolate import interp1d
 from typing import Union
 
 
-def infer_freq(x):
+def infer_freq(t):
     """Like pd.infer_freq but more forgiving"""
-    freq, _ = stats.mode(np.diff(x), keepdims=False)
+    tdiff = t.to_series().diff()
+    q1, q3 = tdiff.quantile([0.25, 0.75])
+    tdiff = tdiff[(q1 <= tdiff) & (tdiff <= q3)]
+    freq = tdiff.mean()
     freq = pd.Timedelta(freq)
     return freq
 
 
-def toScreen(msg, verbose=True):
+def to_screen(msg, verbose=True):
     """
     Print msg str prepended with current time
 
