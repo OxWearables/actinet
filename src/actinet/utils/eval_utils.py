@@ -7,16 +7,9 @@ import os
 from scipy import stats
 from sklearn.metrics import accuracy_score, f1_score, cohen_kappa_score, balanced_accuracy_score, confusion_matrix
 import warnings
-
 warnings.simplefilter("ignore", UserWarning)
 
-ACTIVITY_LABELS_DICT = {
-    'sleep': 'Sleep',
-    'sedentary': 'Sedentary Behaviour',
-    'light': 'Light Activity',
-    'moderate-vigorous': 'Moderate-Vigorous Activity'
-}
-ACTIVITY_LABELS = list(ACTIVITY_LABELS_DICT.keys())
+from actinet.utils.utils import ACTIVITY_LABELS_DICT, ACTIVITY_LABELS
 
 
 class DivDict(dict):
