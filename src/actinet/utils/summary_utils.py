@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import numpy as np
-from actinet.utils.utils import infer_freq
+from actinet.utils.utils import infer_freq, ACTIVITY_LABELS_DICT
 
 
 def impute_missing(data, extrapolate=True):
@@ -203,10 +203,10 @@ def summarize_daily_activity(data: pd.DataFrame, data_adjusted: pd.DataFrame,
 
     daily = data.resample('D')\
                 .agg(_total_hrs, min_wear=min_wear_per_day, dt=dt)\
-                .rename(columns={label: f"{label.capitalize()}(hours)" for label in labels})
+                .rename(columns={label: f"{ACTIVITY_LABELS_DICT[label]}(hours)" for label in labels})
     daily_adj = data_adjusted.resample('D')\
                              .agg(_total_hrs, min_wear=min_wear_per_day, dt=dt)\
-                             .rename(columns={label: f"{label.capitalize()} Adjusted(hours)"
+                             .rename(columns={label: f"{ACTIVITY_LABELS_DICT[label]} Adjusted(hours)"
                                                 for label in labels})
 
     summary = pd.concat([daily, daily_adj], axis=1)

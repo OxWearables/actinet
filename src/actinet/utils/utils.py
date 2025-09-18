@@ -2,9 +2,17 @@ import datetime
 import re
 import numpy as np
 import pandas as pd
-from scipy import stats
 from scipy.interpolate import interp1d
 from typing import Union
+
+
+ACTIVITY_LABELS_DICT = {
+    'sleep': 'Sleep',
+    'sedentary': 'Sedentary Behaviour',
+    'light': 'Light Activity',
+    'moderate-vigorous': 'Moderate-Vigorous Activity'
+}
+ACTIVITY_LABELS = list(ACTIVITY_LABELS_DICT.keys())
 
 
 def infer_freq(t):
