@@ -265,7 +265,7 @@ def main():
             print("Output plot written to:", plotFile)
 
     # Summary
-    summary, daily_summary = get_activity_summary(Y, list(classifier.labels), 
+    summary, daily_summary = get_activity_summary(Y, list(classifier.labels), args.exclude_wear_below,
                                                   True, True, verbose)
 
     # Join the actipy processing info, with acitivity summary data
