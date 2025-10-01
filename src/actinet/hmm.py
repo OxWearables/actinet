@@ -2,8 +2,8 @@ import numpy as np
 import os
 import pandas as pd
 
-from actinet.utils.sleep_utils import (add_sleep_sedentary_transitions, 
-    HMM_SLEEP_CODE, HMM_SEDENTARY_CODE, HMM_LIGHT_CODE, HMM_MVPA_CODE)
+from actinet.utils.sleep_utils import add_sleep_sedentary_transitions 
+#    HMM_SLEEP_CODE, HMM_SEDENTARY_CODE, HMM_LIGHT_CODE, HMM_MVPA_CODE)
 
 
 class HMM:
@@ -180,14 +180,17 @@ class HMM:
         self.ignore_transition_gaps = d["ignore_transition_gaps"]
         self.handle_sleep_transitions = d["handle_sleep_transitions"]
 
-    def display(self, precision=3):
+    def display(self, labels, precision=3):
         """
         Print the model parameters in a readable format.
 
+        :param labels: List of label names in expected order
+        :type labels: list/dict
         :param precision: Number of decimal places to print
         :type precision: int
         """
-        pretty_hmm_params(self, precision=precision)
+
+        pretty_hmm_params(self, labels, precision)
 
 
 def check_for_input_errors(Y, T, interval, groups=None, ignore_transition_gaps=False, handle_sleep_transitions=False):
@@ -239,7 +242,7 @@ def calculate_transition_matrix(Y, groups=None, t=None, interval=None,
     else:
         df = df[(-pd.Series(t).diff(periods=-1) == pd.Timedelta(seconds=interval))]
 
-    # corret sleep transitions if required
+    # correct sleep transitions if required
     if handle_sleep_transitions:
         df = add_sleep_sedentary_transitions(df)
 
@@ -257,6 +260,13 @@ def calculate_transition_matrix(Y, groups=None, t=None, interval=None,
 
     return trans_mat
 
+
+def get_activity_label_code(label, labels):
+    try:
+        return list(sorted(labels)).index(label)
+    except ValueError:
+        raise ValueError(f"Label '{label}' not recognised. Must be one of {list(sorted(labels))}.")
+    
 
 def print_array(arr, precision=3):
     """Prints all elements of a NumPy array to N decimal places."""
@@ -282,10 +292,18 @@ def reorder_matrix(data, index_order):
         raise ValueError("Input must be a 1D or 2D array.")
 
 
-def pretty_hmm_params(hmm: HMM, index_order=[HMM_SLEEP_CODE, HMM_SEDENTARY_CODE, HMM_LIGHT_CODE, HMM_MVPA_CODE], precision=3):
-    """Print the HMM parameters in a readable format, reordering them according to the provided index order."""
+def pretty_hmm_params(hmm: HMM, labels, precision=3):
+    """Print the HMM parameters in a readable format, reordering them according to the provided labels."""
 
-    print("HMM Parameters ordered sleep, sedentary, light, MVPA:\n")
+    if isinstance(labels, dict):
+        labels = list(labels.keys())
+
+    elif not isinstance(labels, list):
+        raise ValueError("labels must be a list or dict")
+
+    index_order = [get_activity_label_code(label, labels) for label in labels]
+
+    print(f"HMM Parameters ordered {', '.join(labels)}:\n")
 
     print("Prior:")
     prior = reorder_matrix(hmm.prior, index_order)

@@ -197,10 +197,6 @@ def load_all_and_make_windows(
     P = np.hstack(P)
 
     if out_dir:
-        out_path = os.path.join(
-            out_dir, f"prepared/downsampling_{downsampling_method}_lowpass_{lowpass_hz}"
-        )
-
         info = {
             "sample_rate": sample_rate,
             "winsec": winsec,
@@ -211,13 +207,13 @@ def load_all_and_make_windows(
         }
 
         # Save arrays for future use
-        os.makedirs(out_path, exist_ok=True)
-        np.save(f"{out_path}/X.npy", X)
-        np.save(f"{out_path}/Y.npy", Y)
-        np.save(f"{out_path}/T.npy", T)
-        np.save(f"{out_path}/pid.npy", P)
+        os.makedirs(out_dir, exist_ok=True)
+        np.save(f"{out_dir}/X.npy", X)
+        np.save(f"{out_dir}/Y.npy", Y)
+        np.save(f"{out_dir}/T.npy", T)
+        np.save(f"{out_dir}/pid.npy", P)
 
-        with open(f"{out_path}/info.json", "w") as f:
+        with open(f"{out_dir}/info.json", "w") as f:
             json.dump(info, f, indent=4)
 
     return X, Y, T, P

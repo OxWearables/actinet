@@ -1,9 +1,7 @@
 """Module to generate overall activity summary from epoch data."""
 
-import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
-import scipy.stats as stats
 
 from actinet.utils.utils import date_parser, to_screen
 from actinet.utils.summary_utils import *
