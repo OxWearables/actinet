@@ -13,6 +13,7 @@ from actinet import circadian
 def get_activity_summary(
     data,
     labels,
+    exclude_daily_wear_below=None,
     intensityDistribution=False,
     circadianMetrics=False,
     verbose=True,
@@ -27,6 +28,7 @@ def get_activity_summary(
 
     :param str data: Input csv.gz file or pandas dataframe of processed epoch data
     :param list(str) labels: Activity state labels
+    :param str exclude_daily_wear_below: Exclude days with wear time below this threshold
     :param bool intensityDistribution: Add intensity outputs to dict <summary>
     :param bool circadianMetrics: Add circadian rhythm metrics to dict <summary>
     :param bool verbose: Print verbose output
@@ -59,7 +61,7 @@ def get_activity_summary(
     )
 
     # Daily summaries
-    daily_summary = _daily_summary(data, data_imputed, labels, verbose)
+    daily_summary = _daily_summary(data, data_imputed, labels, exclude_daily_wear_below,verbose)
 
     # Return physical activity summaries
     return summary, daily_summary
@@ -202,10 +204,15 @@ def _summarise(
     return summary
 
 
-def _daily_summary(data, data_imputed, labels, verbose=False):
+def _daily_summary(data, data_imputed, labels, exclude_daily_wear_below, verbose=False):
     to_screen("=== Daily summary ===", verbose)
-    daily_enmo = summarize_daily_enmo(data["acc"], data_imputed["acc"])
-    daily_activity = summarize_daily_activity(data[labels], data_imputed[labels], labels)
+
+    min_wear_per_day = 0 if exclude_daily_wear_below is None \
+        else pd.Timedelta(exclude_daily_wear_below).total_seconds() / 60 # in minutes
+    
+    daily_enmo = summarize_daily_enmo(data["acc"], data_imputed["acc"], min_wear_per_day)
+    daily_activity = summarize_daily_activity(data[labels], data_imputed[labels], labels, min_wear_per_day)
     daily_summary = pd.concat([daily_enmo, daily_activity], axis=1)
     daily_summary.index.name = "Date"
+    
     return daily_summary
