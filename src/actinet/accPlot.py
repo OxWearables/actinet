@@ -24,12 +24,12 @@ LABELS_AND_COLORS = {
     "sedentary": "red",
     "vehicle": "saddlebrown",
     "light": "darkorange",
-    "mixed": "seagreen",
-    "walking": "limegreen",
+    "mixed": "darkorange",
+    "walking": "green",
     "moderate-vigorous": "green",
     "moderate": "green",
     "vigorous": "springgreen",
-    "bicycling": "springgreen",
+    "bicycling": "yellow",
     "tasks-light": "darkorange",
     "SB": "red",  # sedentary behaviour
     "LPA": "darkorange",  # light physical activity
