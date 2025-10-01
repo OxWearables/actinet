@@ -4,8 +4,8 @@ import pandas as pd
 SLEEP_GAP_TOLERANCE = 30 * 60  # 30 minutes
 SLEEP_BLOCK_PERIOD = 24 * 60 * 60  # 24 hours
 
-HMM_LIGHT_CODE = 0
-HMM_MVPA_CODE = 1
+# HMM_LIGHT_CODE = 0
+# HMM_MVPA_CODE = 1
 HMM_SEDENTARY_CODE = 2
 HMM_SLEEP_CODE = 3
 
@@ -25,11 +25,14 @@ def removeSpuriousSleep(Y, labels, period, sleepTol='1H', removeNaps=False):
     """
     label_map = {label: i for i, label in enumerate(labels)}
 
+    if not sleepTol and not removeNaps:
+        return Y
+
     try:
         sleep_code = label_map['sleep']
-        sedentary_code = label_map['sedentary']
+        sedentary_code = label_map['sedentary'] if 'sedentary' in labels else label_map['sit-stand']
     except KeyError:
-        raise ValueError(f"'sleep' and 'sedentary' must be output labels for spurious sleep correction.")
+        raise ValueError(f"'sleep' and 'sedentary' or 'sit-stand' must be output labels for spurious sleep correction.")
 
     if sleepTol:
         Y = convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol)

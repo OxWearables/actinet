@@ -7,12 +7,26 @@ from typing import Union
 
 
 ACTIVITY_LABELS_DICT = {
-    'sleep': 'Sleep',
-    'sedentary': 'Sedentary Behaviour',
-    'light': 'Light Activity',
-    'moderate-vigorous': 'Moderate-Vigorous Activity'
+    'Walmsley2020': {
+        'sleep': 'Sleep',
+        'sedentary': 'Sedentary Behaviour',
+        'light': 'Light Activity',
+        'moderate-vigorous': 'Moderate-Vigorous Activity'
+    },
+    'Willetts2018': {
+        'sleep': 'Sleep',
+        'sit-stand': 'Sit/Stand',
+        'vehicle': 'Vehicle',
+        'walking': 'Walking',
+        'mixed': 'Mixed Activity',
+        'bicycling': 'Bicycling'
+    }
 }
-ACTIVITY_LABELS = list(ACTIVITY_LABELS_DICT.keys())
+# ACTIVITY_LABELS = list(ACTIVITY_LABELS_DICT.keys())
+# ACTIVITY_CODES_DICT = {label: i for i, label in enumerate(sorted(ACTIVITY_LABELS))}
+
+
+
 
 
 def infer_freq(t):
