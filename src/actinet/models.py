@@ -191,7 +191,7 @@ class ActivityClassifier:
 
         return self
 
-    def predict_from_frame(self, data, sample_freq, hmm_smothing=True, sleep_tolerance=None, remove_naps=True):
+    def predict_from_frame(self, data, sample_freq, hmm_smothing=True, sleep_tolerance=None, remove_naps=False):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
