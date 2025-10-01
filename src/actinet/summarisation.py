@@ -61,7 +61,7 @@ def get_activity_summary(
     )
 
     # Daily summaries
-    daily_summary = _daily_summary(data, data_imputed, labels, exclude_daily_wear_below,verbose)
+    daily_summary = _daily_summary(data, data_imputed, labels, exclude_daily_wear_below, verbose)
 
     # Return physical activity summaries
     return summary, daily_summary
@@ -214,5 +214,5 @@ def _daily_summary(data, data_imputed, labels, exclude_daily_wear_below, verbose
     daily_activity = summarize_daily_activity(data[labels], data_imputed[labels], labels, min_wear_per_day)
     daily_summary = pd.concat([daily_enmo, daily_activity], axis=1)
     daily_summary.index.name = "Date"
-    
+
     return daily_summary
