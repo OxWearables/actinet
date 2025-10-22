@@ -276,7 +276,7 @@ def extract_accelerometer_features(n_jobs):
     )
 
 
-def prepare_participant_accelerometer_data(pid, annotations_file, verbose=False):
+def prepare_participant_accelerometer_data(pid, annotations_file, anno_label, verbose=False):
     raw_file_name = f"data/capture24/P{pid:03}.csv.gz"
     features_file_name = f"data/capture24/bbaa/P{pid:03}-epoch.csv.gz"
 
@@ -299,7 +299,7 @@ def prepare_participant_accelerometer_data(pid, annotations_file, verbose=False)
     Y, T = make_labels(
         raw_file,
         pd.read_csv(annotations_file, index_col="annotation", dtype="string"),
-        "Walmsley2020",
+        anno_label,
     )
 
     features = (
@@ -324,11 +324,11 @@ def prepare_participant_accelerometer_data(pid, annotations_file, verbose=False)
     return X, Y, T, P
 
 
-def prepare_accelerometer_data(annotation_file, out_dir, n_jobs):
+def prepare_accelerometer_data(annotation_file, anno_label, out_dir, n_jobs):
     X, Y, T, P = zip(
         *Parallel(n_jobs=n_jobs)(
             delayed(prepare_participant_accelerometer_data)(
-                file_number, annotation_file
+                file_number, annotation_file, anno_label
             )
             for file_number in tqdm(range(1, 152))
         )
@@ -340,7 +340,7 @@ def prepare_accelerometer_data(annotation_file, out_dir, n_jobs):
     P = np.hstack(P)
 
     if out_dir:
-        out_path = os.path.join(out_dir, f"prepared/accelerometer")
+        out_path = os.path.join(out_dir, f"prepared/{anno_label}")
         # Save arrays for future use
         os.makedirs(out_path, exist_ok=True)
         np.save(f"{out_path}/X.npy", X)
