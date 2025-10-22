@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score, f1_score, cohen_kappa_score, balance
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 
-from actinet.utils.utils import ACTIVITY_LABELS_DICT, ACTIVITY_LABELS
+from actinet.utils.utils import ACTIVITY_LABELS_DICT
 
 
 class DivDict(dict):
@@ -29,9 +29,11 @@ def calculate_metrics(y_true, y_pred):
     return accuracy, f1, kappa, bacc
 
 
-def plot_confusion_matrix(y_true, y_pred, title="", ax=None, figsize=(8, 8), fontsize=20):
+def plot_confusion_matrix(y_true, y_pred, activity_labels, title="", ax=None, figsize=(8, 8), fontsize=20):
     """Plots a confusion matrix with heatmap annotations."""
-    cm = confusion_matrix(y_true, y_pred, labels=ACTIVITY_LABELS)
+
+
+    cm = confusion_matrix(y_true, y_pred, labels=activity_labels)
     cm_norm = cm.astype('float') / cm.sum(axis=1, keepdims=True)
     
     annotations = np.array([[f'{p:.3f}\n({n:,})' for p, n in zip(row_norm, row)] for row_norm, row in zip(cm_norm, cm)])
@@ -45,10 +47,10 @@ def plot_confusion_matrix(y_true, y_pred, title="", ax=None, figsize=(8, 8), fon
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
 
-    ax.set_xticks(np.arange(len(ACTIVITY_LABELS)) + 0.5)
-    ax.set_yticks(np.arange(len(ACTIVITY_LABELS)) + 0.5)
-    ax.set_xticklabels(ACTIVITY_LABELS, fontsize=fontsize*0.8)
-    ax.set_yticklabels(ACTIVITY_LABELS, fontsize=fontsize*0.8)
+    ax.set_xticks(np.arange(len(activity_labels)) + 0.5)
+    ax.set_yticks(np.arange(len(activity_labels)) + 0.5)
+    ax.set_xticklabels(activity_labels, fontsize=fontsize*0.8)
+    ax.set_yticklabels(activity_labels, fontsize=fontsize*0.8)
 
 
 def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
@@ -77,7 +79,7 @@ def plot_and_save_fig(fig, save_path=None):
         fig.savefig(save_path, format='pdf', dpi=800, bbox_inches='tight')
 
 
-def generate_confusion_matrices(results_df, group_by=None, save_path=None, fontsize=20):
+def generate_confusion_matrices(results_df, activity_labels, group_by=None, save_path=None, fontsize=20):
     """Generates and plots confusion matrices for different subgroups.""" 
     if group_by is None:  # Full population
         fig, axs = plt.subplots(1, 2, sharey=True, figsize=(12, 6), dpi=800)
@@ -86,8 +88,8 @@ def generate_confusion_matrices(results_df, group_by=None, save_path=None, fonts
         
         y_true_bbaa, y_pred_bbaa, y_true_actinet, y_pred_actinet, _ = build_confusion_matrix_data(results_df)
         
-        plot_confusion_matrix(y_true_bbaa, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=fontsize*0.8)
-        plot_confusion_matrix(y_true_actinet, y_pred_actinet, 'actinet', ax=axs[1], fontsize=fontsize*0.8)
+        plot_confusion_matrix(y_true_bbaa, y_pred_bbaa, activity_labels, 'Baseline', ax=axs[0], fontsize=fontsize*0.8)
+        plot_confusion_matrix(y_true_actinet, y_pred_actinet, activity_labels, 'ActiNet', ax=axs[1], fontsize=fontsize*0.8)
         fig.tight_layout()
         plot_and_save_fig(fig, save_path)
     
@@ -106,9 +108,9 @@ def generate_confusion_matrices(results_df, group_by=None, save_path=None, fonts
             subfig.suptitle(f"{group_by}: {group} (n = {population})", fontsize=fontsize*0.9)
             axs = subfig.subplots(nrows=1, ncols=2, sharey=True)
 
-            plot_confusion_matrix(y_true_bbaa, y_pred_bbaa, 'accelerometer', ax=axs[0], fontsize=fontsize*0.8)
-            plot_confusion_matrix(y_true_actinet, y_pred_actinet, 'actinet', ax=axs[1], fontsize=fontsize*0.8)
-        
+            plot_confusion_matrix(y_true_bbaa, y_pred_bbaa, activity_labels, 'Baseline', ax=axs[0], fontsize=fontsize*0.8)
+            plot_confusion_matrix(y_true_actinet, y_pred_actinet, activity_labels, 'ActiNet', ax=axs[1], fontsize=fontsize*0.8)
+
         plot_and_save_fig(fig, save_path)
 
 
@@ -204,7 +206,7 @@ def extract_activity_predictions(results: pd.DataFrame, activity, age_band=None,
         return activity_bbaa_pred, activity_actinet_pred, population
 
 
-def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
+def bland_altman_plot(col1, col2, plot_label: str, anno_label: str, output_dir='',
                       col1_label='Baseline', col2_label='ActiNet',
                       display_plot=False, show_y_label=False, ax=None, fontsize=20):
     """Generates a Bland-Altman plot for two columns of data."""
@@ -228,8 +230,8 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
     ax.text(0.8 * max(mean_vals), mean_diff, f'Mean Diff = {mean_diff:.2f}', va='bottom', color='red', fontsize=fontsize*0.8)
     ax.text(0.8 * max(mean_vals), lower_loa, f'Lower LoA = {lower_loa:.2f}', va='bottom', color='blue', fontsize=fontsize*0.8)
     ax.text(0.8 * max(mean_vals), upper_loa, f'Upper LoA = {upper_loa:.2f}', va='bottom', color='blue', fontsize=fontsize*0.8)
-    
-    ax.set_title(f'{ACTIVITY_LABELS_DICT[plot_label]} [hours]\nPearson correlation: {pearson_cor:.3f}', fontsize=fontsize)
+
+    ax.set_title(f'{ACTIVITY_LABELS_DICT[anno_label][plot_label]} [hours]\nPearson correlation: {pearson_cor:.3f}', fontsize=fontsize)
 
     ax.set_xlabel(f'({col2_label} + {col1_label}) / 2', fontsize=fontsize*0.9)
     
@@ -248,7 +250,7 @@ def bland_altman_plot(col1, col2, plot_label: str, output_dir='',
         plt.close()
 
 
-def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, group_by=None, save_path=None, 
+def generate_bland_altman_plots(results_df, activities, anno_label, group_by=None, save_path=None, 
                                 fontsize=20, compare_to_true=False, subset=""):
     """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
     if group_by is None:  # Full population
@@ -260,15 +262,15 @@ def generate_bland_altman_plots(results_df, activities=ACTIVITY_LABELS, group_by
                  extract_activity_predictions(results_df, activity, return_true_labels=True)
             
             if compare_to_true=='bbaa':
-                bland_altman_plot(activity_bbaa_true, activity_bbaa_pred, activity,
+                bland_altman_plot(activity_bbaa_true, activity_bbaa_pred, activity, anno_label,
                                   ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
                                   col1_label='Ground Truth', col2_label='Baseline')
             elif compare_to_true=='actinet':
-                bland_altman_plot(activity_actinet_true, activity_actinet_pred, activity,
+                bland_altman_plot(activity_actinet_true, activity_actinet_pred, activity, anno_label,
                                   ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
                                   col1_label='Ground Truth', col2_label='ActiNet')
             elif compare_to_true is False:
-                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
+                bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity, anno_label,
                                   ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
                                   col1_label='Baseline', col2_label='ActiNet')
             else:
@@ -329,7 +331,7 @@ def build_pvalue_cell(true_values, pred_values):
     return f"{p_value:.3f}"
 
 
-def build_mae_table(df: pd.DataFrame, activities=ACTIVITY_LABELS):
+def build_mae_table(df: pd.DataFrame, activities):
     df_maes = pd.DataFrame(columns=activities, index=['Baseline', 'ActiNet', 'p-value'], dtype=float)
     for activity in activities:
         activity_bbaa_pred, activity_actinet_pred, activity_bbaa_true, activity_actinet_true, _ =\
@@ -340,7 +342,7 @@ def build_mae_table(df: pd.DataFrame, activities=ACTIVITY_LABELS):
     return df_maes
 
 
-def plot_errors(df: pd.DataFrame, activities=ACTIVITY_LABELS, group_by=None, save_path=None, fontsize=12):
+def plot_errors(df: pd.DataFrame, activities, anno_label, group_by=None, save_path=None, fontsize=12):
     if group_by is None:
         all_errors = []
 
@@ -352,10 +354,10 @@ def plot_errors(df: pd.DataFrame, activities=ACTIVITY_LABELS, group_by=None, sav
             actinet_errors = activity_actinet_pred - activity_actinet_true
 
             for err in bbaa_errors:
-                all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                all_errors.append({'Activity': ACTIVITY_LABELS_DICT[anno_label][activity],
                                    'Error': err, 'Model': 'Baseline'})
             for err in actinet_errors:
-                all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                all_errors.append({'Activity': ACTIVITY_LABELS_DICT[anno_label][activity],
                                    'Error': err, 'Model': 'ActiNet'})
 
         error_df = pd.DataFrame(all_errors)
@@ -398,10 +400,10 @@ def plot_errors(df: pd.DataFrame, activities=ACTIVITY_LABELS, group_by=None, sav
                 actinet_errors = activity_actinet_pred - activity_actinet_true
 
                 for err in bbaa_errors:
-                    all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                    all_errors.append({'Activity': ACTIVITY_LABELS_DICT[anno_label][activity],
                                        'Error': err, 'Model': 'Baseline'})
                 for err in actinet_errors:
-                    all_errors.append({'Activity': ACTIVITY_LABELS_DICT[activity],
+                    all_errors.append({'Activity': ACTIVITY_LABELS_DICT[anno_label][activity],
                                        'Error': err, 'Model': 'ActiNet'})
 
             error_df = pd.DataFrame(all_errors)
