@@ -180,8 +180,18 @@ If Java errors occur, try explicitly setting OpenJDK version 8:
     conda create -n actinet openjdk=8
 
 
-Training a bespoke model
-========================
+Choice of activity classifier
+=============================
+
+By default, the ActiNet tool uses the "walmsley" activity classifier,
+trained on the Walmsley2020 annotations for labels activity intensity.
+To instead use the "willetts" activity classifier, using the Willetts2018
+annotations for labels for activities of daily living, you can specify it
+using the `--classifier` or '-c' argument:
+
+.. code-block:: console
+
+    actinet data/sample.cwa -c willetts
 
 It is also possible to train a bespoke activity classification model.
 This requires a labelled dataset of accelerometer data. To do so,

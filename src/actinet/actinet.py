@@ -41,8 +41,8 @@ def main():
     parser.add_argument(
         "--classifier",
         "-c",
-        help="Enter custom activity classifier file to use. Default: None (use latest classifier trained on Walmsley annotations of activity intensity).",
-        default=None,
+        help="Enter custom activity classifier file to use. Default: walmsley (Walmsley2020 annotations of activity intensity).",
+        default="walmsley",
     )
     parser.add_argument(
         "--no-hmm",
@@ -398,8 +398,6 @@ def load_classifier(
     verbose=True,
 ):
     """Load trained classifier. Download if not exists."""
-
-    classifier = classifier or "walmsley" # Set default classifier to walmsley
 
     if classifier in __classifiers__.keys():
         classifier_version = __classifiers__[classifier]['version']
