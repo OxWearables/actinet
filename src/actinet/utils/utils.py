@@ -22,11 +22,6 @@ ACTIVITY_LABELS_DICT = {
         'bicycling': 'Bicycling'
     }
 }
-# ACTIVITY_LABELS = list(ACTIVITY_LABELS_DICT.keys())
-# ACTIVITY_CODES_DICT = {label: i for i, label in enumerate(sorted(ACTIVITY_LABELS))}
-
-
-
 
 
 def infer_freq(t):
