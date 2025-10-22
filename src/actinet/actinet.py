@@ -14,8 +14,7 @@ import sys
 import actipy
 
 from actinet import __version__
-from actinet import __classifier_version__
-from actinet import __classifier_md5__
+from actinet import __classifiers__
 from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
 from actinet.summarisation import get_activity_summary
@@ -40,9 +39,9 @@ def main():
         default="outputs/",
     )
     parser.add_argument(
-        "--classifier-path",
+        "--classifier",
         "-c",
-        help="Enter custom acitivty classifier file to use",
+        help="Enter custom activity classifier file to use. Default: None (use latest classifier trained on Walmsley annotations of activity intensity).",
         default=None,
     )
     parser.add_argument(
@@ -140,21 +139,16 @@ def main():
 
     verbose = not args.quiet
 
-    classifier_path = (
-        pathlib.Path(__file__).parent / f"{__classifier_version__}.joblib.lzma"
-    )
-
     if args.cache_classifier:
         load_classifier(
-            classifier_path=classifier_path,
+            classifier=args.classifier,
             model_repo_path=None,
-            check_md5=True,
             force_download=True,
             verbose=verbose,
         )
 
         after = time.time()
-        print(f"Done! ({round(after - before,2)}s)")
+        print(f"Done! ({round(after - before, 2)}s)")
 
         return
 
@@ -231,11 +225,9 @@ def main():
     if verbose:
         print("Loading classifier...")
 
-    check_md5 = args.classifier_path is None
     classifier: ActivityClassifier = load_classifier(
-        args.classifier_path or classifier_path,
+        args.classifier,
         args.model_repo_path,
-        check_md5,
         args.force_download,
         verbose
     )
@@ -400,33 +392,43 @@ def resolve_path(path):
 
 
 def load_classifier(
-    classifier_path,
+    classifier,
     model_repo_path=None,
-    check_md5=True,
     force_download=False,
     verbose=True,
 ):
     """Load trained classifier. Download if not exists."""
 
-    pth = pathlib.Path(classifier_path)
+    classifier = classifier or "walmsley" # Set default classifier to walmsley
 
-    if force_download or not pth.exists():
+    if classifier in __classifiers__.keys():
+        classifier_version = __classifiers__[classifier]['version']
+        classifier_md5 = __classifiers__[classifier]['md5']
 
-        url = f"{BASE_URL}{__classifier_version__}.joblib.lzma"
+    else:
+        classifier_version = classifier
+        classifier_md5 = None
+
+    classifier_path = pathlib.Path(__file__).parent / f"{classifier_version}.joblib.lzma"
+
+    if force_download or not classifier_path.exists():
+        url = f"{BASE_URL}{classifier_version}.joblib.lzma"
 
         if verbose:
             print(f"Downloading {url}...")
 
-        with urllib.request.urlopen(url) as f_src, open(pth, "wb") as f_dst:
+        with urllib.request.urlopen(url) as f_src, open(classifier_path, "wb") as f_dst:
             shutil.copyfileobj(f_src, f_dst)
 
-    if check_md5:
-        assert md5(pth) == __classifier_md5__, (
-            "Classifier file is corrupted. Please run with --force-download "
-            "to download the model file again."
-        )
+        if classifier_md5:
+            digest = md5(classifier_path)
+            if digest != classifier_md5:
+                raise ValueError(
+                    "Classifier file is corrupted. "
+                    "Run again with --force-download to redownload."
+                )
 
-    classifier: ActivityClassifier = joblib.load(pth)
+    classifier: ActivityClassifier = joblib.load(classifier_path)
 
     if model_repo_path and pathlib.Path(model_repo_path).exists() and verbose:
         print(f"Loading model repository from {model_repo_path}.")
