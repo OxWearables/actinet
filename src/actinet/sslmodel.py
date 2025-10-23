@@ -63,6 +63,25 @@ class RotationAxis:
         return sample
 
 
+class RandomDecimation:
+    """
+    Randomly decimate the input along the time axis
+    """
+
+    def __call__(self, sample):
+        decimation_factor = random.randint(1, 3)
+        T = sample.shape[1]
+        sample = sample[:, ::decimation_factor]
+        
+        sample = torch.nn.functional.interpolate(
+            sample.unsqueeze(0),
+            size=T,
+            mode="linear",
+            align_corners=False,
+        ).squeeze(0)
+        return sample
+
+
 class NormalDataset(Dataset):
     def __init__(
         self, X, y=None, pid=None, augmentation=False, transpose_channels_first=True
@@ -82,7 +101,7 @@ class NormalDataset(Dataset):
         self.pid = pid
 
         if augmentation:
-            self.transform = transforms.Compose([RandomSwitchAxis(), RotationAxis()])
+            self.transform = transforms.Compose([RandomSwitchAxis(), RotationAxis(), RandomDecimation()])
         else:
             self.transform = None
 
