@@ -70,14 +70,15 @@ class RandomDecimation:
 
     def __call__(self, sample):
         decimation_factor = random.randint(1, 3)
-        sample = sample[::decimation_factor, :]
-        # Upsample back to original size
+        T = sample.shape[1]
+        sample = sample[:, ::decimation_factor]
+        
         sample = torch.nn.functional.interpolate(
-            sample.unsqueeze(0).permute(0, 2, 1),
-            size=sample.shape[0] * decimation_factor,
+            sample.unsqueeze(0),
+            size=T,
             mode="linear",
             align_corners=False,
-        ).squeeze(0).permute(1, 0)
+        ).squeeze(0)
         return sample
 
 
