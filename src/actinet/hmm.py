@@ -2,8 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 
-from actinet.utils.sleep_utils import add_sleep_sedentary_transitions 
-#    HMM_SLEEP_CODE, HMM_SEDENTARY_CODE, HMM_LIGHT_CODE, HMM_MVPA_CODE)
+from actinet.utils.sleep_utils import add_sleep_sedentary_transitions
 
 
 class HMM:

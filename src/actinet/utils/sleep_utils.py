@@ -4,8 +4,6 @@ import pandas as pd
 SLEEP_GAP_TOLERANCE = 30 * 60  # 30 minutes
 SLEEP_BLOCK_PERIOD = 24 * 60 * 60  # 24 hours
 
-# HMM_LIGHT_CODE = 0
-# HMM_MVPA_CODE = 1
 HMM_SEDENTARY_CODE = 2
 HMM_SLEEP_CODE = 3
 
