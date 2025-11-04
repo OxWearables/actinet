@@ -308,8 +308,11 @@ def read(
     resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
 ):
     p = pathlib.Path(filepath)
-    ftype = p.suffixes[0].lower()
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
+    
+    ftype = p.suffix.lower()
+    if ftype in (".gz", ".xz", ".lzma", ".bz2", ".zip"):  # if file is compressed, check the next extension
+        ftype = pathlib.Path(p.stem).suffix.lower()
 
     if ftype in (".csv", ".pkl"):
         if ftype == ".csv":
