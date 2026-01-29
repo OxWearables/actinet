@@ -405,31 +405,36 @@ def load_classifier(
     if classifier in __classifiers__.keys():
         classifier_version = __classifiers__[classifier]['version']
         classifier_md5 = __classifiers__[classifier]['md5']
+        
+        classifier_path = pathlib.Path(__file__).parent / f"{classifier_version}.joblib.lzma"
+
+        if force_download or not classifier_path.exists():
+            url = f"{BASE_URL}{classifier_version}.joblib.lzma"
+
+            if verbose:
+                print(f"Downloading {url}...")
+
+            with urllib.request.urlopen(url) as f_src, open(classifier_path, "wb") as f_dst:
+                shutil.copyfileobj(f_src, f_dst)
+
+            if classifier_md5:
+                digest = md5(classifier_path)
+                if digest != classifier_md5:
+                    raise ValueError(
+                        "Classifier file is corrupted. "
+                        "Run again with --force-download to redownload."
+                    )
+
+    elif pathlib.Path(classifier).exists():
+        classifier_path = classifier
 
     else:
-        classifier_version = classifier
-        classifier_md5 = None
+        raise ValueError(f"Unknown classifier: {classifier}")
 
-    classifier_path = pathlib.Path(__file__).parent / f"{classifier_version}.joblib.lzma"
-
-    if force_download or not classifier_path.exists():
-        url = f"{BASE_URL}{classifier_version}.joblib.lzma"
-
-        if verbose:
-            print(f"Downloading {url}...")
-
-        with urllib.request.urlopen(url) as f_src, open(classifier_path, "wb") as f_dst:
-            shutil.copyfileobj(f_src, f_dst)
-
-        if classifier_md5:
-            digest = md5(classifier_path)
-            if digest != classifier_md5:
-                raise ValueError(
-                    "Classifier file is corrupted. "
-                    "Run again with --force-download to redownload."
-                )
-
-    classifier: ActivityClassifier = joblib.load(classifier_path)
+    try:
+        classifier: ActivityClassifier = joblib.load(classifier_path)
+    except Exception as e:
+        raise ValueError(f"Error loading classifier file.")
 
     if model_repo_path and pathlib.Path(model_repo_path).exists() and verbose:
         print(f"Loading model repository from {model_repo_path}.")
