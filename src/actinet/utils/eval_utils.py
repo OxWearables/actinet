@@ -293,15 +293,15 @@ def generate_bland_altman_plots(results_df, activities, anno_label, group_by=Non
                     extract_activity_predictions(results_df, activity, **{group_by.replace(' ', '_').lower(): group}, 
                                                  return_true_labels=True)
                 if compare_to_true=='bbaa':
-                    bland_altman_plot(activity_bbaa_true, activity_bbaa_pred, activity,
+                    bland_altman_plot(activity_bbaa_true, activity_bbaa_pred, activity, anno_label,
                                       ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
                                       col1_label='Ground Truth', col2_label='Baseline')
                 elif compare_to_true=='actinet':
-                    bland_altman_plot(activity_actinet_true, activity_actinet_pred, activity,
+                    bland_altman_plot(activity_actinet_true, activity_actinet_pred, activity, anno_label,
                                       ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
                                       col1_label='Ground Truth', col2_label='ActiNet')
                 elif compare_to_true is False:
-                    bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity,
+                    bland_altman_plot(activity_bbaa_pred, activity_actinet_pred, activity, anno_label,
                                       ax=axs[i], show_y_label=i==0, fontsize=fontsize*0.8,
                                       col1_label='Baseline', col2_label='ActiNet')
                 else:
