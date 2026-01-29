@@ -41,7 +41,7 @@ def main():
     parser.add_argument(
         "--classifier",
         "-c",
-        help="Enter custom activity classifier file to use. Default: walmsley (Walmsley2020 annotations of activity intensity).",
+        help="Enter custom activity classifier file to use. Default: walmsley (Walmsley2020 annotations of activity intensity). Can also enter path to local classifier (.joblib.lzma) file.",
         default="walmsley",
     )
     parser.add_argument(
