@@ -430,11 +430,11 @@ def plot_errors(df: pd.DataFrame, activities, anno_label, group_by=None, save_pa
 
 
 def convert_version(s: str) -> str:
-    """ Converts a version string from 'x.y.z+number' to 'vX-Y-Z+number'. """
+    """ Converts a version string from 'x.y.z+number' to 'vX-Y-Z'. """
     match = re.match(r"(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?", s)
     if not match:
         raise ValueError(f"String '{s}' is not in the expected format")
     
-    major, minor, patch, extra = match.groups()
+    major, minor, patch, _ = match.groups()
     base = f"v{major}-{minor}-{patch}"
-    return f"{base}+{extra}" if extra else base
+    return base
