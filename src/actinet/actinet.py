@@ -345,7 +345,7 @@ def read(
         data, info = actipy.process(
             data,
             sample_rate,
-            lowpass_hz=lowpass_hz,
+            lowpass_hz=None,
             calibrate_gravity=True,
             calibrate_gravity_kwargs={'stdtol_min': calibration_stdtol_min},
             detect_nonwear=True,
@@ -368,7 +368,7 @@ def read(
 
         data, info = actipy.read_device(
             filepath,
-            lowpass_hz=lowpass_hz,
+            lowpass_hz=None,
             calibrate_gravity=True,
             calibrate_gravity_kwargs={'stdtol_min': calibration_stdtol_min},
             detect_nonwear=True,
