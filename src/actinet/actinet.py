@@ -6,6 +6,7 @@ import time
 import argparse
 import json
 import hashlib
+import warnings
 import numpy as np
 import pandas as pd
 import joblib
@@ -99,13 +100,14 @@ def main():
         type=int,
         default=1,
     )
-    parser.add_argument("--txyz",
-                        help="Use this option to specify the column names for time, x, y, z " +
-                             "in the input file, in that order. Use a comma-separated string. " +
-                             "Only needed for CSV files, can be ignored for other file types. " +
-                             "Default: 'time,x,y,z'",
+    parser.add_argument("--csv-txyz",
+                        help="Column names for time, x, y, z in CSV files. "
+                             "Comma-separated string. Default: 'time,x,y,z'",
                         type=str, default="time,x,y,z"
     )
+    parser.add_argument("--csv-txyz-idxs",
+                        help="Column indices for time,x,y,z (0-indexed, e.g., '0,1,2,3'). Overrides --csv-txyz.",
+                        type=str, default=None)
     parser.add_argument('--csv-date-format',
                         default="%Y-%m-%d %H:%M:%S.%f",
                         type=str, 
@@ -164,12 +166,13 @@ def main():
     # Load file
     data, info_read = read(
         args.filepath,
-        args.txyz,
+        args.csv_txyz,
         args.csv_start_row-1,  # -1 to convert to zero-based index
         args.csv_date_format,
         args.calibration_stdtol_min,
         resample_hz="uniform",
         sample_rate=args.sample_rate,
+        csv_txyz_idxs=args.csv_txyz_idxs,
         verbose=verbose,
     )
     info.update(info_read)
@@ -305,7 +308,7 @@ def main():
 
 def read(
     filepath, usecols=None, skipRows=0, dateFormat=None, calibration_stdtol_min=None,
-    resample_hz="uniform", sample_rate=None, lowpass_hz=None, verbose=True
+    resample_hz="uniform", sample_rate=None, lowpass_hz=None, csv_txyz_idxs=None, verbose=True
 ):
     p = pathlib.Path(filepath)
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
@@ -316,7 +319,21 @@ def read(
 
     if ftype in (".csv", ".pkl"):
         if ftype == ".csv":
-            tcol, xcol, ycol, zcol = usecols.split(',')
+            # Determine column names: either from indices or from usecols
+            if csv_txyz_idxs is not None:
+                try:
+                    tidx, xidx, yidx, zidx = map(int, csv_txyz_idxs.split(','))
+                except ValueError:
+                    raise ValueError(f"csv_txyz_idxs must be 4 comma-separated integers, got: '{csv_txyz_idxs}'")
+                if any(i < 0 for i in [tidx, xidx, yidx, zidx]):
+                    raise ValueError(f"csv_txyz_idxs must be non-negative integers, got: '{csv_txyz_idxs}'")
+                header = pd.read_csv(filepath, nrows=0).columns.tolist()
+                max_idx = max(tidx, xidx, yidx, zidx)
+                if max_idx >= len(header):
+                    raise ValueError(f"Column index {max_idx} out of range. CSV has {len(header)} columns.")
+                tcol, xcol, ycol, zcol = header[tidx], header[xidx], header[yidx], header[zidx]
+            else:
+                tcol, xcol, ycol, zcol = usecols.split(',')
             
             data = pd.read_csv(
                 filepath,
@@ -365,6 +382,9 @@ def read(
         }
 
     elif ftype in (".cwa", ".gt3x", ".bin"):
+
+        if csv_txyz_idxs is not None:
+            warnings.warn("--csv-* options are only supported for CSV files. Ignoring.")
 
         data, info = actipy.read_device(
             filepath,
