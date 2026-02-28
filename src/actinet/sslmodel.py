@@ -8,7 +8,10 @@ import random
 from pathlib import Path
 from transforms3d.axangles import axangle2mat
 from tqdm import tqdm
-from torchvision import transforms
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Failed to load image Python extension")
+    from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 
 SAMPLE_RATE = 30  # Sample rate for SSL Resnet18 model fixed to 30Hz
