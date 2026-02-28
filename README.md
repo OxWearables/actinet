@@ -50,6 +50,12 @@ $ actinet sample.bin
 
 # Or a CSV file (see data format below)
 $ actinet sample.csv
+
+# Specify column names for CSV (default: time,x,y,z)
+$ actinet sample.csv --csv-txyz 'timestamp,accel_x,accel_y,accel_z'
+
+# Or specify columns by index (0-indexed)
+$ actinet sample.csv --csv-txyz-idxs '0,1,2,3'
 ```
 
 See the [Usage](https://actinet.readthedocs.io/en/latest/usage.html) page for further uses of the tool.
