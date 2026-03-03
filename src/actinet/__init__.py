@@ -6,12 +6,12 @@ __license__ = "See LICENSE file."
 
 __classifiers__ = {
     'walmsley': {
-        'version': 'ssl-ukb-c24-rw-30s-20251023',
-        'md5': '00508bd3217290d9a0339c34303eb29e'
+        'version': 'ssl-ukb-c24-rw-30s-20260128',
+        'md5': 'a829041ba84b18084b4b2897fb1b36a6'
     },
     'willetts': {
-        'version': 'ssl-ukb-c24-mw-30s-20251023',
-        'md5': 'ec3bf58f2aed2520755aaf8e9ba862fd'
+        'version': 'ssl-ukb-c24-mw-30s-20260128',
+        'md5': '59a9492b50ee922c7a31f88888c5f14b'
     }
 }
 
