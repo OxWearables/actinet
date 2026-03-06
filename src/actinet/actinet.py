@@ -69,9 +69,10 @@ def main():
     parser.add_argument(
         "--pytorch-device",
         "-d",
-        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0'",
+        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0'. "
+             "Default: 'mps' if available, otherwise 'cpu'",
         type=str,
-        default="cpu",
+        default=None,
     )
     parser.add_argument(
         "--sample-rate",
@@ -236,7 +237,11 @@ def main():
     )
 
     classifier.verbose = verbose
-    classifier.device = args.pytorch_device
+    if args.pytorch_device is not None:
+        classifier.device = args.pytorch_device
+    else:
+        import torch
+        classifier.device = 'mps' if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available() else 'cpu'
 
     if verbose:
         print("Running activity classifier...")
