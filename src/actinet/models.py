@@ -156,7 +156,7 @@ class ActivityClassifier:
                     weights_path=weights_path,
                     class_weights="balanced",
                 )
-                self.model.load_state_dict(torch.load(weights_path, self.device))
+                self.model.load_state_dict(torch.load(weights_path, map_location=self.device))
 
             # train HMM with predictions of the validation set
             y_val, y_val_pred, _ = sslmodel.predict(
