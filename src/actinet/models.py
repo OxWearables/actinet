@@ -23,7 +23,7 @@ class ActivityClassifier:
     """
     def __init__(
         self,
-        device="cpu",
+        device='mps' if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available() else 'cpu',
         batch_size=512,
         window_sec=30,
         weights_path=None,
@@ -286,6 +286,9 @@ class ActivityClassifier:
             num_labels=len(self.labels),
         )
         self.model.to(self.device)
+
+        if self.verbose:
+            print(f"Using pytorch device: {self.device}")
 
     def save(self, output_path):
         """
