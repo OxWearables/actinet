@@ -215,6 +215,7 @@ def main():
         verbose=verbose,
     )
     info.update(info_read)
+    info["ActiNetPredictOK"] = 0
 
     # Exclusion: first/last days
     if args.exclude_first_last is not None:
@@ -277,6 +278,8 @@ def main():
     except Exception as e:
         save_and_print_summary(outputSummaryFile, info, verbose)
         raise ValueError(f"Model failed to make predictions on the data: {str(e)}")
+
+    info["ActiNetPredictOK"] = 1
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
