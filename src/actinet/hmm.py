@@ -19,7 +19,7 @@ class HMM:
         labels=None,
         uniform_prior=True,
         ignore_transition_gaps=False,
-        handle_sleep_transitions=False
+        handle_sleep_transitions=False,
     ):
         self.prior = prior
         self.emission = emission
@@ -64,8 +64,14 @@ class HMM:
             [np.mean(Y_prob[Y_true == label], axis=0) for label in self.labels]
         )
 
-        transition = calculate_transition_matrix(Y_true, groups, T, interval, self.ignore_transition_gaps, 
-                                                 self.handle_sleep_transitions)
+        transition = calculate_transition_matrix(
+            Y_true,
+            groups,
+            T,
+            interval,
+            self.ignore_transition_gaps,
+            self.handle_sleep_transitions,
+        )
 
         self.prior = prior
         self.emission = emission
@@ -87,9 +93,13 @@ class HMM:
         :return: Smoothed sequence of activities
         :rtype: np.ndarray
         """
-        check_for_input_errors(y_obs, t, interval,
-                               ignore_transition_gaps=self.ignore_transition_gaps,
-                               handle_sleep_transitions=False)
+        check_for_input_errors(
+            y_obs,
+            t,
+            interval,
+            ignore_transition_gaps=self.ignore_transition_gaps,
+            handle_sleep_transitions=False,
+        )
 
         y_smooth = self.viterbi(y_obs, uniform_prior)
 
@@ -161,7 +171,7 @@ class HMM:
             transition=self.transition,
             labels=self.labels,
             ignore_transition_gaps=self.ignore_transition_gaps,
-            handle_sleep_transitions=self.handle_sleep_transitions
+            handle_sleep_transitions=self.handle_sleep_transitions,
         )
 
     def load(self, path):
@@ -192,12 +202,21 @@ class HMM:
         pretty_hmm_params(self, labels, precision)
 
 
-def check_for_input_errors(Y, T, interval, groups=None, ignore_transition_gaps=False, handle_sleep_transitions=False):
+def check_for_input_errors(
+    Y,
+    T,
+    interval,
+    groups=None,
+    ignore_transition_gaps=False,
+    handle_sleep_transitions=False,
+):
     if not ignore_transition_gaps:
         if len(Y) != len(T):
             raise Exception("Provided times should have same length as labels")
         if not interval:
-            raise Exception("A window length must be provided when using label times to train hmm")
+            raise Exception(
+                "A window length must be provided when using label times to train hmm"
+            )
 
     if handle_sleep_transitions:
         if len(Y) != len(groups):
@@ -219,18 +238,23 @@ def restore_labels_after_gaps(y_pred, y_smooth, t, interval):
     return df["y_smooth"].values
 
 
-def calculate_transition_matrix(Y, groups=None, t=None, interval=None,
-                                 ignore_transition_gaps=False, handle_sleep_transitions=False):
-    check_for_input_errors(Y, t, interval, groups, ignore_transition_gaps, handle_sleep_transitions)
+def calculate_transition_matrix(
+    Y,
+    groups=None,
+    t=None,
+    interval=None,
+    ignore_transition_gaps=False,
+    handle_sleep_transitions=False,
+):
+    check_for_input_errors(
+        Y, t, interval, groups, ignore_transition_gaps, handle_sleep_transitions
+    )
 
     if ignore_transition_gaps:
         t = range(len(Y))
         interval = 1
 
-    df = pd.DataFrame({
-        "label": Y,
-        "group": groups
-    })
+    df = pd.DataFrame({"label": Y, "group": groups})
 
     # create a new column with data shifted one space
     df["shift"] = df["label"].shift(-1)
@@ -264,8 +288,10 @@ def get_activity_label_code(label, labels):
     try:
         return list(sorted(labels)).index(label)
     except ValueError:
-        raise ValueError(f"Label '{label}' not recognised. Must be one of {list(sorted(labels))}.")
-    
+        raise ValueError(
+            f"Label '{label}' not recognised. Must be one of {list(sorted(labels))}."
+        )
+
 
 def print_array(arr, precision=3):
     """Prints all elements of a NumPy array to N decimal places."""
@@ -280,13 +306,13 @@ def reorder_matrix(data, index_order):
 
     if arr.ndim == 1:
         return arr[index_order]
-    
+
     elif arr.ndim == 2:
         if arr.shape[0] != arr.shape[1]:
             raise ValueError("2D input must be a square matrix.")
         # Reorder rows and columns using the same index order
         return arr[index_order][:, index_order]
-    
+
     else:
         raise ValueError("Input must be a 1D or 2D array.")
 

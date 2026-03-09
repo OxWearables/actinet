@@ -8,7 +8,7 @@ HMM_SEDENTARY_CODE = 2
 HMM_SLEEP_CODE = 3
 
 
-def removeSpuriousSleep(Y, labels, period, sleepTol='1H', removeNaps=False):
+def removeSpuriousSleep(Y, labels, period, sleepTol="1H", removeNaps=False):
     """
     Remove spurious sleep epochs from activity classification.
 
@@ -27,10 +27,14 @@ def removeSpuriousSleep(Y, labels, period, sleepTol='1H', removeNaps=False):
         return Y
 
     try:
-        sleep_code = label_map['sleep']
-        sedentary_code = label_map['sedentary'] if 'sedentary' in labels else label_map['sit-stand']
+        sleep_code = label_map["sleep"]
+        sedentary_code = (
+            label_map["sedentary"] if "sedentary" in labels else label_map["sit-stand"]
+        )
     except KeyError:
-        raise ValueError(f"'sleep' and 'sedentary' or 'sit-stand' must be output labels for spurious sleep correction.")
+        raise ValueError(
+            f"'sleep' and 'sedentary' or 'sit-stand' must be output labels for spurious sleep correction."
+        )
 
     if sleepTol:
         Y = convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol)
@@ -41,7 +45,7 @@ def removeSpuriousSleep(Y, labels, period, sleepTol='1H', removeNaps=False):
     return Y
 
 
-def convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol='1H'):
+def convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol="1H"):
     """
     Convert sleep labels to sedentary if sleep block is below an expected threshold.
 
@@ -64,10 +68,12 @@ def convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol='
     sleepStreak = (
         sleep_mask.ne(sleep_mask.shift())
         .cumsum()
-        .pipe(lambda x: x.groupby(x).transform('count') * sleep_mask)
+        .pipe(lambda x: x.groupby(x).transform("count") * sleep_mask)
     )
 
-    short_sleep = sleep_mask & (sleepStreak < (pd.Timedelta(sleepTol).total_seconds() / period))
+    short_sleep = sleep_mask & (
+        sleepStreak < (pd.Timedelta(sleepTol).total_seconds() / period)
+    )
     Y_series.loc[short_sleep] = sedentary_code
 
     return Y_series.values
@@ -86,17 +92,18 @@ def convertNaps(Y, period, sleep_code, sedentary_code):
     :rtype: numpy.ndarray
     """
 
-    sleep_blocks = find_blocks(Y, gap_tol=int(SLEEP_GAP_TOLERANCE/period),
-                               block_code=sleep_code)
+    sleep_blocks = find_blocks(
+        Y, gap_tol=int(SLEEP_GAP_TOLERANCE / period), block_code=sleep_code
+    )
 
     longest_blocks = select_longest_blocks_per_period(
-        sleep_blocks, len(Y), block_period=int(SLEEP_BLOCK_PERIOD/period)
+        sleep_blocks, len(Y), block_period=int(SLEEP_BLOCK_PERIOD / period)
     )
 
     return convert_non_selected_block(Y, longest_blocks, sleep_code, sedentary_code)
 
 
-def find_blocks(labels, gap_tol, block_code='s'):
+def find_blocks(labels, gap_tol, block_code="s"):
     """Finds blocks of a specific code in a sequence of labels, allowing for gap tolerance of other labels."""
     blocks = []
     is_block = False
@@ -126,7 +133,7 @@ def find_blocks(labels, gap_tol, block_code='s'):
 
 def extract_start_end_tuple(row):
     """Helper to extract a (start, end) tuple from a DataFrame row."""
-    return (row['start'], row['end'])
+    return (row["start"], row["end"])
 
 
 def select_longest_blocks_per_period(blocks, sequence_len, block_period):
@@ -134,46 +141,51 @@ def select_longest_blocks_per_period(blocks, sequence_len, block_period):
     Selects the longest blocks within an expected period.
     Also includes edge blocks that start at 0 or end at sequence end.
     """
-    
+
     if not blocks:
         return []
 
-    blocks_df = pd.DataFrame(blocks, columns=['start', 'end'])
-    blocks_df['length'] = blocks_df['end'] - blocks_df['start'] + 1
+    blocks_df = pd.DataFrame(blocks, columns=["start", "end"])
+    blocks_df["length"] = blocks_df["end"] - blocks_df["start"] + 1
 
     selected = []
     ref_start = 0
 
-    if (start_blocks := blocks_df[blocks_df['start'] == 0]).any().any():
+    if (start_blocks := blocks_df[blocks_df["start"] == 0]).any().any():
         selected.append(extract_start_end_tuple(start_blocks.iloc[0]))
-        ref_start = start_blocks.iloc[0]['end']
-    if (end_blocks := blocks_df[blocks_df['end'] == sequence_len - 1]).any().any():
+        ref_start = start_blocks.iloc[0]["end"]
+    if (end_blocks := blocks_df[blocks_df["end"] == sequence_len - 1]).any().any():
         selected.append(extract_start_end_tuple(end_blocks.iloc[0]))
 
-    blocks_df = blocks_df[(blocks_df['start'] != 0) & (blocks_df['end'] != sequence_len - 1)]
+    blocks_df = blocks_df[
+        (blocks_df["start"] != 0) & (blocks_df["end"] != sequence_len - 1)
+    ]
 
     while ref_start + block_period < sequence_len:
-        window_blocks = blocks_df[(blocks_df['start'] > ref_start) & (blocks_df['start'] <= ref_start + block_period)]
+        window_blocks = blocks_df[
+            (blocks_df["start"] > ref_start)
+            & (blocks_df["start"] <= ref_start + block_period)
+        ]
         if window_blocks.empty:
             ref_start += block_period
             continue
-        
-        best_block = window_blocks.loc[window_blocks['length'].idxmax()]
-        
+
+        best_block = window_blocks.loc[window_blocks["length"].idxmax()]
+
         selected.append(extract_start_end_tuple(best_block))
-        ref_start = best_block['end']
+        ref_start = best_block["end"]
 
     return selected
 
 
-def convert_non_selected_block(labels, selected_blocks, block_code='s', conv_code='d'):
+def convert_non_selected_block(labels, selected_blocks, block_code="s", conv_code="d"):
     """
     Converts all block code labels found outside longest blocks to conv code.
     """
     mask = np.zeros(len(labels), dtype=bool)
 
     for start, end in selected_blocks:
-        mask[start:end+1] = True
+        mask[start : end + 1] = True
 
     mask_to_change = (labels == block_code) & (~mask)
     labels[mask_to_change] = conv_code
@@ -182,7 +194,7 @@ def convert_non_selected_block(labels, selected_blocks, block_code='s', conv_cod
 
 
 def add_sleep_sedentary_transitions(df):
-    """ 
+    """
     Adds a single transition from sleep to sedentary, and vice-versa, for each participant, if it does not exist.
     """
     df_copy = df.copy()
@@ -192,11 +204,21 @@ def add_sleep_sedentary_transitions(df):
     for group in df_copy["group"].unique():
         group_df = df_copy[df_copy["group"] == group]
 
-        if not ((group_df["label"] == HMM_SLEEP_CODE) & (group_df["shift"] == HMM_SEDENTARY_CODE)).any():
-            rows_to_append.append({"label": HMM_SLEEP_CODE, "shift": HMM_SEDENTARY_CODE, "group": group})
+        if not (
+            (group_df["label"] == HMM_SLEEP_CODE)
+            & (group_df["shift"] == HMM_SEDENTARY_CODE)
+        ).any():
+            rows_to_append.append(
+                {"label": HMM_SLEEP_CODE, "shift": HMM_SEDENTARY_CODE, "group": group}
+            )
 
-        if not ((group_df["label"] == HMM_SEDENTARY_CODE) & (group_df["shift"] == HMM_SLEEP_CODE)).any():
-            rows_to_append.append({"label": HMM_SEDENTARY_CODE, "shift": HMM_SLEEP_CODE, "group": group})
+        if not (
+            (group_df["label"] == HMM_SEDENTARY_CODE)
+            & (group_df["shift"] == HMM_SLEEP_CODE)
+        ).any():
+            rows_to_append.append(
+                {"label": HMM_SEDENTARY_CODE, "shift": HMM_SLEEP_CODE, "group": group}
+            )
 
     if rows_to_append:
         new_rows = pd.DataFrame(rows_to_append)

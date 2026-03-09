@@ -7,20 +7,20 @@ from typing import Union
 
 
 ACTIVITY_LABELS_DICT = {
-    'Walmsley2020': {
-        'sleep': 'Sleep',
-        'sedentary': 'Sedentary Behaviour',
-        'light': 'Light Activity',
-        'moderate-vigorous': 'Moderate-Vigorous Activity'
+    "Walmsley2020": {
+        "sleep": "Sleep",
+        "sedentary": "Sedentary Behaviour",
+        "light": "Light Activity",
+        "moderate-vigorous": "Moderate-Vigorous Activity",
     },
-    'Willetts2018': {
-        'sleep': 'Sleep',
-        'sit-stand': 'Sit/Stand',
-        'vehicle': 'Vehicle',
-        'walking': 'Walking',
-        'mixed': 'Mixed Activity',
-        'bicycling': 'Bicycling'
-    }
+    "Willetts2018": {
+        "sleep": "Sleep",
+        "sit-stand": "Sit/Stand",
+        "vehicle": "Vehicle",
+        "walking": "Walking",
+        "mixed": "Mixed Activity",
+        "bicycling": "Bicycling",
+    },
 }
 
 
@@ -110,10 +110,7 @@ def resize(x, length, axis=1):
     return x
 
 
-def drop_first_last_days(
-    x: Union[pd.Series, pd.DataFrame],
-    first_or_last='both'
-):
+def drop_first_last_days(x: Union[pd.Series, pd.DataFrame], first_or_last="both"):
     """
     Drop the first day, last day, or both from a time series.
 
@@ -132,19 +129,16 @@ def drop_first_last_days(
         print("No data to drop")
         return x
 
-    if first_or_last == 'first':
+    if first_or_last == "first":
         x = x[x.index.date != x.index.date[0]]
-    elif first_or_last == 'last':
+    elif first_or_last == "last":
         x = x[x.index.date != x.index.date[-1]]
-    elif first_or_last == 'both':
+    elif first_or_last == "both":
         x = x[(x.index.date != x.index.date[0]) & (x.index.date != x.index.date[-1])]
     return x
 
 
-def flag_wear_below_days(
-    x: Union[pd.Series, pd.DataFrame],
-    min_wear: str = '12H'
-):
+def flag_wear_below_days(x: Union[pd.Series, pd.DataFrame], min_wear: str = "12H"):
     """
     Set days containing less than the specified minimum wear time (`min_wear`) to NaN.
 
@@ -168,12 +162,7 @@ def flag_wear_below_days(
     ok = x.notna()
     if isinstance(ok, pd.DataFrame):
         ok = ok.all(axis=1)
-    ok = (
-        ok
-        .groupby(x.index.date)
-        .sum() * dt
-        >= min_wear
-    )
+    ok = ok.groupby(x.index.date).sum() * dt >= min_wear
     # keep ok days, rest is set to NaN
     x = x.copy()  # make a copy to avoid modifying the original data
     x[np.isin(x.index.date, ok[~ok].index)] = np.nan
@@ -219,16 +208,16 @@ def calculate_wear_stats(data: pd.DataFrame):
         if wear_end_time is not None:
             wear_end_time = wear_end_time.strftime(TIME_FORMAT)
         nonwear_duration = na.sum() * dt / (60 * 60 * 24)
-        wear_duration = n_data * dt / (60 * 60 * 24) - nonwear_duration 
+        wear_duration = n_data * dt / (60 * 60 * 24) - nonwear_duration
         coverage = (~na).groupby(na.index.hour).mean()
         covers24hok = int(len(coverage) == 24 and coverage.min() >= 0.01)
 
     return {
-        'StartTime': start_time,
-        'EndTime': end_time,
-        'WearStartTime': wear_start_time,
-        'WearEndTime': wear_end_time,
-        'WearTime(days)': wear_duration,
-        'NonwearTime(days)': nonwear_duration,
-        'Covers24hOK': covers24hok
+        "StartTime": start_time,
+        "EndTime": end_time,
+        "WearStartTime": wear_start_time,
+        "WearEndTime": wear_end_time,
+        "WearTime(days)": wear_duration,
+        "NonwearTime(days)": nonwear_duration,
+        "Covers24hOK": covers24hok,
     }

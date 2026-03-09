@@ -76,7 +76,7 @@ def evaluate_models(
     groups_rf,
     T_actinet=None,
     T_rf=None,
-    sleep_tol='1H',
+    sleep_tol="1H",
     remove_naps=False,
     weights_path="models/weights.pt",
     out_dir=None,
@@ -146,14 +146,11 @@ def evaluate_models(
             X_test_actinet, t_test_actinet, True, sleep_tol, remove_naps
         ).astype(int)
 
-        rf_classifier.fit(
-            X_train_rf,
-            y_train_rf,
-            groups_train_rf,
-            t_train_rf
-        )
+        rf_classifier.fit(X_train_rf, y_train_rf, groups_train_rf, t_train_rf)
 
-        y_pred_rf = rf_classifier.predict(X_test_rf, t_test_rf, True, sleep_tol, remove_naps)
+        y_pred_rf = rf_classifier.predict(
+            X_test_rf, t_test_rf, True, sleep_tol, remove_naps
+        )
 
         # Display model performance for each fold
         if verbose:

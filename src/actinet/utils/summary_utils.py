@@ -116,9 +116,7 @@ def calculateECDF(x, summary):
 
 
 def summarize_daily_enmo(
-    acc: pd.Series,
-    acc_adjusted: pd.Series,
-    min_wear_per_day: float = 21 * 60
+    acc: pd.Series, acc_adjusted: pd.Series, min_wear_per_day: float = 21 * 60
 ):
     """
     Summarize daily ENMO information from raw accelerometer data.
@@ -154,16 +152,28 @@ def summarize_daily_enmo(
     if infer_freq(acc_adjusted.index) != infer_freq(acc.index):
         raise ValueError("Data and Data_adjusted must have the same frequency")
 
-    daily = acc.resample('D').agg(_mean, min_wear=min_wear_per_day, dt=dt).rename('ENMO(mg)')
-    daily_adj = acc_adjusted.resample('D').agg(_mean, min_wear=min_wear_per_day, dt=dt).rename('ENMO Adjusted(mg)')
-    
+    daily = (
+        acc.resample("D")
+        .agg(_mean, min_wear=min_wear_per_day, dt=dt)
+        .rename("ENMO(mg)")
+    )
+    daily_adj = (
+        acc_adjusted.resample("D")
+        .agg(_mean, min_wear=min_wear_per_day, dt=dt)
+        .rename("ENMO Adjusted(mg)")
+    )
+
     summary = pd.concat([daily, daily_adj], axis=1)
 
     return summary
 
 
-def summarize_daily_activity(data: pd.DataFrame, data_adjusted: pd.DataFrame, 
-                             labels: list, min_wear_per_day: float = 21 * 60):
+def summarize_daily_activity(
+    data: pd.DataFrame,
+    data_adjusted: pd.DataFrame,
+    labels: list,
+    min_wear_per_day: float = 21 * 60,
+):
     """
     Summarize daily activity information from predicted label outputs.
 
@@ -186,9 +196,9 @@ def summarize_daily_activity(data: pd.DataFrame, data_adjusted: pd.DataFrame,
     """
     if infer_freq(data_adjusted.index) != infer_freq(data.index):
         raise ValueError("Data and Data_adjusted must have the same frequency")
-    
+
     dt = infer_freq(data.index).total_seconds()
-    
+
     def _is_enough(x, min_wear=None, dt=None):
         if min_wear is None:
             return True  # no minimum wear time, then default to True
@@ -201,13 +211,18 @@ def summarize_daily_activity(data: pd.DataFrame, data_adjusted: pd.DataFrame,
             return np.nan
         return x.sum() * dt / 3600
 
-    daily = data.resample('D')\
-                .agg(_total_hrs, min_wear=min_wear_per_day, dt=dt)\
-                .rename(columns={label: f"{label.capitalize()}(hours)" for label in labels})
-    daily_adj = data_adjusted.resample('D')\
-                             .agg(_total_hrs, min_wear=min_wear_per_day, dt=dt)\
-                             .rename(columns={label: f"{label.capitalize()} Adjusted(hours)"
-                                                for label in labels})
+    daily = (
+        data.resample("D")
+        .agg(_total_hrs, min_wear=min_wear_per_day, dt=dt)
+        .rename(columns={label: f"{label.capitalize()}(hours)" for label in labels})
+    )
+    daily_adj = (
+        data_adjusted.resample("D")
+        .agg(_total_hrs, min_wear=min_wear_per_day, dt=dt)
+        .rename(
+            columns={label: f"{label.capitalize()} Adjusted(hours)" for label in labels}
+        )
+    )
 
     summary = pd.concat([daily, daily_adj], axis=1)
 
@@ -256,17 +271,16 @@ def calculate_daily_wear_stats(data: pd.DataFrame):
         # Convert to hours
         wear_hours = wear_samples * dt / 3600
 
-        results.append({
-            'Date': pd.to_datetime(date),
-            'WearTime(hours)': round(wear_hours, 2)
-        })
+        results.append(
+            {"Date": pd.to_datetime(date), "WearTime(hours)": round(wear_hours, 2)}
+        )
 
     if not results:
         return pd.DataFrame()
 
     # Create DataFrame and set date as index
     daily_stats = pd.DataFrame(results)
-    daily_stats.set_index('Date', inplace=True)
-    daily_stats.index.name = 'Date'
+    daily_stats.set_index("Date", inplace=True)
+    daily_stats.index.name = "Date"
 
     return daily_stats

@@ -276,7 +276,9 @@ def extract_accelerometer_features(n_jobs):
     )
 
 
-def prepare_participant_accelerometer_data(pid, annotations_file, anno_label, verbose=False):
+def prepare_participant_accelerometer_data(
+    pid, annotations_file, anno_label, verbose=False
+):
     raw_file_name = f"data/capture24/P{pid:03}.csv.gz"
     features_file_name = f"data/capture24/bbaa/P{pid:03}-epoch.csv.gz"
 

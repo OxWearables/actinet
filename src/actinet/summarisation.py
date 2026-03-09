@@ -59,7 +59,9 @@ def get_activity_summary(
     )
 
     # Daily summaries
-    daily_summary = _daily_summary(data, data_imputed, labels, exclude_daily_wear_below, verbose)
+    daily_summary = _daily_summary(
+        data, data_imputed, labels, exclude_daily_wear_below, verbose
+    )
 
     # Return physical activity summaries
     return summary, daily_summary
@@ -69,7 +71,7 @@ def _impute_missing(data, labels, verbose=False):
     # In the following, we resample, pad and impute the data so that we have a
     # multiple of 24h for the stats calculations
     to_screen("=== Imputing missing values ===", verbose)
-    
+
     cols = ["acc"] + labels
     if "MET" in data.columns:
         cols.append("MET")
@@ -135,8 +137,9 @@ def _summarise(
         summary[f"{col}-overall-avg"] = overallStats[col].loc["mean"]
         summary[f"{col}-overall-sd"] = overallStats[col].loc["std"]
 
-    dayOfWeekStats = data_imputed.groupby([data_imputed.index.weekday, 
-                                           data_imputed.index.hour]).mean()
+    dayOfWeekStats = data_imputed.groupby(
+        [data_imputed.index.weekday, data_imputed.index.hour]
+    ).mean()
     dayOfWeekStats.index = dayOfWeekStats.index.set_levels(
         dayOfWeekStats.index.levels[0]
         .to_series()
@@ -189,8 +192,12 @@ def _summarise(
     # Calculate circadian metrics
     if circadianMetrics:
         to_screen("=== Calculating circadian metrics ===", verbose)
-        summary = circadian.calculatePSD(data_imputed, epochPeriod, False, labels, summary)
-        summary = circadian.calculatePSD(data_imputed, epochPeriod, True, labels, summary)
+        summary = circadian.calculatePSD(
+            data_imputed, epochPeriod, False, labels, summary
+        )
+        summary = circadian.calculatePSD(
+            data_imputed, epochPeriod, True, labels, summary
+        )
         summary = circadian.calculateFourierFreq(
             data_imputed, epochPeriod, False, labels, summary
         )
@@ -205,11 +212,18 @@ def _summarise(
 def _daily_summary(data, data_imputed, labels, exclude_daily_wear_below, verbose=False):
     to_screen("=== Daily summary ===", verbose)
 
-    min_wear_per_day = 0 if exclude_daily_wear_below is None \
-        else pd.Timedelta(exclude_daily_wear_below).total_seconds() / 60 # in minutes
-    
-    daily_enmo = summarize_daily_enmo(data["acc"], data_imputed["acc"], min_wear_per_day)
-    daily_activity = summarize_daily_activity(data[labels], data_imputed[labels], labels, min_wear_per_day)
+    min_wear_per_day = (
+        0
+        if exclude_daily_wear_below is None
+        else pd.Timedelta(exclude_daily_wear_below).total_seconds() / 60
+    )  # in minutes
+
+    daily_enmo = summarize_daily_enmo(
+        data["acc"], data_imputed["acc"], min_wear_per_day
+    )
+    daily_activity = summarize_daily_activity(
+        data[labels], data_imputed[labels], labels, min_wear_per_day
+    )
     daily_summary = pd.concat([daily_enmo, daily_activity], axis=1)
     daily_summary.index.name = "Date"
 
