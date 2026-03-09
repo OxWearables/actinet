@@ -20,9 +20,39 @@ from actinet.accPlot import plotTimeSeries
 from actinet.models import ActivityClassifier
 from actinet.summarisation import get_activity_summary
 from actinet.utils.summary_utils import calculate_daily_wear_stats
-from actinet.utils.utils import infer_freq, drop_first_last_days, flag_wear_below_days, calculate_wear_stats
+from actinet.utils.utils import (
+    infer_freq,
+    drop_first_last_days,
+    flag_wear_below_days,
+    calculate_wear_stats,
+)
 
 BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/models/actinet/"
+
+
+def save_and_print_summary(outputSummaryFile, info, verbose):
+    """Save info to outputSummary.json and print summary stats."""
+    with open(outputSummaryFile, "w") as f:
+        json.dump(info, f, indent=4, cls=NpEncoder)
+
+    if verbose:
+        print("\nSummary Stats\n---------------------")
+        print(
+            json.dumps(
+                {
+                    key: info[key]
+                    for key in [
+                        "Filename",
+                        "Filesize(MB)",
+                        "WearTime(days)",
+                        "NonwearTime(days)",
+                        "ReadOK",
+                    ]
+                },
+                indent=4,
+                cls=NpEncoder,
+            )
+        )
 
 
 def main():
@@ -53,8 +83,8 @@ def main():
     parser.add_argument(
         "--require-sleep-above",
         help="Require sleep blocks to exceed a minimum duration, otherwise be classified as sedentary. Pass values as strings, e.g.: '2H', '30min'. Default: None (no requirement)",
-        type=str, 
-        default=None
+        type=str,
+        default=None,
     )
     parser.add_argument(
         "--single-sleep-block",
@@ -70,7 +100,7 @@ def main():
         "--pytorch-device",
         "-d",
         help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0'. "
-             "Default: 'mps' if available, otherwise 'cpu'",
+        "Default: 'mps' if available, otherwise 'cpu'",
         type=str,
         default=None,
     )
@@ -82,44 +112,52 @@ def main():
         default=None,
     )
     parser.add_argument(
-        "--exclude-first-last", 
+        "--exclude-first-last",
         "-e",
         help="Exclude first, last or both days of data. Default: None (no exclusion)",
-        type=str, 
-        choices=['first', 'last', 'both'], 
-        default=None
-    ) 
+        type=str,
+        choices=["first", "last", "both"],
+        default=None,
+    )
     parser.add_argument(
-        "--exclude-wear-below", 
+        "--exclude-wear-below",
         "-w",
         help="Exclude days with wear time below threshold. Pass values as strings, e.g.: '12H', '30min'. Default: None (no exclusion)",
-        type=str, 
-        default=None)
+        type=str,
+        default=None,
+    )
     parser.add_argument(
         "--csv-start-row",
         help="Row number to start reading a CSV file. Default: 1 (First row)",
         type=int,
         default=1,
     )
-    parser.add_argument("--csv-txyz",
-                        help="Column names for time, x, y, z in CSV files. "
-                             "Comma-separated string. Default: 'time,x,y,z'",
-                        type=str, default="time,x,y,z"
+    parser.add_argument(
+        "--csv-txyz",
+        help="Column names for time, x, y, z in CSV files. "
+        "Comma-separated string. Default: 'time,x,y,z'",
+        type=str,
+        default="time,x,y,z",
     )
-    parser.add_argument("--csv-txyz-idxs",
-                        help="Column indices for time,x,y,z (0-indexed, e.g., '0,1,2,3'). Overrides --csv-txyz.",
-                        type=str, default=None)
-    parser.add_argument('--csv-date-format',
-                        default="%Y-%m-%d %H:%M:%S.%f",
-                        type=str, 
-                        help="Date time format for csv file when reading a csv file. " +
-                             "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes." +
-                             "Default: '%%Y-%%m-%%d %%H:%%M:%%S.%%f' (e.g. '2023-10-01 12:34:56.789')"
+    parser.add_argument(
+        "--csv-txyz-idxs",
+        help="Column indices for time,x,y,z (0-indexed, e.g., '0,1,2,3'). Overrides --csv-txyz.",
+        type=str,
+        default=None,
     )
-    parser.add_argument('--calibration-stdtol-min',
-                        default=None,
-                        type=float,
-                        help="Minimum standard deviation tolerance (g) for detecting stationary periods for calibration. Default: None"
+    parser.add_argument(
+        "--csv-date-format",
+        default="%Y-%m-%d %H:%M:%S.%f",
+        type=str,
+        help="Date time format for csv file when reading a csv file. "
+        + "See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for more possible codes."
+        + "Default: '%%Y-%%m-%%d %%H:%%M:%%S.%%f' (e.g. '2023-10-01 12:34:56.789')",
+    )
+    parser.add_argument(
+        "--calibration-stdtol-min",
+        default=None,
+        type=float,
+        help="Minimum standard deviation tolerance (g) for detecting stationary periods for calibration. Default: None",
     )
     parser.add_argument(
         "--plot-activity",
@@ -161,14 +199,14 @@ def main():
 
     # Info contains high-level summary of the data and results
     info = {}
-    info['ActiNetVersion'] = __version__
-    info['ActiNetArgs'] = vars(args)
+    info["ActiNetVersion"] = __version__
+    info["ActiNetArgs"] = vars(args)
 
     # Load file
     data, info_read = read(
         args.filepath,
         args.csv_txyz,
-        args.csv_start_row-1,  # -1 to convert to zero-based index
+        args.csv_start_row - 1,  # -1 to convert to zero-based index
         args.csv_date_format,
         args.calibration_stdtol_min,
         resample_hz="uniform",
@@ -181,11 +219,11 @@ def main():
     # Exclusion: first/last days
     if args.exclude_first_last is not None:
         data = drop_first_last_days(data, args.exclude_first_last)
-  
+
     # Exclusion: days with wear time below threshold
     if args.exclude_wear_below is not None:
         data = flag_wear_below_days(data, args.exclude_wear_below)
-   
+
     # Update wear time stats after exclusions
     info.update(calculate_wear_stats(data))
 
@@ -197,31 +235,11 @@ def main():
     outputSummaryFile = f"{outdir}/{basename}-outputSummary.json"
     os.makedirs(outdir, exist_ok=True)
 
-     # If no data, save info and exit
-    if len(data) == 0 or data.isna().any(axis=1).all():  # TODO: check na only on x,y,z cols?
-        # Save info as outputSummary.json
-        with open(outputSummaryFile, "w") as f:
-            json.dump(info, f, indent=4, cls=NpEncoder)
-
-        # Print
-        if verbose:
-            print("\nSummary Stats\n---------------------")
-            print(
-                json.dumps(
-                    {
-                        key: info[key]
-                        for key in [
-                            "Filename",
-                            "Filesize(MB)",
-                            "WearTime(days)",
-                            "NonwearTime(days)",
-                            "ReadOK"
-                        ]
-                    },
-                    indent=4,
-                    cls=NpEncoder,
-                )
-            )
+    # If no data, save info and exit
+    if (
+        len(data) == 0 or data.isna().any(axis=1).all()
+    ):  # TODO: check na only on x,y,z cols?
+        save_and_print_summary(outputSummaryFile, info, verbose)
         print("No data to process. Exiting early...")
         sys.exit(0)
 
@@ -230,10 +248,7 @@ def main():
         print("Loading classifier...")
 
     classifier: ActivityClassifier = load_classifier(
-        args.classifier,
-        args.model_repo_path,
-        args.force_download,
-        verbose
+        args.classifier, args.model_repo_path, args.force_download, verbose
     )
 
     classifier.verbose = verbose
@@ -241,12 +256,27 @@ def main():
         classifier.device = args.pytorch_device
     else:
         import torch
-        classifier.device = 'mps' if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available() else 'cpu'
+
+        classifier.device = (
+            "mps"
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            else "cpu"
+        )
 
     if verbose:
         print("Running activity classifier...")
-    Y = classifier.predict_from_frame(data, args.sample_rate, not args.no_hmm,
-                                      args.require_sleep_above, args.single_sleep_block)
+
+    try:
+        Y = classifier.predict_from_frame(
+            data,
+            args.sample_rate,
+            not args.no_hmm,
+            args.require_sleep_above,
+            args.single_sleep_block,
+        )
+    except Exception as e:
+        save_and_print_summary(outputSummaryFile, info, verbose)
+        raise ValueError(f"Model failed to make predictions on the data: {str(e)}")
 
     # Save predicted activities
     timeSeriesFile = f"{outdir}/{basename}-timeSeries.csv.gz"
@@ -265,8 +295,9 @@ def main():
             print("Output plot written to:", plotFile)
 
     # Summary
-    summary, daily_summary = get_activity_summary(Y, list(classifier.labels), args.exclude_wear_below,
-                                                  True, True, verbose)
+    summary, daily_summary = get_activity_summary(
+        Y, list(classifier.labels), args.exclude_wear_below, True, True, verbose
+    )
 
     # Join the actipy processing info, with acitivity summary data
     outputSummary = {**summary, **info}
@@ -280,7 +311,7 @@ def main():
 
     daily_summary = pd.concat([daily_wear_stats, daily_summary], axis=1)
 
-    daily_summary.insert(0, 'Filename', info['Filename'])  # add filename for reference
+    daily_summary.insert(0, "Filename", info["Filename"])  # add filename for reference
     daily_summary.to_csv(f"{outdir}/{basename}-Daily.csv.gz")
 
     # Print
@@ -312,14 +343,28 @@ def main():
 
 
 def read(
-    filepath, usecols=None, skipRows=0, dateFormat=None, calibration_stdtol_min=None,
-    resample_hz="uniform", sample_rate=None, lowpass_hz=None, csv_txyz_idxs=None, verbose=True
+    filepath,
+    usecols=None,
+    skipRows=0,
+    dateFormat=None,
+    calibration_stdtol_min=None,
+    resample_hz="uniform",
+    sample_rate=None,
+    lowpass_hz=None,
+    csv_txyz_idxs=None,
+    verbose=True,
 ):
     p = pathlib.Path(filepath)
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
-    
+
     ftype = p.suffix.lower()
-    if ftype in (".gz", ".xz", ".lzma", ".bz2", ".zip"):  # if file is compressed, check the next extension
+    if ftype in (
+        ".gz",
+        ".xz",
+        ".lzma",
+        ".bz2",
+        ".zip",
+    ):  # if file is compressed, check the next extension
         ftype = pathlib.Path(p.stem).suffix.lower()
 
     if ftype in (".csv", ".pkl"):
@@ -327,19 +372,30 @@ def read(
             # Determine column names: either from indices or from usecols
             if csv_txyz_idxs is not None:
                 try:
-                    tidx, xidx, yidx, zidx = map(int, csv_txyz_idxs.split(','))
+                    tidx, xidx, yidx, zidx = map(int, csv_txyz_idxs.split(","))
                 except ValueError:
-                    raise ValueError(f"csv_txyz_idxs must be 4 comma-separated integers, got: '{csv_txyz_idxs}'")
+                    raise ValueError(
+                        f"csv_txyz_idxs must be 4 comma-separated integers, got: '{csv_txyz_idxs}'"
+                    )
                 if any(i < 0 for i in [tidx, xidx, yidx, zidx]):
-                    raise ValueError(f"csv_txyz_idxs must be non-negative integers, got: '{csv_txyz_idxs}'")
+                    raise ValueError(
+                        f"csv_txyz_idxs must be non-negative integers, got: '{csv_txyz_idxs}'"
+                    )
                 header = pd.read_csv(filepath, nrows=0).columns.tolist()
                 max_idx = max(tidx, xidx, yidx, zidx)
                 if max_idx >= len(header):
-                    raise ValueError(f"Column index {max_idx} out of range. CSV has {len(header)} columns.")
-                tcol, xcol, ycol, zcol = header[tidx], header[xidx], header[yidx], header[zidx]
+                    raise ValueError(
+                        f"Column index {max_idx} out of range. CSV has {len(header)} columns."
+                    )
+                tcol, xcol, ycol, zcol = (
+                    header[tidx],
+                    header[xidx],
+                    header[yidx],
+                    header[zidx],
+                )
             else:
-                tcol, xcol, ycol, zcol = usecols.split(',')
-            
+                tcol, xcol, ycol, zcol = usecols.split(",")
+
             data = pd.read_csv(
                 filepath,
                 usecols=[tcol, xcol, ycol, zcol],
@@ -351,8 +407,8 @@ def read(
             )
 
             # rename to standard names
-            data = data.rename(columns={xcol: 'x', ycol: 'y', zcol: 'z'})
-            data.index.name = 'time'
+            data = data.rename(columns={xcol: "x", ycol: "y", zcol: "z"})
+            data.index.name = "time"
 
         elif ftype == ".pkl":
             data = pd.read_pickle(filepath)
@@ -367,9 +423,9 @@ def read(
         data, info = actipy.process(
             data,
             sample_rate,
-            lowpass_hz=None,
+            lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
-            calibrate_gravity_kwargs={'stdtol_min': calibration_stdtol_min},
+            calibrate_gravity_kwargs={"stdtol_min": calibration_stdtol_min},
             detect_nonwear=True,
             resample_hz=resample_hz,
             verbose=verbose,
@@ -393,9 +449,9 @@ def read(
 
         data, info = actipy.read_device(
             filepath,
-            lowpass_hz=None,
+            lowpass_hz=lowpass_hz,
             calibrate_gravity=True,
-            calibrate_gravity_kwargs={'stdtol_min': calibration_stdtol_min},
+            calibrate_gravity_kwargs={"stdtol_min": calibration_stdtol_min},
             detect_nonwear=True,
             resample_hz=resample_hz,
             verbose=verbose,
@@ -428,10 +484,12 @@ def load_classifier(
     """Load trained classifier. Download if not exists."""
 
     if classifier in __classifiers__.keys():
-        classifier_version = __classifiers__[classifier]['version']
-        classifier_md5 = __classifiers__[classifier]['md5']
-        
-        classifier_path = pathlib.Path(__file__).parent / f"{classifier_version}.joblib.lzma"
+        classifier_version = __classifiers__[classifier]["version"]
+        classifier_md5 = __classifiers__[classifier]["md5"]
+
+        classifier_path = (
+            pathlib.Path(__file__).parent / f"{classifier_version}.joblib.lzma"
+        )
 
         if force_download or not classifier_path.exists():
             url = f"{BASE_URL}{classifier_version}.joblib.lzma"
@@ -439,7 +497,9 @@ def load_classifier(
             if verbose:
                 print(f"Downloading {url}...")
 
-            with urllib.request.urlopen(url) as f_src, open(classifier_path, "wb") as f_dst:
+            with urllib.request.urlopen(url) as f_src, open(
+                classifier_path, "wb"
+            ) as f_dst:
                 shutil.copyfileobj(f_src, f_dst)
 
             if classifier_md5:
