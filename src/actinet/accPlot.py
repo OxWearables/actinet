@@ -199,11 +199,14 @@ def plotTimeSeries(data, title=None, showFirstNDays=None):  # noqa: C901
         ax = fig.add_subplot(nrows, 1, i + 1)
 
         if "acc" in group:
-            ax.plot(group.index, group["acc"].to_numpy(), c="k")
+            ax.plot(group.index.to_pydatetime(), group["acc"].to_numpy(), c="k")
 
         if len(labels) > 0:
             ax.stackplot(
-                group.index, group[labels].to_numpy().T, colors=colors, edgecolor="none"
+                group.index.to_pydatetime(),
+                group[labels].to_numpy().T,
+                colors=colors,
+                edgecolor="none",
             )
 
         # add date label to left hand side of each day's activity plot

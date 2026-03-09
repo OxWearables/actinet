@@ -1,4 +1,4 @@
-""" Helper classes and functions for the SSL model """
+"""Helper classes and functions for the SSL model"""
 
 from collections import OrderedDict
 import torch
@@ -9,6 +9,7 @@ from pathlib import Path
 from transforms3d.axangles import axangle2mat
 from tqdm import tqdm
 import warnings
+
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="Failed to load image Python extension")
     from torchvision import transforms
@@ -75,7 +76,7 @@ class RandomDecimation:
         decimation_factor = random.randint(1, 3)
         T = sample.shape[1]
         sample = sample[:, ::decimation_factor]
-        
+
         sample = torch.nn.functional.interpolate(
             sample.unsqueeze(0),
             size=T,
@@ -104,7 +105,9 @@ class NormalDataset(Dataset):
         self.pid = pid
 
         if augmentation:
-            self.transform = transforms.Compose([RandomSwitchAxis(), RotationAxis(), RandomDecimation()])
+            self.transform = transforms.Compose(
+                [RandomSwitchAxis(), RotationAxis(), RandomDecimation()]
+            )
         else:
             self.transform = None
 

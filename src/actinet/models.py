@@ -21,9 +21,14 @@ class ActivityClassifier:
     """
     Implement a ResNet-18 based Activity Classifier with model saving/loading and optional HMM smoothing.
     """
+
     def __init__(
         self,
-        device='mps' if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available() else 'cpu',
+        device=(
+            "mps"
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            else "cpu"
+        ),
         batch_size=512,
         window_sec=30,
         weights_path=None,
@@ -46,10 +51,12 @@ class ActivityClassifier:
         )
         self.model = None
 
-        self.hmm = load_hmm_params(hmm_params, 
-                                   hmm_ignore_transition_gaps,
-                                   hmm_handle_sleep_transitions,
-                                   verbose)
+        self.hmm = load_hmm_params(
+            hmm_params,
+            hmm_ignore_transition_gaps,
+            hmm_handle_sleep_transitions,
+            verbose,
+        )
 
     def __str__(self):
         return (
@@ -156,7 +163,9 @@ class ActivityClassifier:
                     weights_path=weights_path,
                     class_weights="balanced",
                 )
-                self.model.load_state_dict(torch.load(weights_path, map_location=self.device))
+                self.model.load_state_dict(
+                    torch.load(weights_path, map_location=self.device)
+                )
 
             # train HMM with predictions of the validation set
             y_val, y_val_pred, _ = sslmodel.predict(
@@ -182,7 +191,7 @@ class ActivityClassifier:
             y_true_splits,
             group_splits,
             t_splits,
-            interval=self.window_sec
+            interval=self.window_sec,
         )
 
         # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
@@ -191,7 +200,14 @@ class ActivityClassifier:
 
         return self
 
-    def predict_from_frame(self, data, sample_freq, hmm_smothing=True, sleep_tolerance=None, remove_naps=False):
+    def predict_from_frame(
+        self,
+        data,
+        sample_freq,
+        hmm_smothing=True,
+        sleep_tolerance=None,
+        remove_naps=False,
+    ):
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -216,8 +232,11 @@ class ActivityClassifier:
         )
 
         Y = raw_to_df(
-            X, self.predict(X, T, hmm_smothing, sleep_tolerance, remove_naps), 
-            T, self.labels, reindex=False
+            X,
+            self.predict(X, T, hmm_smothing, sleep_tolerance, remove_naps),
+            T,
+            self.labels,
+            reindex=False,
         )
 
         return Y
@@ -311,18 +330,26 @@ class RFActivityClassifier:
     """
 
     def __init__(
-        self, 
-        winsec=None, 
-        hmm_params=None, 
+        self,
+        winsec=None,
+        hmm_params=None,
         hmm_ignore_transition_gaps=False,
         hmm_handle_sleep_transitions=False,
         labels=None,
         verbose=False,
-        **kwargs):
+        **kwargs,
+    ):
 
-        self.model = BalancedRandomForestClassifier(oob_score=True, random_state=42, verbose=verbose, **kwargs)
+        self.model = BalancedRandomForestClassifier(
+            oob_score=True, random_state=42, verbose=verbose, **kwargs
+        )
         self.labels = labels
-        self.hmm = load_hmm_params(hmm_params, hmm_ignore_transition_gaps, hmm_handle_sleep_transitions, verbose)
+        self.hmm = load_hmm_params(
+            hmm_params,
+            hmm_ignore_transition_gaps,
+            hmm_handle_sleep_transitions,
+            verbose,
+        )
         self.winsec = winsec
 
     def __str__(self):
@@ -338,10 +365,12 @@ class RFActivityClassifier:
         if hmm_smothing:
             y_pred = self.hmm.predict(y_pred, T, self.winsec)
 
-        y_pred = removeSpuriousSleep(y_pred, self.labels, self.winsec, sleep_tol, remove_naps)
+        y_pred = removeSpuriousSleep(
+            y_pred, self.labels, self.winsec, sleep_tol, remove_naps
+        )
 
         return y_pred
-    
+
     def save(self, output_path):
         classifier = copy.deepcopy(self)
 
@@ -449,7 +478,9 @@ def raw_to_df(data, labels, time, classes, reindex=True, freq="30S"):
     return df
 
 
-def load_hmm_params(hmm_params, ignore_transition_gaps, handle_sleep_transitions, verbose=False):
+def load_hmm_params(
+    hmm_params, ignore_transition_gaps, handle_sleep_transitions, verbose=False
+):
     if isinstance(hmm_params, str):
         if os.path.exists(hmm_params):
             if verbose:
@@ -466,13 +497,13 @@ def load_hmm_params(hmm_params, ignore_transition_gaps, handle_sleep_transitions
         hmm_params = dict()
 
     elif not isinstance(hmm_params, dict):
-        raise TypeError(
-            "Invalid type for HMM parameters. Expected str, dict, or None."
-        )
-    
-    hmm_params.update({
-        "ignore_transition_gaps": ignore_transition_gaps,
-        "handle_sleep_transitions": handle_sleep_transitions
-    })
+        raise TypeError("Invalid type for HMM parameters. Expected str, dict, or None.")
+
+    hmm_params.update(
+        {
+            "ignore_transition_gaps": ignore_transition_gaps,
+            "handle_sleep_transitions": handle_sleep_transitions,
+        }
+    )
 
     return hmm.HMM(**hmm_params)
