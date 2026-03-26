@@ -16,7 +16,7 @@ import warnings
 
 warnings.simplefilter("ignore", UserWarning)
 
-from actinet.utils.utils import ACTIVITY_LABELS_DICT
+from actinet.utils.bbaa_config import BBAA_CONFIG
 
 
 class DivDict(dict):
@@ -387,8 +387,10 @@ def bland_altman_plot(
         fontsize=fontsize * 0.8,
     )
 
+    activity_labels_dict = BBAA_CONFIG[anno_label]["labels"]
+
     ax.set_title(
-        f"{ACTIVITY_LABELS_DICT[anno_label][plot_label]} [hours]\nPearson correlation: {pearson_cor:.3f}",
+        f"{activity_labels_dict.get(plot_label, plot_label)} [hours]\nPearson correlation: {pearson_cor:.3f}",
         fontsize=fontsize,
     )
 
@@ -606,6 +608,8 @@ def build_mae_table(df: pd.DataFrame, activities):
 def plot_errors(
     df: pd.DataFrame, activities, anno_label, group_by=None, save_path=None, fontsize=12
 ):
+    activity_labels_dict = BBAA_CONFIG[anno_label]["labels"]
+
     if group_by is None:
         all_errors = []
 
@@ -624,7 +628,7 @@ def plot_errors(
             for err in bbaa_errors:
                 all_errors.append(
                     {
-                        "Activity": ACTIVITY_LABELS_DICT[anno_label][activity],
+                        "Activity": activity_labels_dict.get(activity, activity),
                         "Error": err,
                         "Model": "Baseline",
                     }
@@ -632,7 +636,7 @@ def plot_errors(
             for err in actinet_errors:
                 all_errors.append(
                     {
-                        "Activity": ACTIVITY_LABELS_DICT[anno_label][activity],
+                        "Activity": activity_labels_dict.get(activity, activity),
                         "Error": err,
                         "Model": "ActiNet",
                     }
@@ -704,7 +708,7 @@ def plot_errors(
                 for err in bbaa_errors:
                     all_errors.append(
                         {
-                            "Activity": ACTIVITY_LABELS_DICT[anno_label][activity],
+                            "Activity": activity_labels_dict.get(activity, activity),
                             "Error": err,
                             "Model": "Baseline",
                         }
@@ -712,7 +716,7 @@ def plot_errors(
                 for err in actinet_errors:
                     all_errors.append(
                         {
-                            "Activity": ACTIVITY_LABELS_DICT[anno_label][activity],
+                            "Activity": activity_labels_dict.get(activity, activity),
                             "Error": err,
                             "Model": "ActiNet",
                         }
