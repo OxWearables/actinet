@@ -10,6 +10,7 @@ from glob import glob
 import subprocess
 
 from actinet.utils.utils import is_good_window, resize
+from actinet.utils.bbaa_config import BBAA_CONFIG
 
 ACC_COLS = ["x", "y", "z"]
 
@@ -304,17 +305,7 @@ def prepare_participant_accelerometer_data(
         anno_label,
     )
 
-    features = (
-        ["enmoTrunc", "enmoAbs", "xMean", "yMean", "zMean", "xRange"]
-        + ["yRange", "zRange", "xStd", "yStd", "zStd", "xyCov", "xzCov", "yzCov"]
-        + ["mean", "sd", "coefvariation", "median", "min", "max", "25thp", "75thp"]
-        + ["autocorr", "corrxy", "corrxz", "corryz", "avgroll", "avgpitch"]
-        + ["avgyaw", "sdroll", "sdpitch", "sdyaw", "rollg", "pitchg", "yawg"]
-        + ["fmax", "pmax", "fmaxband", "pmaxband", "entropy", "fft1", "fft2"]
-        + ["fft3", "fft4", "fft5", "fft6", "fft7", "fft8", "fft9", "fft10", "MAD"]
-        + ["MPD", "skew", "kurt", "avgArmAngel", "avgArmAngelAbsDiff", "f1", "p1"]
-        + ["f2", "p2", "f625", "p625", "totalPower"]
-    )
+    features = BBAA_CONFIG[anno_label]["features"]
 
     X = features_file[features].to_numpy()
     Y, T = Y[: len(X)], T[: len(X)]
