@@ -43,7 +43,7 @@ class ActivityClassifier:
         self.repo_tag = repo_tag
         self.batch_size = batch_size
         self.window_sec = window_sec
-        self.labels = labels
+        self.labels = list(np.unique(labels))
         self.verbose = verbose
 
         self.model_weights = (
@@ -341,9 +341,9 @@ class RFActivityClassifier:
     ):
 
         self.model = BalancedRandomForestClassifier(
-            oob_score=True, random_state=42, verbose=verbose, **kwargs
+            oob_score=True, verbose=verbose, **kwargs
         )
-        self.labels = labels
+        self.labels = list(np.unique(labels))
         self.hmm = load_hmm_params(
             hmm_params,
             hmm_ignore_transition_gaps,
