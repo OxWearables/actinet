@@ -16,7 +16,7 @@ import warnings
 
 warnings.simplefilter("ignore", UserWarning)
 
-from actinet.utils.bbaa_config import BBAA_CONFIG
+from actinet.utils.model_config import MODEL_CONFIG
 
 
 class DivDict(dict):
@@ -387,7 +387,7 @@ def bland_altman_plot(
         fontsize=fontsize * 0.8,
     )
 
-    activity_labels_dict = BBAA_CONFIG[anno_label]["labels"]
+    activity_labels_dict = MODEL_CONFIG[anno_label]["labels"]
 
     ax.set_title(
         f"{activity_labels_dict.get(plot_label, plot_label)} [hours]\nPearson correlation: {pearson_cor:.3f}",
@@ -608,7 +608,7 @@ def build_mae_table(df: pd.DataFrame, activities):
 def plot_errors(
     df: pd.DataFrame, activities, anno_label, group_by=None, save_path=None, fontsize=12
 ):
-    activity_labels_dict = BBAA_CONFIG[anno_label]["labels"]
+    activity_labels_dict = MODEL_CONFIG[anno_label]["labels"]
 
     if group_by is None:
         all_errors = []

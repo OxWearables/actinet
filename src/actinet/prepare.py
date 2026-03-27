@@ -10,7 +10,7 @@ from glob import glob
 import subprocess
 
 from actinet.utils.utils import is_good_window, resize
-from actinet.utils.bbaa_config import BBAA_CONFIG
+from actinet.utils.model_config import MODEL_CONFIG
 
 ACC_COLS = ["x", "y", "z"]
 
@@ -305,7 +305,7 @@ def prepare_participant_accelerometer_data(
         anno_label,
     )
 
-    features = BBAA_CONFIG[anno_label]["features"]
+    features = MODEL_CONFIG[anno_label]["rf_features"]
 
     X = features_file[features].to_numpy()
     Y, T = Y[: len(X)], T[: len(X)]
@@ -333,12 +333,11 @@ def prepare_accelerometer_data(annotation_file, anno_label, out_dir, n_jobs):
     P = np.hstack(P)
 
     if out_dir:
-        out_path = os.path.join(out_dir, f"prepared/{anno_label}")
         # Save arrays for future use
-        os.makedirs(out_path, exist_ok=True)
-        np.save(f"{out_path}/X.npy", X)
-        np.save(f"{out_path}/Y.npy", Y)
-        np.save(f"{out_path}/T.npy", T)
-        np.save(f"{out_path}/pid.npy", P)
+        os.makedirs(out_dir, exist_ok=True)
+        np.save(f"{out_dir}/X.npy", X)
+        np.save(f"{out_dir}/Y.npy", Y)
+        np.save(f"{out_dir}/T.npy", T)
+        np.save(f"{out_dir}/pid.npy", P)
 
     return X, Y, T, P
