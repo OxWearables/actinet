@@ -1,6 +1,6 @@
-BBAA_CONFIG = {
+MODEL_CONFIG = {
     'Walmsley2020': {
-        "features": [
+        "rf_features": [
             'enmoTrunc', 'enmoAbs', 'mean', 'sd', 'coefvariation', 'median',
             'min', 'max', '25thp', '75thp', 'autocorr', 'fmax', 'pmax',
             'fmaxband', 'pmaxband', 'entropy', 'fft1', 'fft2', 'fft3', 'fft4',
@@ -18,14 +18,18 @@ BBAA_CONFIG = {
             "n_jobs": 4
         },
         "labels": {
-        "sleep": "Sleep",
-        "sedentary": "Sedentary Behaviour",
-        "light": "Light Activity",
-        "moderate-vigorous": "Moderate-Vigorous Activity",
-    }
+            "sleep": "Sleep",
+            "sedentary": "Sedentary Behaviour",
+            "light": "Light Activity",
+            "moderate-vigorous": "Moderate-Vigorous Activity",
+        },
+        "actinet_params": {
+            "hmm_handle_sleep_transitions": True,
+            "hmm_ignore_transition_gaps": False,
+        }
     },
     'Willetts2018': {
-        "features": [
+        "rf_features": [
             'enmoTrunc', 'enmoAbs', 'xMean', 'yMean', 'zMean', 'xRange',
             'yRange', 'zRange', 'xStd', 'yStd', 'zStd', 'xyCov', 'xzCov',
             'yzCov', 'mean', 'sd', 'coefvariation', 'median', 'min', 'max',
@@ -52,6 +56,10 @@ BBAA_CONFIG = {
             "walking": "Walking",
             "mixed": "Mixed Activity",
             "bicycling": "Bicycling",
+        },     
+        "actinet_params": {
+            "hmm_handle_sleep_transitions": False,
+            "hmm_ignore_transition_gaps": False,
         }
     }
 }
