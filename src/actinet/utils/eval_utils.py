@@ -425,7 +425,7 @@ def generate_bland_altman_plots(
 ):
     """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
     if group_by is None:  # Full population
-        fig, axs = plt.subplots(1, 4, figsize=(15, 6), dpi=800, sharey=True)
+        fig, axs = plt.subplots(1, len(activities), figsize=(4 * len(activities), 6), dpi=800, sharey=True)
         axs = axs.flatten()
 
         for i, activity in enumerate(activities):
