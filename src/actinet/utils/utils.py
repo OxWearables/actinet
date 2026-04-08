@@ -58,6 +58,14 @@ def date_parser(t):
     return pd.to_datetime(t, utc=True).tz_convert(tz)
 
 
+def custom_date_parser(date_str):
+    dt = datetime.datetime.strptime(
+        date_str.split(" ")[0] + " " + date_str.split(" ")[1], "%Y-%m-%d %H:%M:%S.%f%z"
+    )
+    dt_utc = dt.astimezone(datetime.timezone.utc)
+    return dt_utc.replace(tzinfo=None)
+
+
 def safe_indexer(array, indexes):
     return array[indexes] if array is not None else None
 

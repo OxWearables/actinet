@@ -8,6 +8,8 @@ import warnings
 import actipy
 from glob import glob
 import subprocess
+from urllib import request
+import zipfile
 
 from actinet.utils.utils import is_good_window, resize
 from actinet.utils.model_config import MODEL_CONFIG
@@ -341,3 +343,69 @@ def prepare_accelerometer_data(annotation_file, anno_label, out_dir, n_jobs):
         np.save(f"{out_dir}/pid.npy", P)
 
     return X, Y, T, P
+
+
+def download_data(url, zip_path, extract_path, verbose=True):
+    os.makedirs(os.path.dirname(zip_path), exist_ok=True)
+
+    if os.path.exists(zip_path):
+        if verbose:
+            print(f"{zip_path} already exists. Skipping download.")
+    else:
+        if verbose:
+            print(f"Downloading {url}...")
+        request.urlretrieve(url, zip_path)
+
+        if verbose:
+            print(f"Download complete.\nExtracting {zip_path}...")
+
+    if not os.path.exists(extract_path):
+        os.makedirs(extract_path)
+
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(extract_path)
+
+        if verbose:
+            print(f"Extraction complete.")
+
+    else:
+        if verbose:
+            print(f"{extract_path} already exists. Skipping extraction.")
+
+
+def make_acc_df(path, save_path, sample_rate=100):
+    if os.path.exists(save_path):
+        print(f"File {save_path} already exists. Skipping generation.")
+        return
+
+    X = np.load(os.path.join(path, "X.npy"))
+    Y = np.load(os.path.join(path, "Y.npy"))
+    pid = np.load(os.path.join(path, "pid.npy"))
+
+    num_samples = X.shape[0] * X.shape[1]
+    start_time = pd.Timestamp("2023-01-01 12:00:00")
+    time = pd.date_range(
+        start=start_time,
+        periods=num_samples,
+        freq=pd.Timedelta(seconds=1 / sample_rate),
+    )
+
+    X_flat = X.reshape(-1, 3)
+
+    Y_repeated = np.repeat(Y, X.shape[1])
+    pid_repeated = np.repeat(pid, X.shape[1])
+
+    df = pd.DataFrame(
+        {
+            "x": X_flat[:, 0],
+            "y": X_flat[:, 1],
+            "z": X_flat[:, 2],
+            "time": time,
+            "label": Y_repeated,
+            "pid": pid_repeated,
+        }
+    )
+
+    df.set_index("time", inplace=True)
+
+    df.to_csv(save_path, index=True)
