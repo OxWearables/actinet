@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import re
 import os
+from pathlib import Path
 from scipy import stats
 from sklearn.metrics import (
     accuracy_score,
@@ -100,12 +101,13 @@ def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
     return y_true_bbaa, y_pred_bbaa, y_true_actinet, y_pred_actinet, population
 
 
-def plot_and_save_fig(fig, save_path=None):
+def plot_and_save_fig(fig, save_path=None, dpi=800):
     """Displays and optionally saves the figure as a PDF."""
     plt.show()
     if save_path:
+        format = Path(save_path).suffix[1:]
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        fig.savefig(save_path, format="pdf", dpi=800, bbox_inches="tight")
+        fig.savefig(save_path, format=format, dpi=dpi, bbox_inches="tight")
 
 
 def generate_confusion_matrices(
@@ -425,7 +427,9 @@ def generate_bland_altman_plots(
 ):
     """Generates Bland-Altman plots for different activities, optionally stratified by a subgroup."""
     if group_by is None:  # Full population
-        fig, axs = plt.subplots(1, len(activities), figsize=(4 * len(activities), 6), dpi=800, sharey=True)
+        fig, axs = plt.subplots(
+            1, len(activities), figsize=(4 * len(activities), 6), dpi=800, sharey=True
+        )
         axs = axs.flatten()
 
         for i, activity in enumerate(activities):
