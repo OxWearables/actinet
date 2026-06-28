@@ -118,7 +118,7 @@ Option 1: Cache them while online::
 
     actinet --cache-classifier
 
-Note: this will only download the classifier and model files, and will not run the ActiNet model.
+Note: this will only download the classifier and model files, and prevent the ActiNet classification model from running.
 
 Option 2: Manually download from the `ssl-wearables repository <https://github.com/OxWearables/ssl-wearables>`_ and specify paths::
 
