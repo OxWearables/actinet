@@ -168,7 +168,7 @@ def main():
     parser.add_argument(
         "--cache-classifier",
         action="store_true",
-        help="Download and cache classifier file and model modules for offline usage. This will not run the ActiNet classification model.",
+        help="Download and cache classifier file and model modules for offline usage. This will cause the ActiNet classification model to not run.",
     )
     parser.add_argument(
         "--model-repo-path", "-m", help="Enter repository of ssl model", default=None
