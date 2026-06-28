@@ -168,7 +168,7 @@ def main():
     parser.add_argument(
         "--cache-classifier",
         action="store_true",
-        help="Download and cache classifier file and model modules for offline usage",
+        help="Download and cache classifier file and model modules for offline usage only. This will not run the model.",
     )
     parser.add_argument(
         "--model-repo-path", "-m", help="Enter repository of ssl model", default=None
