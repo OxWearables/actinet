@@ -19,7 +19,7 @@ When using this tool, please consider citing the following works:
 }
 ```
 
-1. Yuan H, Chan S, et al. (2024)
+2. Yuan H, Chan S, et al. (2024)
 [Self-supervised learning for human activity recognition using 700,000 person-days of wearable data](https://www.nature.com/articles/s41746-024-01062-3).
 
 ```
