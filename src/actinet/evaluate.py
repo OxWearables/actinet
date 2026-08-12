@@ -174,6 +174,11 @@ def evaluate_models(
             {
                 "fold": [fold] * len(y_pred_actinet),
                 "group": groups_test_actinet,
+                "time": (
+                    t_test_actinet
+                    if t_test_actinet is not None
+                    else [None] * len(y_pred_actinet)
+                ),
                 "Y_pred": le.inverse_transform(y_pred_actinet),
                 "Y_true": le.inverse_transform(y_test_actinet),
             }
@@ -182,6 +187,9 @@ def evaluate_models(
             {
                 "fold": [fold] * len(y_pred_rf),
                 "group": groups_test_rf,
+                "time": (
+                    t_test_rf if t_test_rf is not None else [None] * len(y_pred_rf)
+                ),
                 "Y_pred": le.inverse_transform(y_pred_rf),
                 "Y_true": le.inverse_transform(y_test_rf),
             }
