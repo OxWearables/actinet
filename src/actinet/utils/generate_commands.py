@@ -1,10 +1,15 @@
 import argparse
 import os
+from typing import Optional, Sequence
 
 
 def generate_commands(
-    input_dir, output_dir, cmdsfile="list-of-commands.txt", fext="cwa", cmdopts=""
-):
+    input_dir: str,
+    output_dir: str,
+    cmdsfile: str = "list-of-commands.txt",
+    fext: str = "cwa",
+    cmdopts: str = "",
+) -> None:
     """Generate a text file listing processing commands for files found under input_dir/
 
     :param str input_dir: Directory containing accelerometer files to process.
@@ -52,7 +57,7 @@ def generate_commands(
     print("List of commands written to ", cmdsfile)
 
 
-def main():
+def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("input_dir")
     parser.add_argument("--output_dir", "-d", required=True)
@@ -70,7 +75,7 @@ def main():
         default="",
         help="String of processing options e.g. '--type rf' to use Random Forest classifier.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     generate_commands(
         input_dir=args.input_dir,

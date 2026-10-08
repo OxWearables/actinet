@@ -36,6 +36,36 @@ jobs:
           python setup.py sdist bdist_wheel
           twine check --strict dist/*
 
+      - name: Verify type marker in distributions
+        shell: python
+        run: |
+          from pathlib import Path
+          import tarfile
+          import zipfile
+
+          def only_artifact(pattern):
+              artifacts = list(Path("dist").glob(pattern))
+              if len(artifacts) != 1:
+                  raise SystemExit(
+                      f"Expected one {pattern} artifact, found {len(artifacts)}"
+                  )
+              return artifacts[0]
+
+          wheel = only_artifact("*.whl")
+          with zipfile.ZipFile(wheel) as archive:
+              if "actinet/py.typed" not in archive.namelist():
+                  raise SystemExit(f"{wheel} does not contain actinet/py.typed")
+
+          sdist = only_artifact("*.tar.gz")
+          with tarfile.open(sdist, "r:gz") as archive:
+              if not any(
+                  name.endswith("/src/actinet/py.typed")
+                  for name in archive.getnames()
+              ):
+                  raise SystemExit(
+                      f"{sdist} does not contain src/actinet/py.typed"
+                  )
+
       - name: Sanity check build
         run: |
           python -m pip install dist/*.gz

@@ -9,9 +9,9 @@ from sklearn.metrics import (
 import numpy as np
 import pandas as pd
 import os
+from typing import Any, Dict, List, Optional, Tuple
 
 from actinet.models import ActivityClassifier, RFActivityClassifier
-from actinet.hmm import HMM
 from actinet.utils.utils import safe_indexer
 
 WINSEC = 30
@@ -19,13 +19,13 @@ WINSEC = 30
 
 def evaluate_preprocessing(
     classifier: ActivityClassifier,
-    X,
-    Y,
-    groups=None,
-    T=None,
-    weights_path="models/weights.pt",
-    verbose=True,
-):
+    X: np.ndarray,
+    Y: np.ndarray,
+    groups: Optional[np.ndarray] = None,
+    T: Optional[np.ndarray] = None,
+    weights_path: str = "models/weights.pt",
+    verbose: bool = True,
+) -> np.ndarray:
     skf = StratifiedGroupKFold(n_splits=5)
 
     le = LabelEncoder().fit(Y)
@@ -47,7 +47,7 @@ def evaluate_preprocessing(
             weights_path.format(fold),
             n_splits=1,
         )
-        y_pred = classifier.predict(X_test, False)
+        y_pred = classifier.predict(X_test, hmm_smothing=False)
 
         if verbose:
             print(
@@ -68,20 +68,20 @@ def evaluate_preprocessing(
 def evaluate_models(
     actinet_classifier: ActivityClassifier,
     rf_classifier: RFActivityClassifier,
-    X_actinet,
-    X_rf,
-    Y_actinet,
-    Y_rf,
-    groups_actinet,
-    groups_rf,
-    T_actinet=None,
-    T_rf=None,
-    sleep_tol="1H",
-    remove_naps=False,
-    weights_path="models/weights.pt",
-    out_dir=None,
-    verbose=True,
-):
+    X_actinet: np.ndarray,
+    X_rf: np.ndarray,
+    Y_actinet: np.ndarray,
+    Y_rf: np.ndarray,
+    groups_actinet: np.ndarray,
+    groups_rf: np.ndarray,
+    T_actinet: Optional[np.ndarray] = None,
+    T_rf: Optional[np.ndarray] = None,
+    sleep_tol: Optional[str] = "1H",
+    remove_naps: bool = False,
+    weights_path: str = "models/weights.pt",
+    out_dir: Optional[str] = None,
+    verbose: bool = True,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     skf = StratifiedGroupKFold(n_splits=5)
 
     le = LabelEncoder().fit(Y_rf)
@@ -91,8 +91,8 @@ def evaluate_models(
     Y_preds_rf = np.empty_like(Y_encoded_rf)
     Y_preds_actinet = np.empty_like(Y_encoded_actinet)
 
-    results_rf = []
-    results_actinet = []
+    rf_records: List[Dict[str, Any]] = []
+    actinet_records: List[Dict[str, Any]] = []
 
     for fold, (train_index, test_index) in enumerate(
         skf.split(X_rf, Y_encoded_rf, groups_rf)
@@ -170,7 +170,7 @@ def evaluate_models(
         Y_preds_actinet[test_index_actinet] = y_pred_actinet
         Y_preds_rf[test_index_rf] = y_pred_rf
 
-        results_actinet.append(
+        actinet_records.append(
             {
                 "fold": [fold] * len(y_pred_actinet),
                 "group": groups_test_actinet,
@@ -183,7 +183,7 @@ def evaluate_models(
                 "Y_true": le.inverse_transform(y_test_actinet),
             }
         )
-        results_rf.append(
+        rf_records.append(
             {
                 "fold": [fold] * len(y_pred_rf),
                 "group": groups_test_rf,
@@ -206,8 +206,8 @@ def evaluate_models(
         print(classification_report(Y_rf, Y_preds_rf))
 
     # Save results to pickle files
-    results_actinet = pd.DataFrame(results_actinet)
-    results_rf = pd.DataFrame(results_rf)
+    results_actinet = pd.DataFrame(actinet_records)
+    results_rf = pd.DataFrame(rf_records)
 
     if out_dir is not None:
         os.makedirs(out_dir, exist_ok=True)

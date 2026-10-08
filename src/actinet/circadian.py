@@ -1,12 +1,21 @@
 """Module to support calculation of metrics of circadian rhythm from acc data. Recommendeed to use imputed data."""
 
+from typing import Any, Dict, List, Optional, Sequence
+
 import numpy as np
+import pandas as pd
 import scipy as sp
 from scipy import fftpack
 from datetime import timedelta
 
 
-def calculatePSD(e, epochPeriod, fourierWithAcc, labels, summary={}):
+def calculatePSD(
+    e: pd.DataFrame,
+    epochPeriod: int,
+    fourierWithAcc: bool,
+    labels: Sequence[str],
+    summary: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """
     Calculate the power spectral density from fourier analysis of a 1 day frequency.
 
@@ -17,6 +26,9 @@ def calculatePSD(e, epochPeriod, fourierWithAcc, labels, summary={}):
     :param dict summary: Dictionary to update with summary metrics.
 
     """
+    if summary is None:
+        summary = {}
+
     if fourierWithAcc:
         y = e["acc"].values
         key_suffix = "acc"
@@ -37,7 +49,13 @@ def calculatePSD(e, epochPeriod, fourierWithAcc, labels, summary={}):
     return summary
 
 
-def calculateFourierFreq(e, epochPeriod, fourierWithAcc, labels, summary={}):
+def calculateFourierFreq(
+    e: pd.DataFrame,
+    epochPeriod: int,
+    fourierWithAcc: bool,
+    labels: Sequence[str],
+    summary: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """
     Calculate the most prevalent frequency in a fourier analysis.
 
@@ -48,6 +66,9 @@ def calculateFourierFreq(e, epochPeriod, fourierWithAcc, labels, summary={}):
     :param dict summary: Output dictionary containing all summary metrics. This dictionary will be modified in-place: a new key 'fourier frequency-<1/days>' will be added with the calculated frequency as its value.
 
     """
+    if summary is None:
+        summary = {}
+
     if fourierWithAcc:
         y = e["acc"].values
         key_suffix = "acc"
@@ -64,7 +85,7 @@ def calculateFourierFreq(e, epochPeriod, fourierWithAcc, labels, summary={}):
     k_max = np.argmax(fft_y[i]) + 1
     n = len(y)
 
-    def func(k):
+    def func(k: float) -> float:
         """Maximise the fourier transform function (func) using the fft_y as a first esitmate"""
         return -np.abs(np.sum(np.exp(-2.0j * np.pi * k * np.arange(n) / n) * y) / n)
 
@@ -76,7 +97,11 @@ def calculateFourierFreq(e, epochPeriod, fourierWithAcc, labels, summary={}):
     return summary
 
 
-def calculateM10L5(e, epochPeriod, summary={}):
+def calculateM10L5(
+    e: pd.DataFrame,
+    epochPeriod: int,
+    summary: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """
     Calculates the M10 L5 relative amplitude from the average acceleration from
     the ten most active hours and 5 least most active hours.
@@ -86,11 +111,14 @@ def calculateM10L5(e, epochPeriod, summary={}):
     :param dict summary: Output dictionary containing all summary metrics. This dictionary will be modified in-place: a new key 'M10 L5-<rel amp>' will be added with the calculated frequency as its value.
 
     """
+    if summary is None:
+        summary = {}
+
     TEN_HOURS = int(10 * 60 * 60 / epochPeriod)
     FIVE_HOURS = int(5 * 60 * 60 / epochPeriod)
     num_days = (e.index[-1] - e.index[0]).days
 
-    days_split = []
+    days_split: List[int] = []
     for n in range(num_days):
         # creates a new list which is used to identify the 24 hour periods in the data frame
         days_split += [
@@ -98,31 +126,31 @@ def calculateM10L5(e, epochPeriod, summary={}):
             for x in e.index
             if e.index[0] + timedelta(days=n) <= x < e.index[0] + timedelta(days=n + 1)
         ]
-    dct = {}
+    dct: Dict[str, List[Any]] = {}
     for i in range(num_days):
         # create new lists with the acceleration data from each 24 hour period
         dct["day_%s" % i] = [
             e.loc[:, "acc"][n] for n in range(len(days_split)) if days_split[n] == i
         ]
-    dct_10 = {}
-    dct_5 = {}
-    for i in dct:
+    dct_10: Dict[str, List[Any]] = {}
+    dct_5: Dict[str, List[Any]] = {}
+    for day_key in dct:
         #  sums each 10 or 5 hour window with steps of 30s for each day
-        dct_10["%s" % i] = [
-            sum(dct["%s" % i][j : j + TEN_HOURS])
-            for j in range(len(dct["%s" % i]) - TEN_HOURS)
+        dct_10[day_key] = [
+            sum(dct[day_key][j : j + TEN_HOURS])
+            for j in range(len(dct[day_key]) - TEN_HOURS)
         ]
-        dct_5["%s" % i] = [
-            sum(dct["%s" % i][j : j + FIVE_HOURS])
-            for j in range(len(dct["%s" % i]) - FIVE_HOURS)
+        dct_5[day_key] = [
+            sum(dct[day_key][j : j + FIVE_HOURS])
+            for j in range(len(dct[day_key]) - FIVE_HOURS)
         ]
-    avg_10 = {}
-    avg_5 = {}
+    avg_10: Dict[str, Any] = {}
+    avg_5: Dict[str, Any] = {}
     #   average acceleration (for each 30s) for the max and min windows
-    for i in dct:
-        avg_10["%s" % i] = (np.max(dct_10["%s" % i])) / TEN_HOURS
-    for i in dct:
-        avg_5["%s" % i] = (np.min(dct_5["%s" % i])) / FIVE_HOURS
+    for day_key in dct:
+        avg_10[day_key] = np.max(dct_10[day_key]) / TEN_HOURS
+    for day_key in dct:
+        avg_5[day_key] = np.min(dct_5[day_key]) / FIVE_HOURS
 
     if num_days > 0:
         M10 = sum(avg_10.values()) / num_days

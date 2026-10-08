@@ -10,6 +10,7 @@ from glob import glob
 import subprocess
 from urllib import request
 import zipfile
+from typing import Any, Iterable, List, Optional, Tuple, Type
 
 from actinet.utils.utils import is_good_window, resize
 from actinet.utils.model_config import MODEL_CONFIG
@@ -18,12 +19,12 @@ ACC_COLS = ["x", "y", "z"]
 
 
 def load_data(
-    datafile,
-    sample_rate=100,
-    annot_type=str,
-    lowpass_hz=None,
-    resample_rate=None,
-):
+    datafile: str,
+    sample_rate: int = 100,
+    annot_type: Type[Any] = str,
+    lowpass_hz: Optional[float] = None,
+    resample_rate: Optional[int] = None,
+) -> pd.DataFrame:
     """
     Load data from a file and process it using actipy.
 
@@ -59,13 +60,13 @@ def load_data(
 
 
 def make_windows(
-    data,
-    anno_dict,
-    anno_label,
-    winsec=30,
-    sample_rate=100,
-    resample_rate=30,
-):
+    data: pd.DataFrame,
+    anno_dict: pd.DataFrame,
+    anno_label: str,
+    winsec: int = 30,
+    sample_rate: int = 100,
+    resample_rate: int = 30,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Create windows from the input data.
 
@@ -81,7 +82,9 @@ def make_windows(
         tuple: Tuple containing the windowed data, labels, and timestamps.
 
     """
-    X, Y, T = [], [], []
+    x_windows: List[np.ndarray] = []
+    labels: List[Any] = []
+    times: List[Any] = []
 
     for t, w in data.resample(f"{winsec}s", origin="start"):
 
@@ -108,13 +111,13 @@ def make_windows(
                 .iloc[0]
             )
 
-        X.append(x.to_numpy())
-        Y.append(y)
-        T.append(t)
+        x_windows.append(x.to_numpy())
+        labels.append(y)
+        times.append(t)
 
-    X = np.stack(X)
-    Y = np.stack(Y)
-    T = np.stack(T)
+    X = np.stack(x_windows)
+    Y = np.stack(labels)
+    T = np.stack(times)
 
     if resample_rate != sample_rate:
         X = resize(X, int(resample_rate * winsec))
@@ -123,17 +126,17 @@ def make_windows(
 
 
 def load_all_and_make_windows(
-    datafiles,
-    annofile,
-    out_dir=None,
-    anno_label="Walmsley2020",
-    sample_rate=100,
-    winsec=30,
-    resample_rate=30,
-    lowpass_hz=None,
-    downsampling_method="nn",
-    n_jobs=1,
-):
+    datafiles: Iterable[str],
+    annofile: str,
+    out_dir: Optional[str] = None,
+    anno_label: str = "Walmsley2020",
+    sample_rate: int = 100,
+    winsec: int = 30,
+    resample_rate: int = 30,
+    lowpass_hz: Optional[float] = None,
+    downsampling_method: str = "nn",
+    n_jobs: int = 1,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load data from multiple files, create windows, and save the results.
 
@@ -148,7 +151,7 @@ def load_all_and_make_windows(
 
     """
 
-    def worker(datafile):
+    def worker(datafile: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         if downsampling_method == "nn":
             X, Y, T = make_windows(
                 load_data(
@@ -179,25 +182,26 @@ def load_all_and_make_windows(
         else:
             raise ValueError("Invalid downsampling method")
 
-        pid = os.path.basename(datafile).split(".")[
+        participant_id = os.path.basename(datafile).split(".")[
             0
         ]  # participant ID based on file name
-        pid = np.asarray([pid] * len(X))
-        return X, Y, T, pid
+        participant_ids = np.asarray([participant_id] * len(X))
+        return X, Y, T, participant_ids
 
     anno_dict = pd.read_csv(annofile, index_col="annotation", dtype="string")
 
-    X, Y, T, P = zip(
-        *Parallel(n_jobs=n_jobs)(
-            delayed(worker)(datafile)
-            for datafile in tqdm(datafiles, desc="Load and making windows: ")
-        )
+    window_sets = Parallel(n_jobs=n_jobs)(
+        delayed(worker)(datafile)
+        for datafile in tqdm(datafiles, desc="Load and making windows: ")
+    )
+    x_parts, y_parts, time_parts, participant_parts = zip(
+        *window_sets
     )
 
-    X = np.vstack(X)
-    Y = np.hstack(Y)
-    T = np.hstack(T)
-    P = np.hstack(P)
+    X = np.vstack(x_parts)
+    Y = np.hstack(y_parts)
+    T = np.hstack(time_parts)
+    P = np.hstack(participant_parts)
 
     if out_dir:
         info = {
@@ -223,13 +227,14 @@ def load_all_and_make_windows(
 
 
 def make_labels(
-    data,
-    anno_dict,
-    anno_label,
-    sample_rate=100,
-    winsec=30,
-):
-    Y, T = [], []
+    data: pd.DataFrame,
+    anno_dict: pd.DataFrame,
+    anno_label: str,
+    sample_rate: int = 100,
+    winsec: int = 30,
+) -> Tuple[np.ndarray, np.ndarray]:
+    labels: List[Any] = []
+    times: List[Any] = []
     for t, w in data.resample(f"{winsec}s", origin="start"):
         if len(w) < 1:
             continue
@@ -255,17 +260,17 @@ def make_labels(
                     .iloc[0]
                 )
 
-        Y.append(y)
-        T.append(t)
+        labels.append(y)
+        times.append(t)
 
-    Y = np.stack(Y)
-    T = np.stack(T)
+    Y = np.stack(labels)
+    T = np.stack(times)
 
     return Y, T
 
 
-def extract_accelerometer_features(n_jobs):
-    def process_file(file_number):
+def extract_accelerometer_features(n_jobs: int) -> None:
+    def process_file(file_number: int) -> Optional[subprocess.CompletedProcess]:
         filename = f"P{file_number:03}.csv.gz"
 
         if len(glob(f"data/capture24/bbaa/P{file_number:03}*")) != 4:
@@ -273,6 +278,7 @@ def extract_accelerometer_features(n_jobs):
             process = subprocess.run(command, shell=True, capture_output=True)
 
             return process
+        return None
 
     Parallel(n_jobs=n_jobs)(
         delayed(process_file)(file_number) for file_number in tqdm(range(1, 152))
@@ -280,8 +286,8 @@ def extract_accelerometer_features(n_jobs):
 
 
 def prepare_participant_accelerometer_data(
-    pid, annotations_file, anno_label, verbose=False
-):
+    pid: int, annotations_file: str, anno_label: str, verbose: bool = False
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     raw_file_name = f"data/capture24/P{pid:03}.csv.gz"
     features_file_name = f"data/capture24/bbaa/P{pid:03}-epoch.csv.gz"
 
@@ -319,20 +325,26 @@ def prepare_participant_accelerometer_data(
     return X, Y, T, P
 
 
-def prepare_accelerometer_data(annotation_file, anno_label, out_dir, n_jobs):
-    X, Y, T, P = zip(
-        *Parallel(n_jobs=n_jobs)(
-            delayed(prepare_participant_accelerometer_data)(
-                file_number, annotation_file, anno_label
-            )
-            for file_number in tqdm(range(1, 152))
+def prepare_accelerometer_data(
+    annotation_file: str,
+    anno_label: str,
+    out_dir: Optional[str],
+    n_jobs: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    participant_sets = Parallel(n_jobs=n_jobs)(
+        delayed(prepare_participant_accelerometer_data)(
+            file_number, annotation_file, anno_label
         )
+        for file_number in tqdm(range(1, 152))
+    )
+    x_parts, y_parts, time_parts, participant_parts = zip(
+        *participant_sets
     )
 
-    X = np.vstack(X)
-    Y = np.hstack(Y)
-    T = np.hstack(T)
-    P = np.hstack(P)
+    X = np.vstack(x_parts)
+    Y = np.hstack(y_parts)
+    T = np.hstack(time_parts)
+    P = np.hstack(participant_parts)
 
     if out_dir:
         # Save arrays for future use
@@ -345,7 +357,9 @@ def prepare_accelerometer_data(annotation_file, anno_label, out_dir, n_jobs):
     return X, Y, T, P
 
 
-def download_data(url, zip_path, extract_path, verbose=True):
+def download_data(
+    url: str, zip_path: str, extract_path: str, verbose: bool = True
+) -> None:
     os.makedirs(os.path.dirname(zip_path), exist_ok=True)
 
     if os.path.exists(zip_path):
@@ -366,14 +380,14 @@ def download_data(url, zip_path, extract_path, verbose=True):
             zip_ref.extractall(extract_path)
 
         if verbose:
-            print(f"Extraction complete.")
+            print("Extraction complete.")
 
     else:
         if verbose:
             print(f"{extract_path} already exists. Skipping extraction.")
 
 
-def make_acc_df(path, save_path, sample_rate=100):
+def make_acc_df(path: str, save_path: str, sample_rate: int = 100) -> None:
     if os.path.exists(save_path):
         print(f"File {save_path} already exists. Skipping generation.")
         return

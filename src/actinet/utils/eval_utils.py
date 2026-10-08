@@ -1,3 +1,5 @@
+from typing import Any, Dict, Iterable, Literal, Tuple, Union, overload
+
 import numpy as np
 import pandas as pd
 import re
@@ -10,16 +12,19 @@ from sklearn.metrics import (
 )
 
 
-class DivDict(dict):
+Number = Union[int, float]
+
+
+class DivDict(Dict[Any, Number]):
     """Dictionary subclass that allows division by a number."""
 
-    def __truediv__(self, n):
+    def __truediv__(self, n: Number) -> "DivDict":
         if not isinstance(n, (int, float)):
             raise TypeError("Can only divide by a number (int or float)")
         return DivDict({k: v / n for k, v in self.items()})
 
 
-def calculate_metrics(y_true, y_pred):
+def calculate_metrics(y_true: Any, y_pred: Any) -> Tuple[float, float, float, float]:
     """Calculates accuracy, F1, Cohen's Kappa, and balanced accuracy."""
     accuracy = accuracy_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred, average="macro")
@@ -28,9 +33,38 @@ def calculate_metrics(y_true, y_pred):
     return accuracy, f1, kappa, bacc
 
 
+@overload
 def extract_activity_predictions(
-    results: pd.DataFrame, activity, age_band=None, sex=None, return_true_labels=False
-):
+    results: pd.DataFrame,
+    activity: str,
+    age_band: Any = None,
+    sex: Any = None,
+    return_true_labels: Literal[True] = True,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
+    ...
+
+
+@overload
+def extract_activity_predictions(
+    results: pd.DataFrame,
+    activity: str,
+    age_band: Any = None,
+    sex: Any = None,
+    return_true_labels: Literal[False] = False,
+) -> Tuple[np.ndarray, np.ndarray, int]:
+    ...
+
+
+def extract_activity_predictions(
+    results: pd.DataFrame,
+    activity: str,
+    age_band: Any = None,
+    sex: Any = None,
+    return_true_labels: bool = False,
+) -> Union[
+    Tuple[np.ndarray, np.ndarray, int],
+    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int],
+]:
     """Extracts incidence of predicted activity label for actinet and accelerometer based on filtering conditions."""
     model_results = results.copy()
     if age_band is not None:
@@ -84,13 +118,13 @@ def extract_activity_predictions(
         return activity_bbaa_pred, activity_actinet_pred, population
 
 
-def build_mae_cell(true_values, pred_values):
+def build_mae_cell(true_values: Any, pred_values: Any) -> str:
     """Builds a MAE cell for a given set of true and predicted values."""
     mae = np.abs(true_values - pred_values)
     return f"{np.mean(mae):.3f} ± {np.std(mae):.3f}"
 
 
-def build_pvalue_cell(true_values, pred_values):
+def build_pvalue_cell(true_values: Any, pred_values: Any) -> str:
     """Builds a p-value cell for a given set of true and predicted values."""
     _, p_value = stats.ttest_rel(true_values, pred_values)
     if p_value < 0.001:
@@ -98,7 +132,7 @@ def build_pvalue_cell(true_values, pred_values):
     return f"{p_value:.3f}"
 
 
-def build_mae_table(df: pd.DataFrame, activities):
+def build_mae_table(df: pd.DataFrame, activities: Iterable[str]) -> pd.DataFrame:
     df_maes = pd.DataFrame(
         columns=activities, index=["Baseline", "ActiNet", "p-value"], dtype=float
     )

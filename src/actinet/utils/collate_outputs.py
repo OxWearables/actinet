@@ -2,11 +2,13 @@ import argparse
 import os
 import json
 from collections import OrderedDict
+from typing import Any, Dict, List, Optional, Sequence
+
 import pandas as pd
 from tqdm.auto import tqdm
 
 
-def collate_outputs(outputs, outfile="outputs.csv"):
+def collate_outputs(outputs: str, outfile: str = "outputs.csv") -> None:
     """Read all *-outputSummary.json files under <outputs> and merge into one CSV file.
     :param str outputs: Directory containing JSON files.
     :param str outfile: Output CSV filename.
@@ -15,8 +17,8 @@ def collate_outputs(outputs, outfile="outputs.csv"):
     """
 
     # Load all *-outputSummary.json files under outputs/
-    infofiles = []
-    jdicts = []
+    infofiles: List[str] = []
+    jdicts: List[Dict[str, Any]] = []
     for root, _, files in os.walk(outputs):
         for file in files:
             if file.endswith("-outputSummary.json"):
@@ -34,15 +36,15 @@ def collate_outputs(outputs, outfile="outputs.csv"):
     return
 
 
-def main():
+def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("outputs", help="Directory containing JSON files.")
     parser.add_argument(
         "--outfile", "-o", default="outputs.csv", help="Output CSV filename."
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    return collate_outputs(outputs=args.outputs, outfile=args.outfile)
+    collate_outputs(outputs=args.outputs, outfile=args.outfile)
 
 
 if __name__ == "__main__":

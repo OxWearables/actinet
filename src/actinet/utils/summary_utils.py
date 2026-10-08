@@ -1,10 +1,12 @@
+from typing import Any, Dict, List, Optional, Sequence
+
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import numpy as np
 from actinet.utils.utils import infer_freq
 
 
-def impute_missing(data, extrapolate=True):
+def impute_missing(data: pd.DataFrame, extrapolate: bool = True) -> pd.DataFrame:
     """Impute missing/nonwear segments
 
     Impute non-wear data segments using the average of similar time-of-day values
@@ -37,7 +39,7 @@ def impute_missing(data, extrapolate=True):
             limit=1,
         )
 
-    def fillna(subframe):
+    def fillna(subframe: Any) -> Any:
         # Transform will first pass the subframe column-by-column as a Series.
         # After passing all columns, it will pass the entire subframe again as a DataFrame.
         # Processing the entire subframe is optional (return value can be omitted). See 'Notes' in transform doc.
@@ -67,7 +69,7 @@ def impute_missing(data, extrapolate=True):
     return data
 
 
-def calculateECDF(x, summary):
+def calculateECDF(x: pd.Series, summary: Dict[str, Any]) -> Dict[str, Any]:
     """Calculate activity intensity empirical cumulative distribution
 
     The input data must not be imputed, as ECDF requires different imputation
@@ -117,7 +119,7 @@ def calculateECDF(x, summary):
 
 def summarize_daily_enmo(
     acc: pd.Series, acc_adjusted: pd.Series, min_wear_per_day: float = 21 * 60
-):
+) -> pd.DataFrame:
     """
     Summarize daily ENMO information from raw accelerometer data.
 
@@ -135,14 +137,22 @@ def summarize_daily_enmo(
         summary = summarize_daily_enmo(acc, acc_adjusted, min_wear_per_day=21*60)
     """
 
-    def _is_enough(x, min_wear=None, dt=None):
+    def _is_enough(
+        x: pd.Series,
+        min_wear: Optional[float] = None,
+        dt: Optional[float] = None,
+    ) -> bool:
         if min_wear is None:
             return True  # no minimum wear time, then default to True
         if dt is None:
             dt = infer_freq(x.index).total_seconds()
         return x.notna().sum() * dt / 60 > min_wear
 
-    def _mean(x, min_wear=None, dt=None):
+    def _mean(
+        x: pd.Series,
+        min_wear: Optional[float] = None,
+        dt: Optional[float] = None,
+    ) -> float:
         if not _is_enough(x, min_wear, dt):
             return np.nan
         return x.mean()
@@ -171,9 +181,9 @@ def summarize_daily_enmo(
 def summarize_daily_activity(
     data: pd.DataFrame,
     data_adjusted: pd.DataFrame,
-    labels: list,
+    labels: Sequence[str],
     min_wear_per_day: float = 21 * 60,
-):
+) -> pd.DataFrame:
     """
     Summarize daily activity information from predicted label outputs.
 
@@ -199,14 +209,22 @@ def summarize_daily_activity(
 
     dt = infer_freq(data.index).total_seconds()
 
-    def _is_enough(x, min_wear=None, dt=None):
+    def _is_enough(
+        x: pd.Series,
+        min_wear: Optional[float] = None,
+        dt: Optional[float] = None,
+    ) -> bool:
         if min_wear is None:
             return True  # no minimum wear time, then default to True
         if dt is None:
             dt = infer_freq(x.index).total_seconds()
         return x.notna().sum() * dt / 60 > min_wear
 
-    def _total_hrs(x, min_wear=None, dt=None):
+    def _total_hrs(
+        x: pd.Series,
+        min_wear: Optional[float] = None,
+        dt: Optional[float] = None,
+    ) -> float:
         if not _is_enough(x, min_wear, dt):
             return np.nan
         return x.sum() * dt / 3600
@@ -229,7 +247,7 @@ def summarize_daily_activity(
     return summary
 
 
-def calculate_daily_wear_stats(data: pd.DataFrame):
+def calculate_daily_wear_stats(data: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate daily wear time statistics from raw accelerometer data.
 
@@ -254,7 +272,7 @@ def calculate_daily_wear_stats(data: pd.DataFrame):
     # Group by date
     date_groups = data.groupby(data.index.date)
 
-    results = []
+    results: List[Dict[str, Any]] = []
 
     for date, day_data in date_groups:
         day_na = na.loc[day_data.index]
