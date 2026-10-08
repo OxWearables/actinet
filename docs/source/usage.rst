@@ -32,6 +32,22 @@ to visualise the output time-series.
 |                     | for each 30sec time window.                            |
 +---------------------+--------------------------------------------------------+
 
+Selecting a processing interval
+-------------------------------
+
+Use ``--start`` and ``--end`` to process an inclusive interval from a recording.
+Either option can be supplied independently. For example:
+
+.. code-block:: console
+
+    $ actinet data/sample.cwa.gz --start "2024-01-01 10:00:00" --end "2024-01-08 09:59:59"
+
+The recording is calibrated and checked for non-wear before the interval is
+selected. Activity classification and summary statistics use only the selected
+interval. The boundaries must use timestamps compatible with the recording,
+the start must not follow the end, and the interval must overlap the recording.
+The selected data must produce at least three activity-classification epochs.
+
 Processing a CSV file
 ---------------------
 

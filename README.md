@@ -56,6 +56,9 @@ $ actinet sample.csv --csv-txyz 'timestamp,accel_x,accel_y,accel_z'
 
 # Or specify columns by index (0-indexed)
 $ actinet sample.csv --csv-txyz-idxs '0,1,2,3'
+
+# Process an inclusive time interval from the recording
+$ actinet sample.cwa --start '2024-01-01 10:00:00' --end '2024-01-08 09:59:59'
 ```
 
 See the [Usage](https://actinet.readthedocs.io/en/latest/usage.html) page for further uses of the tool.

@@ -127,6 +127,24 @@ def main():
         default=None,
     )
     parser.add_argument(
+        "--start",
+        help=(
+            "Specify a start time for the data to be processed (otherwise, process all). "
+            "Pass values as strings, e.g.: '2024-01-01 10:00:00'. Default: None"
+        ),
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--end",
+        help=(
+            "Specify an end time for the data to be processed (otherwise, process all). "
+            "Pass values as strings, e.g.: '2024-01-02 09:59:59'. Default: None"
+        ),
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         "--csv-start-row",
         help="Row number to start reading a CSV file. Default: 1 (First row)",
         type=int,
@@ -211,6 +229,8 @@ def main():
         args.calibration_stdtol_min,
         resample_hz="uniform",
         sample_rate=args.sample_rate,
+        start_time=args.start,
+        end_time=args.end,
         csv_txyz_idxs=args.csv_txyz_idxs,
         verbose=verbose,
     )
@@ -275,6 +295,11 @@ def main():
             args.require_sleep_above,
             args.single_sleep_block,
         )
+        if len(Y) < 3:
+            raise ValueError(
+                "The selected time interval must produce at least three "
+                f"{classifier.window_sec}-second activity epochs."
+            )
     except Exception as e:
         save_and_print_summary(outputSummaryFile, info, verbose)
         raise ValueError(f"Model failed to make predictions on the data: {str(e)}")
@@ -356,7 +381,11 @@ def read(
     lowpass_hz=None,
     csv_txyz_idxs=None,
     verbose=True,
+    start_time=None,
+    end_time=None,
 ):
+    start_time, end_time = validate_time_interval(start_time, end_time)
+
     p = pathlib.Path(filepath)
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
 
@@ -466,7 +495,68 @@ def read(
     if "ResampleRate" not in info:
         info["ResampleRate"] = info["SampleRate"]
 
+    start_time, end_time = validate_time_interval(
+        start_time, end_time, data.index
+    )
+
+    # Apply bounds after ActiPy processes the complete recording for calibration
+    # and non-wear detection.
+    if start_time is not None:
+        data = data.loc[start_time:]
+    if end_time is not None:
+        data = data.loc[:end_time]
+
+    if len(data) == 0 and (start_time is not None or end_time is not None):
+        raise ValueError("The selected time interval does not contain any data.")
+
     return data, info
+
+
+def validate_time_interval(start_time=None, end_time=None, index=None):
+    """Parse optional bounds and validate them against a recording index."""
+
+    def parse_bound(value, name):
+        if value is None:
+            return None
+        try:
+            value = pd.Timestamp(value)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"Invalid {name} time: {value!r}") from error
+        if pd.isna(value):
+            raise ValueError(f"Invalid {name} time: {value!r}")
+        return value
+
+    start_time = parse_bound(start_time, "start")
+    end_time = parse_bound(end_time, "end")
+
+    if start_time is not None and end_time is not None:
+        try:
+            reversed_interval = start_time > end_time
+        except TypeError as error:
+            raise ValueError(
+                "Start and end times must use compatible timezones."
+            ) from error
+        if reversed_interval:
+            raise ValueError("Start time must be earlier than or equal to end time.")
+
+    if index is None or len(index) == 0:
+        return start_time, end_time
+    if not isinstance(index, pd.DatetimeIndex):
+        raise ValueError("Time interval selection requires a DatetimeIndex.")
+
+    index_is_aware = index.tz is not None
+    for name, bound in (("start", start_time), ("end", end_time)):
+        if bound is not None and (bound.tzinfo is not None) != index_is_aware:
+            raise ValueError(
+                f"The {name} time and recording timestamps must use compatible timezones."
+            )
+
+    if start_time is not None and start_time > index[-1]:
+        raise ValueError("The selected time interval does not overlap the recording.")
+    if end_time is not None and end_time < index[0]:
+        raise ValueError("The selected time interval does not overlap the recording.")
+
+    return start_time, end_time
 
 
 def resolve_path(path):
