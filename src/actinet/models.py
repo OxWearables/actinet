@@ -211,7 +211,7 @@ class ActivityClassifier:
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
-        :param data: The training accelerometer data [x,y,z]
+        :param data: The input accelerometer data [x,y,z]
         :type data: pandas.DataFrame
         :param sample_freq: Sampling frequency of the accelerometer data
         :type sample_freq: int or float
@@ -221,8 +221,21 @@ class ActivityClassifier:
         :type sleep_tolerance: str, optional
         :param remove_naps: Whether to remove nap periods from the predictions
         :type remove_naps: bool, optional
+
+        :raises ValueError: If the sample frequency cannot be inferred or the
+            data contains no valid prediction window.
         """
-        sample_freq = sample_freq or 1 / (infer_freq(data.index).total_seconds())
+        if sample_freq in (None, False):
+            if len(data.index) < 2:
+                raise ValueError(
+                    "Input data must contain at least two timestamps to infer "
+                    "the sample frequency."
+                )
+            sample_period = infer_freq(data.index)
+            if pd.isna(sample_period) or sample_period <= pd.Timedelta(0):
+                raise ValueError("Could not infer a valid sample frequency.")
+            sample_freq = 1 / sample_period.total_seconds()
+
         X, T = make_windows(
             data,
             self.window_sec,
@@ -230,6 +243,12 @@ class ActivityClassifier:
             return_index=True,
             verbose=self.verbose,
         )
+
+        if X.ndim != 3 or not (~np.isnan(X).any(axis=(1, 2))).any():
+            raise ValueError(
+                "Input data does not contain enough valid samples for a "
+                "prediction window."
+            )
 
         Y = raw_to_df(
             X,
