@@ -49,7 +49,7 @@ def generate_commands(
                 input_dir.rstrip("/"), output_dir.rstrip("/")
             ).split(".")[0]
 
-            cmd = f"stepcount '{fpath}' --outdir '{_output_dir}' {cmdopts}"
+            cmd = f"actinet '{fpath}' --outdir '{_output_dir}' {cmdopts}"
 
             f.write(cmd)
             f.write("\n")

@@ -643,6 +643,8 @@ def md5(fname: Union[str, pathlib.Path]) -> str:
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
+        if isinstance(obj, np.bool_):
+            return bool(obj)
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):
