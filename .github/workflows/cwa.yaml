@@ -1,0 +1,46 @@
+name: cwa
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  end-to-end:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: setup.py
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Download model artifacts
+        run: actinet --cache-classifier --quiet
+
+      - name: Smoke test compressed CSV
+        run: |
+          actinet tests/data/nano-sample.csv.gz --outdir test-outputs --pytorch-device cpu --quiet
+          test -s test-outputs/nano-sample/nano-sample-outputSummary.json
+          test -s test-outputs/nano-sample/nano-sample-timeSeries.csv.gz
+          test -s test-outputs/nano-sample/nano-sample-Daily.csv.gz
+
+      - name: End-to-end test CWA input
+        run: |
+          actinet tests/data/tiny-sample.cwa.gz --outdir test-outputs --pytorch-device cpu --quiet
+          test -s test-outputs/tiny-sample/tiny-sample-outputSummary.json
+          test -s test-outputs/tiny-sample/tiny-sample-timeSeries.csv.gz
+          test -s test-outputs/tiny-sample/tiny-sample-Daily.csv.gz
