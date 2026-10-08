@@ -69,7 +69,7 @@ def main():
                 "twine",
                 "ipython",
                 "ipdb",
-                "flake8",
+                "ruff==0.15.20",
                 "autopep8",
                 "tomli",
                 "jupyter",
