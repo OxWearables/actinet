@@ -74,6 +74,9 @@ def main():
                 "tomli",
                 "jupyter",
                 "mypy==1.14.1",
+                "pytest>=8.3,<8.4",
+                "pytest-cov>=5,<6",
+                "seaborn==0.13.*",
             ],
             "docs": [
                 "sphinx>=4.2",

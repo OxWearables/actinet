@@ -218,3 +218,15 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "actinet._version"
 follow_imports = "skip"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "slow: real-device or otherwise longer-running regression tests",
+]
+
+[tool.coverage.run]
+omit = ["*/actinet/_version.py"]
+
+[tool.coverage.report]
+fail_under = 80
