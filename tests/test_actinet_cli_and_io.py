@@ -5,20 +5,21 @@ import sys
 import warnings
 from unittest.mock import MagicMock, mock_open
 
+import actipy
 import joblib
 import numpy as np
 import pandas as pd
 import pytest
 
-from actinet import actinet
+from actinet import accPlot, actinet, summarisation
 from actinet.models import ActivityClassifier
+from actinet.utils import summary_utils
+from actinet.utils import utils as actinet_utils
 
 
 def _acceleration_frame(periods=6):
     index = pd.date_range("2024-01-01", periods=periods, freq="1s", name="time")
-    return pd.DataFrame(
-        {"x": np.zeros(periods), "y": np.zeros(periods), "z": np.ones(periods)}, index=index
-    )
+    return pd.DataFrame({"x": np.zeros(periods), "y": np.zeros(periods), "z": np.ones(periods)}, index=index)
 
 
 def test_summary_path_hash_and_json_encoder(tmp_path, capsys):
@@ -54,9 +55,7 @@ def test_validate_time_interval_edge_cases():
     with pytest.raises(ValueError, match="DatetimeIndex"):
         actinet.validate_time_interval("2024-01-01", index=pd.Index([1, 2]))
     aware = pd.date_range("2024-01-01", periods=3, freq="1h", tz="UTC")
-    start, end = actinet.validate_time_interval(
-        "2024-01-01 00:00+00:00", "2024-01-01 02:00+00:00", aware
-    )
+    start, end = actinet.validate_time_interval("2024-01-01 00:00+00:00", "2024-01-01 02:00+00:00", aware)
     assert start.tzinfo is not None and end.tzinfo is not None
     with pytest.raises(ValueError, match="does not overlap"):
         actinet.validate_time_interval(end_time="2023-12-31 00:00+00:00", index=aware)
@@ -68,7 +67,7 @@ def test_read_csv_by_column_indices_and_pickle(tmp_path, monkeypatch):
     csv = tmp_path / "sample.csv"
     csv_frame.to_csv(csv, index=False)
     monkeypatch.setattr(
-        actinet.actipy,
+        actipy,
         "process",
         lambda data, *args, **kwargs: (data, {"ResampleRate": 1}),
     )
@@ -110,7 +109,7 @@ def test_read_device_warnings_unknown_format_and_empty_selection(tmp_path, monke
     cwa = tmp_path / "sample.cwa"
     cwa.write_bytes(b"fixture")
     monkeypatch.setattr(
-        actinet.actipy,
+        actipy,
         "read_device",
         lambda *args, **kwargs: (frame, {"SampleRate": 1}),
     )
@@ -154,9 +153,7 @@ def test_load_local_classifier_and_errors(tmp_path, monkeypatch):
 
 def test_download_known_classifier_and_detect_corruption(monkeypatch):
     classifier = ActivityClassifier(labels=["sleep"])
-    monkeypatch.setattr(
-        actinet, "__classifiers__", {"known": {"version": "test-model", "md5": "expected"}}
-    )
+    monkeypatch.setattr(actinet, "__classifiers__", {"known": {"version": "test-model", "md5": "expected"}})
     response = MagicMock()
     response.__enter__.return_value = io.BytesIO(b"model")
     response.__exit__.return_value = False
@@ -164,7 +161,7 @@ def test_download_known_classifier_and_detect_corruption(monkeypatch):
     monkeypatch.setattr("builtins.open", mock_open())
     monkeypatch.setattr(actinet.shutil, "copyfileobj", MagicMock())
     monkeypatch.setattr(actinet, "md5", lambda path: "expected")
-    monkeypatch.setattr(actinet.joblib, "load", lambda path: classifier)
+    monkeypatch.setattr(joblib, "load", lambda path: classifier)
     monkeypatch.setattr(ActivityClassifier, "load_model", MagicMock())
     assert actinet.load_classifier("known", force_download=True, verbose=True) is classifier
     monkeypatch.setattr(actinet, "md5", lambda path: "wrong")
@@ -182,13 +179,11 @@ def test_cli_successful_prediction_workflow(tmp_path, monkeypatch, capsys):
         "ReadOK": 1,
     }
     monkeypatch.setattr(actinet, "read", MagicMock(return_value=(data, info)))
-    monkeypatch.setattr(actinet, "drop_first_last_days", MagicMock(side_effect=lambda x, _: x))
-    monkeypatch.setattr(actinet, "flag_wear_below_days", MagicMock(side_effect=lambda x, _: x))
-    monkeypatch.setattr(actinet, "calculate_wear_stats", lambda data: {"WearTime(days)": 1.0})
-    daily_wear = pd.DataFrame(
-        {"WearTime(hours)": [24.0]}, index=pd.DatetimeIndex(["2024-01-01"], name="Date")
-    )
-    monkeypatch.setattr(actinet, "calculate_daily_wear_stats", lambda data: daily_wear)
+    monkeypatch.setattr(actinet_utils, "drop_first_last_days", MagicMock(side_effect=lambda x, _: x))
+    monkeypatch.setattr(actinet_utils, "flag_wear_below_days", MagicMock(side_effect=lambda x, _: x))
+    monkeypatch.setattr(actinet_utils, "calculate_wear_stats", lambda data: {"WearTime(days)": 1.0})
+    daily_wear = pd.DataFrame({"WearTime(hours)": [24.0]}, index=pd.DatetimeIndex(["2024-01-01"], name="Date"))
+    monkeypatch.setattr(summary_utils, "calculate_daily_wear_stats", lambda data: daily_wear)
     classifier = MagicMock()
     classifier.labels = ["sleep", "light"]
     classifier.window_sec = 30
@@ -198,16 +193,17 @@ def test_cli_successful_prediction_workflow(tmp_path, monkeypatch, capsys):
     )
     classifier.predict_from_frame.return_value = predictions
     monkeypatch.setattr(actinet, "load_classifier", MagicMock(return_value=classifier))
-    daily_activity = pd.DataFrame(
-        {"Sleep(hours)": [1.0]}, index=pd.DatetimeIndex(["2024-01-01"], name="Date")
-    )
+    daily_activity = pd.DataFrame({"Sleep(hours)": [1.0]}, index=pd.DatetimeIndex(["2024-01-01"], name="Date"))
     monkeypatch.setattr(
-        actinet,
+        summarisation,
         "get_activity_summary",
-        lambda *args, **kwargs: ({"acc-overall-avg": 2.0, "sleep-overall-avg": 1 / 3, "light-overall-avg": 2 / 3}, daily_activity),
+        lambda *args, **kwargs: (
+            {"acc-overall-avg": 2.0, "sleep-overall-avg": 1 / 3, "light-overall-avg": 2 / 3},
+            daily_activity,
+        ),
     )
     figure = MagicMock()
-    monkeypatch.setattr(actinet, "plotTimeSeries", MagicMock(return_value=figure))
+    monkeypatch.setattr(accPlot, "plotTimeSeries", MagicMock(return_value=figure))
     argv = [
         "actinet",
         "sample.cwa",
