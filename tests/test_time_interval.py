@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,6 +10,71 @@ import pandas as pd
 
 from actinet.actinet import main, read
 from actinet.models import ActivityClassifier
+
+
+class CLIStartupTests(unittest.TestCase):
+    def test_cli_module_import_is_lightweight(self):
+        probe = """
+import sys
+modules_before_import = set(sys.modules)
+import actinet.actinet as actinet
+
+annotation_text = repr({
+    'read': actinet.read.__annotations__,
+    'validate_time_interval': actinet.validate_time_interval.__annotations__,
+    'load_classifier': actinet.load_classifier.__annotations__,
+})
+for expected in ('pd.DataFrame', 'pd.Index', 'pd.Timestamp', 'ActivityClassifier'):
+    assert expected in annotation_text, annotation_text
+assert '_PandasTypes' not in actinet.__dict__
+assert 'ActivityClassifier' not in actinet.__dict__
+
+heavy_modules = {
+    'actinet.models',
+    'actipy',
+    'hmmlearn',
+    'imblearn',
+    'joblib',
+    'matplotlib',
+    'numpy',
+    'pandas',
+    'scipy',
+    'sklearn',
+    'torch',
+    'torchvision',
+    'transforms3d',
+}
+loaded = heavy_modules.intersection(sys.modules).difference(modules_before_import)
+print(','.join(sorted(loaded)))
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", probe],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "")
+
+    def test_activity_classifier_symbol_resolves_to_real_class(self):
+        import actinet.actinet as actinet
+
+        self.assertNotIn("ActivityClassifier", actinet.__dict__)
+        self.assertIs(actinet.ActivityClassifier, ActivityClassifier)
+        self.assertIs(actinet.__dict__["ActivityClassifier"], ActivityClassifier)
+
+    def test_cli_help(self):
+        result = subprocess.run(
+            [sys.executable, "-m", "actinet.actinet", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("usage:", result.stdout.lower())
+        self.assertIn("filepath", result.stdout.lower())
 
 
 class ReadTimeIntervalTests(unittest.TestCase):
@@ -25,7 +91,7 @@ class ReadTimeIntervalTests(unittest.TestCase):
         self.data.index.name = "time"
         self.info = {"SampleRate": 1, "ResampleRate": 1}
 
-    @patch("actinet.actinet.actipy.process")
+    @patch("actipy.process")
     def test_read_csv_trims_to_inclusive_interval(self, process_mock):
         process_mock.side_effect = lambda data, *args, **kwargs: (data, self.info)
 
@@ -48,7 +114,7 @@ class ReadTimeIntervalTests(unittest.TestCase):
             process_mock.call_args.args[0], self.data, check_freq=False
         )
 
-    @patch("actinet.actinet.actipy.read_device")
+    @patch("actipy.read_device")
     def test_read_device_supports_independent_start_and_end_bounds(
         self, read_device_mock
     ):
@@ -73,7 +139,7 @@ class ReadTimeIntervalTests(unittest.TestCase):
         pd.testing.assert_index_equal(start_only.index, self.index[2:])
         pd.testing.assert_index_equal(end_only.index, self.index[:3])
 
-    @patch("actinet.actinet.actipy.read_device")
+    @patch("actipy.read_device")
     def test_read_rejects_invalid_bounds_before_preprocessing(self, read_device_mock):
         with tempfile.TemporaryDirectory() as tmpdir:
             filepath = os.path.join(tmpdir, "sample.cwa")
@@ -97,7 +163,7 @@ class ReadTimeIntervalTests(unittest.TestCase):
 
         read_device_mock.assert_not_called()
 
-    @patch("actinet.actinet.actipy.read_device")
+    @patch("actipy.read_device")
     def test_read_rejects_non_overlapping_and_timezone_incompatible_bounds(
         self, read_device_mock
     ):
@@ -136,8 +202,8 @@ class ReadTimeIntervalTests(unittest.TestCase):
             )
 
     @patch("actinet.actinet.save_and_print_summary")
-    @patch("actinet.actinet.calculate_daily_wear_stats")
-    @patch("actinet.actinet.calculate_wear_stats")
+    @patch("actinet.utils.summary_utils.calculate_daily_wear_stats")
+    @patch("actinet.utils.utils.calculate_wear_stats")
     @patch("actinet.actinet.read")
     def test_cli_forwards_start_and_end_to_reader(
         self,
@@ -172,10 +238,10 @@ class ReadTimeIntervalTests(unittest.TestCase):
         self.assertEqual(read_mock.call_args.kwargs["end_time"], argv[7])
         save_summary_mock.assert_called_once()
 
-    @patch("actinet.actinet.get_activity_summary")
+    @patch("actinet.summarisation.get_activity_summary")
     @patch("actinet.actinet.save_and_print_summary")
-    @patch("actinet.actinet.calculate_daily_wear_stats")
-    @patch("actinet.actinet.calculate_wear_stats")
+    @patch("actinet.utils.summary_utils.calculate_daily_wear_stats")
+    @patch("actinet.utils.utils.calculate_wear_stats")
     @patch("actinet.actinet.load_classifier")
     @patch("actinet.actinet.read")
     def test_cli_rejects_fewer_than_three_prediction_epochs_before_writing(

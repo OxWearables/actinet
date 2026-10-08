@@ -1,32 +1,32 @@
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
 import os
 import pathlib
-import urllib
 import shutil
-import time
-import argparse
-import json
-import hashlib
-import warnings
-import numpy as np
-import pandas as pd
-import joblib
 import sys
-from typing import Any, Dict, Literal, Optional, Tuple, Union
+import time
+import urllib
+import warnings
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Tuple, Union
 
-import actipy
+from actinet import __classifiers__, __version__
 
-from actinet import __version__
-from actinet import __classifiers__
-from actinet.accPlot import plotTimeSeries
-from actinet.models import ActivityClassifier
-from actinet.summarisation import get_activity_summary
-from actinet.utils.summary_utils import calculate_daily_wear_stats
-from actinet.utils.utils import (
-    infer_freq,
-    drop_first_last_days,
-    flag_wear_below_days,
-    calculate_wear_stats,
-)
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from actinet.models import ActivityClassifier
+
+
+def __getattr__(name: str) -> Any:
+    if name == "ActivityClassifier":
+        from actinet.models import ActivityClassifier
+
+        globals()[name] = ActivityClassifier
+        return ActivityClassifier
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/models/actinet/"
 
@@ -218,6 +218,13 @@ def main() -> None:
         if not args.filepath:
             raise ValueError("Please provide a file to process.")
 
+    from actinet.utils.summary_utils import calculate_daily_wear_stats
+    from actinet.utils.utils import (
+        calculate_wear_stats,
+        drop_first_last_days,
+        flag_wear_below_days,
+    )
+
     # Info contains high-level summary of the data and results
     info = {}
     info["ActiNetVersion"] = __version__
@@ -318,6 +325,8 @@ def main() -> None:
 
     # Plot activity profile
     if args.plot_activity:
+        from actinet.accPlot import plotTimeSeries
+
         plotFile = f"{outdir}/{basename}-timeSeries-plot.png"
         fig = plotTimeSeries(Y)
         fig.savefig(plotFile, dpi=200, bbox_inches="tight")
@@ -326,6 +335,8 @@ def main() -> None:
             print("Output plot written to:", plotFile)
 
     # Summary
+    from actinet.summarisation import get_activity_summary
+
     summary, daily_summary = get_activity_summary(
         Y, list(classifier.labels), args.exclude_wear_below, True, True, verbose
     )
@@ -339,6 +350,8 @@ def main() -> None:
 
     if verbose:
         print("Output summary written to:", outputSummaryFile)
+
+    import pandas as pd
 
     daily_summary = pd.concat([daily_wear_stats, daily_summary], axis=1)
 
@@ -387,6 +400,12 @@ def read(
     start_time: Any = None,
     end_time: Any = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    import actipy
+    import numpy as np
+    import pandas as pd
+
+    from actinet.utils.utils import infer_freq
+
     start_time, end_time = validate_time_interval(start_time, end_time)
 
     p = pathlib.Path(filepath)
@@ -526,6 +545,8 @@ def validate_time_interval(
 ) -> Tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
     """Parse optional bounds and validate them against a recording index."""
 
+    import pandas as pd
+
     def parse_bound(value: Any, name: str) -> Optional[pd.Timestamp]:
         if value is None:
             return None
@@ -587,6 +608,8 @@ def load_classifier(
 ) -> ActivityClassifier:
     """Load trained classifier. Download if not exists."""
 
+    import joblib
+
     if classifier in __classifiers__.keys():
         classifier_version = __classifiers__[classifier]["version"]
         classifier_md5 = __classifiers__[classifier]["md5"]
@@ -643,6 +666,9 @@ def md5(fname: Union[str, pathlib.Path]) -> str:
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
+        import numpy as np
+        import pandas as pd
+
         if isinstance(obj, np.bool_):
             return bool(obj)
         if isinstance(obj, np.integer):
