@@ -10,11 +10,14 @@ from sklearn.model_selection import StratifiedGroupKFold, GroupShuffleSplit
 from imblearn.ensemble import BalancedRandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from scipy.special import softmax
+from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Tuple, Union, cast, overload
 
 from actinet import hmm
 from actinet import sslmodel
 from actinet.utils.utils import safe_indexer, resize, infer_freq
 from actinet.utils.sleep_utils import removeSpuriousSleep
+
+TimeSequence = Union[np.ndarray, pd.Index, Sequence[Any]]
 
 
 class ActivityClassifier:
@@ -24,32 +27,32 @@ class ActivityClassifier:
 
     def __init__(
         self,
-        device=(
+        device: Any = (
             "mps"
             if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
             else "cpu"
         ),
-        batch_size=512,
-        window_sec=30,
-        weights_path=None,
-        labels=[],
-        repo_tag="v1.0.0",
-        hmm_params=None,
-        hmm_ignore_transition_gaps=False,
-        hmm_handle_sleep_transitions=False,
-        verbose=False,
-    ):
+        batch_size: int = 512,
+        window_sec: int = 30,
+        weights_path: Optional[str] = None,
+        labels: Optional[Sequence[Any]] = None,
+        repo_tag: str = "v1.0.0",
+        hmm_params: Optional[Union[str, Mapping[str, Any]]] = None,
+        hmm_ignore_transition_gaps: bool = False,
+        hmm_handle_sleep_transitions: bool = False,
+        verbose: bool = False,
+    ) -> None:
         self.device = device
         self.repo_tag = repo_tag
         self.batch_size = batch_size
         self.window_sec = window_sec
-        self.labels = list(np.unique(labels))
+        self.labels = list(np.unique(labels if labels is not None else []))
         self.verbose = verbose
 
-        self.model_weights = (
+        self.model_weights: Any = (
             sslmodel.get_model_dict(weights_path, device) if weights_path else None
         )
-        self.model = None
+        self.model: Any = None
 
         self.hmm = load_hmm_params(
             hmm_params,
@@ -58,7 +61,7 @@ class ActivityClassifier:
             verbose,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "Activity Classifier\n"
             "class_labels: {self.labels}\n"
@@ -73,14 +76,14 @@ class ActivityClassifier:
 
     def fit(
         self,
-        X,
-        Y,
-        groups=None,
-        T=None,
-        weights_path="models/weights.pt",
-        model_repo_path=None,
-        n_splits=5,
-    ):
+        X: np.ndarray,
+        Y: np.ndarray,
+        groups: Optional[np.ndarray] = None,
+        T: Optional[TimeSequence] = None,
+        weights_path: str = "models/weights.pt",
+        model_repo_path: Optional[str] = None,
+        n_splits: int = 5,
+    ) -> "ActivityClassifier":
         """
         Fit the ActivityClassifier to the provided data by training the model.
 
@@ -106,10 +109,10 @@ class ActivityClassifier:
         if self.verbose:
             print("Training SSL")
 
-        y_prob_splits = []
-        y_true_splits = []
-        group_splits = []
-        t_splits = []
+        y_prob_splits: List[Any] = []
+        y_true_splits: List[Any] = []
+        group_splits: List[Any] = []
+        t_splits: List[Any] = []
 
         if n_splits < 3:
             splitter = GroupShuffleSplit(n_splits=n_splits, random_state=42)
@@ -178,19 +181,19 @@ class ActivityClassifier:
             group_splits.append(group_val)
             t_splits.append(t_val)
 
-        y_prob_splits = np.vstack(y_prob_splits)
-        y_true_splits = np.hstack(y_true_splits)
-        group_splits = np.hstack(group_splits)
-        t_splits = np.hstack(t_splits)
+        y_prob = np.vstack(y_prob_splits)
+        y_true = np.hstack(y_true_splits)
+        group_values = np.hstack(group_splits)
+        time_values = np.hstack(t_splits)
 
         if self.verbose:
             print("Training HMM")
 
         self.hmm.fit(
-            y_prob_splits,
-            y_true_splits,
-            group_splits,
-            t_splits,
+            y_prob,
+            y_true,
+            group_values,
+            time_values,
             interval=self.window_sec,
         )
 
@@ -202,12 +205,12 @@ class ActivityClassifier:
 
     def predict_from_frame(
         self,
-        data,
-        sample_freq,
-        hmm_smothing=True,
-        sleep_tolerance=None,
-        remove_naps=False,
-    ):
+        data: pd.DataFrame,
+        sample_freq: Optional[float],
+        hmm_smothing: bool = True,
+        sleep_tolerance: Optional[str] = None,
+        remove_naps: bool = False,
+    ) -> pd.DataFrame:
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -225,7 +228,7 @@ class ActivityClassifier:
         :raises ValueError: If the sample frequency cannot be inferred or the
             data contains no valid prediction window.
         """
-        if sample_freq in (None, False):
+        if sample_freq is None or sample_freq is False:
             if len(data.index) < 2:
                 raise ValueError(
                     "Input data must contain at least two timestamps to infer "
@@ -240,7 +243,7 @@ class ActivityClassifier:
             data,
             self.window_sec,
             int(self.window_sec * sample_freq),
-            return_index=True,
+            return_index=cast(Literal[True], True),
             verbose=self.verbose,
         )
 
@@ -260,7 +263,14 @@ class ActivityClassifier:
 
         return Y
 
-    def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
+    def predict(
+        self,
+        X: np.ndarray,
+        T: Optional[TimeSequence] = None,
+        hmm_smothing: bool = True,
+        sleep_tol: Optional[str] = None,
+        remove_naps: bool = False,
+    ) -> np.ndarray:
         """
         Use the ActivityClassifier to make predictions on input accelerometer data.
 
@@ -309,7 +319,7 @@ class ActivityClassifier:
 
         return Y
 
-    def load_model(self, model_repo_path=None):
+    def load_model(self, model_repo_path: Optional[str] = None) -> None:
         """
         Load SSL model reposiotory from specified path. (https://github.com/OxWearables/ssl-wearables)
 
@@ -328,7 +338,7 @@ class ActivityClassifier:
         if self.verbose:
             print(f"Using pytorch device: {self.device}")
 
-    def save(self, output_path):
+    def save(self, output_path: str) -> None:
         """
         Save the ActivityClassifier model to a .lzma file.
 
@@ -350,19 +360,19 @@ class RFActivityClassifier:
 
     def __init__(
         self,
-        winsec=None,
-        hmm_params=None,
-        hmm_ignore_transition_gaps=False,
-        hmm_handle_sleep_transitions=False,
-        labels=None,
-        verbose=False,
-        **kwargs,
-    ):
+        winsec: Optional[float] = None,
+        hmm_params: Optional[Union[str, Mapping[str, Any]]] = None,
+        hmm_ignore_transition_gaps: bool = False,
+        hmm_handle_sleep_transitions: bool = False,
+        labels: Optional[Sequence[Any]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> None:
 
         self.model = BalancedRandomForestClassifier(
             oob_score=True, verbose=verbose, **kwargs
         )
-        self.labels = list(np.unique(labels))
+        self.labels = list(np.unique(labels if labels is not None else []))
         self.hmm = load_hmm_params(
             hmm_params,
             hmm_ignore_transition_gaps,
@@ -371,14 +381,31 @@ class RFActivityClassifier:
         )
         self.winsec = winsec
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.model)
 
-    def fit(self, X, Y, groups=None, T=None):
+    def fit(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        groups: Optional[np.ndarray] = None,
+        T: Optional[TimeSequence] = None,
+    ) -> None:
+        if self.winsec is None:
+            raise ValueError("winsec must be set before fitting the classifier")
         self.model.fit(X, Y)
         self.hmm.fit(self.model.oob_decision_function_, Y, groups, T, self.winsec)
 
-    def predict(self, X, T=None, hmm_smothing=True, sleep_tol=None, remove_naps=False):
+    def predict(
+        self,
+        X: np.ndarray,
+        T: Optional[TimeSequence] = None,
+        hmm_smothing: bool = True,
+        sleep_tol: Optional[str] = None,
+        remove_naps: bool = False,
+    ) -> np.ndarray:
+        if self.winsec is None:
+            raise ValueError("winsec must be set before making predictions")
         y_pred = self.model.predict(X)
 
         if hmm_smothing:
@@ -390,12 +417,12 @@ class RFActivityClassifier:
 
         return y_pred
 
-    def save(self, output_path):
+    def save(self, output_path: str) -> None:
         classifier = copy.deepcopy(self)
 
         joblib.dump(classifier, output_path, compress=("lzma", 3))
 
-    def load(self, input_path):
+    def load(self, input_path: str) -> None:
         classifier = joblib.load(input_path)
         self.model = classifier.model
         self.labels = classifier.labels
@@ -403,13 +430,42 @@ class RFActivityClassifier:
         self.winsec = classifier.winsec
 
 
-def make_windows(data, window_sec, window_len, return_index=False, verbose=True):
+@overload
+def make_windows(
+    data: pd.DataFrame,
+    window_sec: int,
+    window_len: int,
+    return_index: Literal[True],
+    verbose: bool = True,
+) -> Tuple[np.ndarray, pd.DatetimeIndex]:
+    ...
+
+
+@overload
+def make_windows(
+    data: pd.DataFrame,
+    window_sec: int,
+    window_len: int,
+    return_index: Literal[False] = False,
+    verbose: bool = True,
+) -> np.ndarray:
+    ...
+
+
+def make_windows(
+    data: pd.DataFrame,
+    window_sec: int,
+    window_len: int,
+    return_index: bool = False,
+    verbose: bool = True,
+) -> Union[np.ndarray, Tuple[np.ndarray, pd.DatetimeIndex]]:
     """Split data into windows"""
 
     if verbose:
         print("Defining windows...")
 
-    X, T = [], []
+    windows: List[np.ndarray] = []
+    times: List[Any] = []
     acc_cols = ["x", "y", "z"]
     ssl_window_len = int(sslmodel.SAMPLE_RATE * window_sec)
 
@@ -430,22 +486,29 @@ def make_windows(data, window_sec, window_len, return_index=False, verbose=True)
         else:
             x = np.full((window_len, 3), np.nan)
 
-        X.append(x)
-        T.append(t)
+        windows.append(x)
+        times.append(t)
 
-    X = np.asarray(X)
+    X = np.asarray(windows)
 
     if window_len != ssl_window_len:
         X = resize(X, ssl_window_len)
 
     if return_index:
-        T = pd.DatetimeIndex(T, name=data.index.name)
-        return X, T
+        time_index = pd.DatetimeIndex(times, name=data.index.name)
+        return X, time_index
 
     return X
 
 
-def raw_to_df(data, labels, time, classes, reindex=True, freq="30S"):
+def raw_to_df(
+    data: np.ndarray,
+    labels: np.ndarray,
+    time: Sequence[Any],
+    classes: Sequence[str],
+    reindex: bool = True,
+    freq: str = "30S",
+) -> pd.DataFrame:
     """
     Construct a DataFrome from the raw data, prediction labels and time Numpy arrays.
 
@@ -498,14 +561,17 @@ def raw_to_df(data, labels, time, classes, reindex=True, freq="30S"):
 
 
 def load_hmm_params(
-    hmm_params, ignore_transition_gaps, handle_sleep_transitions, verbose=False
-):
+    hmm_params: Optional[Union[str, Mapping[str, Any]]],
+    ignore_transition_gaps: bool,
+    handle_sleep_transitions: bool,
+    verbose: bool = False,
+) -> hmm.HMM:
     if isinstance(hmm_params, str):
         if os.path.exists(hmm_params):
             if verbose:
                 print(f"Loading hmm_params from {hmm_params}")
 
-            hmm_params = dict(np.load(hmm_params, allow_pickle=True))
+            params: Dict[str, Any] = dict(np.load(hmm_params, allow_pickle=True))
 
         else:
             raise FileNotFoundError(
@@ -513,16 +579,19 @@ def load_hmm_params(
             )
 
     elif hmm_params is None:
-        hmm_params = dict()
+        params = {}
 
-    elif not isinstance(hmm_params, dict):
+    elif not isinstance(hmm_params, Mapping):
         raise TypeError("Invalid type for HMM parameters. Expected str, dict, or None.")
 
-    hmm_params.update(
+    else:
+        params = dict(hmm_params)
+
+    params.update(
         {
             "ignore_transition_gaps": ignore_transition_gaps,
             "handle_sleep_transitions": handle_sleep_transitions,
         }
     )
 
-    return hmm.HMM(**hmm_params)
+    return hmm.HMM(**params)

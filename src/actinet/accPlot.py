@@ -1,6 +1,8 @@
 """Script to plot accelerometer traces."""
 
 import sys
+from typing import Any, Optional
+
 import numpy as np
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
@@ -39,7 +41,7 @@ LABELS_AND_COLORS = {
 }
 
 
-def main():  # noqa: C901
+def main() -> None:  # noqa: C901
     """
     Application entry point responsible for parsing command line requests
     """
@@ -111,7 +113,11 @@ def main():  # noqa: C901
     print("Plot file written to:", args.plotFile)
 
 
-def plotTimeSeries(data, title=None, showFirstNDays=None):  # noqa: C901
+def plotTimeSeries(
+    data: pd.DataFrame,
+    title: Optional[str] = None,
+    showFirstNDays: Optional[int] = None,
+) -> Any:  # noqa: C901
     """
     Plot acceleration traces and classified activities.
 
@@ -292,7 +298,7 @@ def plotTimeSeries(data, title=None, showFirstNDays=None):  # noqa: C901
     return fig
 
 
-def str2bool(v):
+def str2bool(v: str) -> bool:
     """
     Used to parse true/false values from the command line. E.g. "True" -> True
     """

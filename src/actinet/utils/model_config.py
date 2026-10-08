@@ -1,4 +1,7 @@
-MODEL_CONFIG = {
+from typing import Any, Dict
+
+
+MODEL_CONFIG: Dict[str, Dict[str, Any]] = {
     'Walmsley2020': {
         "rf_features": [
             'enmoTrunc', 'enmoAbs', 'mean', 'sd', 'coefvariation', 'median',

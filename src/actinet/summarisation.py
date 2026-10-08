@@ -1,21 +1,28 @@
 """Module to generate overall activity summary from epoch data."""
 
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
+
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 
-from actinet.utils.utils import date_parser, to_screen
-from actinet.utils.summary_utils import *
+from actinet.utils.utils import date_parser, infer_freq, to_screen
+from actinet.utils.summary_utils import (
+    calculateECDF,
+    impute_missing,
+    summarize_daily_activity,
+    summarize_daily_enmo,
+)
 from actinet import circadian
 
 
 def get_activity_summary(
-    data,
-    labels,
-    exclude_daily_wear_below=None,
-    intensityDistribution=False,
-    circadianMetrics=False,
-    verbose=True,
-):
+    data: Union[str, pd.DataFrame],
+    labels: Sequence[str],
+    exclude_daily_wear_below: Optional[str] = None,
+    intensityDistribution: bool = False,
+    circadianMetrics: bool = False,
+    verbose: bool = True,
+) -> Tuple[Dict[str, Any], pd.DataFrame]:
     """
     Calculate overall activity summary from predicted activity label data.
     This is achieved by:
@@ -67,12 +74,14 @@ def get_activity_summary(
     return summary, daily_summary
 
 
-def _impute_missing(data, labels, verbose=False):
+def _impute_missing(
+    data: pd.DataFrame, labels: Sequence[str], verbose: bool = False
+) -> pd.DataFrame:
     # In the following, we resample, pad and impute the data so that we have a
     # multiple of 24h for the stats calculations
     to_screen("=== Imputing missing values ===", verbose)
 
-    cols = ["acc"] + labels
+    cols = ["acc"] + list(labels)
     if "MET" in data.columns:
         cols.append("MET")
     data_imputed = impute_missing(data[cols].astype("float"))
@@ -81,14 +90,14 @@ def _impute_missing(data, labels, verbose=False):
 
 
 def _summarise(
-    data,
-    data_imputed,
-    labels,
-    intensityDistribution=False,
-    circadianMetrics=False,
-    verbose=False,
-    summary={},
-):
+    data: pd.DataFrame,
+    data_imputed: pd.DataFrame,
+    labels: Sequence[str],
+    intensityDistribution: bool = False,
+    circadianMetrics: bool = False,
+    verbose: bool = False,
+    summary: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Overall summary stats for each activity type to summary dict
 
     :param pandas.DataFrame data: Pandas dataframe of epoch data
@@ -107,6 +116,8 @@ def _summarise(
     """
 
     data = data.copy()
+    if summary is None:
+        summary = {}
     freq = to_offset(infer_freq(data.index))
 
     # Get start day
@@ -209,7 +220,13 @@ def _summarise(
     return summary
 
 
-def _daily_summary(data, data_imputed, labels, exclude_daily_wear_below, verbose=False):
+def _daily_summary(
+    data: pd.DataFrame,
+    data_imputed: pd.DataFrame,
+    labels: Sequence[str],
+    exclude_daily_wear_below: Optional[str],
+    verbose: bool = False,
+) -> pd.DataFrame:
     to_screen("=== Daily summary ===", verbose)
 
     min_wear_per_day = (

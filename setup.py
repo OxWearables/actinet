@@ -46,7 +46,7 @@ def main():
         packages=find_packages(where="src", exclude=("test", "tests")),
         package_dir={"": "src"},
         # What other files to include, e.g. *.class if the package uses some Java code.
-        package_data={"actinet": ["*.txt", "*.rst", "*.md"]},
+        package_data={"actinet": ["*.txt", "*.rst", "*.md", "py.typed"]},
         include_package_data=False,
         # Dependencies
         install_requires=[
@@ -73,6 +73,7 @@ def main():
                 "autopep8",
                 "tomli",
                 "jupyter",
+                "mypy==1.14.1",
             ],
             "docs": [
                 "sphinx>=4.2",

@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+
 from scipy import stats
 from sklearn.metrics import confusion_matrix
 
@@ -11,7 +13,9 @@ from actinet.utils.model_config import MODEL_CONFIG
 from actinet.utils.eval_utils import extract_activity_predictions
 
 
-def plot_and_save_fig(fig, save_path=None, dpi=800):
+def plot_and_save_fig(
+    fig: Any, save_path: Optional[str] = None, dpi: int = 800
+) -> None:
     """Displays and optionally saves the figure as a PDF."""
     plt.show()
     if save_path:
@@ -20,7 +24,9 @@ def plot_and_save_fig(fig, save_path=None, dpi=800):
         fig.savefig(save_path, format=format, dpi=dpi, bbox_inches="tight")
 
 
-def plot_model_performance(results, metric="Macro F1", modulus=0):
+def plot_model_performance(
+    results: pd.DataFrame, metric: str = "Macro F1", modulus: int = 0
+) -> None:
     """Plots a boxplot of model performance with optional participant-wise lines."""
     plt.figure(figsize=(10, 6), dpi=1000)
     with sns.color_palette("Set1"):
@@ -55,7 +61,7 @@ def plot_model_performance(results, metric="Macro F1", modulus=0):
     )
 
 
-def plot_difference_boxplots(df):
+def plot_difference_boxplots(df: pd.DataFrame) -> None:
     """Plots boxplots of the differences in performance between actinet and accelerometer"""
     metrics = ["Accuracy", "Macro F1", "Cohen Kappa"]
     differences = []
@@ -98,15 +104,15 @@ def plot_difference_boxplots(df):
 
 
 def plot_boxplots(
-    df,
-    x,
-    y="Macro F1",
-    hue="Model",
-    ax=None,
-    title=None,
-    fontsize=14,
-    show_legend=True,
-):
+    df: pd.DataFrame,
+    x: str,
+    y: str = "Macro F1",
+    hue: str = "Model",
+    ax: Any = None,
+    title: Optional[str] = None,
+    fontsize: int = 14,
+    show_legend: bool = True,
+) -> Any:
     """Plots boxplots of model performance."""
 
     if ax is None:
@@ -130,13 +136,15 @@ def plot_boxplots(
 
 
 def plot_boxplots_panel(
-    df,
-    y="Macro F1",
-    hue="Model",
-    by=[],
-    save_path=None,
-    fontsize=14,
-):
+    df: pd.DataFrame,
+    y: str = "Macro F1",
+    hue: str = "Model",
+    by: Optional[Sequence[str]] = None,
+    save_path: Optional[str] = None,
+    fontsize: int = 14,
+) -> None:
+    if by is None:
+        by = []
     fig, axs = plt.subplots(1, len(by), figsize=(1 + len(by) * 3, 3), dpi=800)
     for i, by_var in enumerate(by):
         title = f"{chr(ord('a') + i)}) Performance by {by_var}"
@@ -170,8 +178,14 @@ def plot_boxplots_panel(
 
 
 def plot_confusion_matrix(
-    y_true, y_pred, activity_labels, title="", ax=None, figsize=(8, 8), fontsize=20
-):
+    y_true: Any,
+    y_pred: Any,
+    activity_labels: Sequence[str],
+    title: str = "",
+    ax: Any = None,
+    figsize: Tuple[int, int] = (8, 8),
+    fontsize: float = 20,
+) -> None:
     """Plots a confusion matrix with heatmap annotations."""
 
     cm = confusion_matrix(y_true, y_pred, labels=activity_labels)
@@ -206,7 +220,9 @@ def plot_confusion_matrix(
     ax.set_yticklabels(activity_labels, fontsize=fontsize * 0.8)
 
 
-def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
+def build_confusion_matrix_data(
+    results: pd.DataFrame, age_band: Any = None, sex: Any = None
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     """Extracts ground truth and predicted labels based on filtering conditions."""
     model_results = results.copy()
     if age_band is not None:
@@ -233,8 +249,12 @@ def build_confusion_matrix_data(results: pd.DataFrame, age_band=None, sex=None):
 
 
 def generate_confusion_matrices(
-    results_df, activity_labels, group_by=None, save_path=None, fontsize=20
-):
+    results_df: pd.DataFrame,
+    activity_labels: Sequence[str],
+    group_by: Optional[str] = None,
+    save_path: Optional[str] = None,
+    fontsize: float = 20,
+) -> None:
     """Generates and plots confusion matrices for different subgroups."""
     if group_by is None:  # Full population
         fig, axs = plt.subplots(1, 2, sharey=True, figsize=(12, 6), dpi=800)
@@ -312,18 +332,18 @@ def generate_confusion_matrices(
 
 
 def bland_altman_plot(
-    col1,
-    col2,
+    col1: Any,
+    col2: Any,
     plot_label: str,
     anno_label: str,
-    output_dir="",
-    col1_label="Baseline",
-    col2_label="ActiNet",
-    display_plot=False,
-    show_y_label=False,
-    ax=None,
-    fontsize=20,
-):
+    output_dir: str = "",
+    col1_label: str = "Baseline",
+    col2_label: str = "ActiNet",
+    display_plot: bool = False,
+    show_y_label: bool = False,
+    ax: Any = None,
+    fontsize: float = 20,
+) -> None:
     """Generates a Bland-Altman plot for two columns of data."""
     dat = pd.DataFrame({"col1": col1, "col2": col2})
     pearson_cor = dat.corr().iloc[0, 1]
@@ -367,7 +387,7 @@ def bland_altman_plot(
         fontsize=fontsize * 0.8,
     )
 
-    activity_labels_dict = MODEL_CONFIG[anno_label]["labels"]
+    activity_labels_dict = cast(Dict[str, str], MODEL_CONFIG[anno_label]["labels"])
 
     ax.set_title(
         f"{activity_labels_dict.get(plot_label, plot_label)} [hours]\nPearson correlation: {pearson_cor:.3f}",
@@ -394,16 +414,16 @@ def bland_altman_plot(
 
 
 def generate_bland_altman_plots(
-    results_df,
-    activities,
-    anno_label,
-    group_by=None,
-    save_path=None,
-    fontsize=20,
-    compare_to_true=False,
-    subset="",
-    axs=None,
-):
+    results_df: pd.DataFrame,
+    activities: Sequence[str],
+    anno_label: str,
+    group_by: Optional[str] = None,
+    save_path: Optional[str] = None,
+    fontsize: float = 20,
+    compare_to_true: Union[bool, str] = False,
+    subset: str = "",
+    axs: Any = None,
+) -> None:
     """
     Flexible Bland-Altman plotting function.
     """
@@ -500,17 +520,17 @@ def generate_bland_altman_plots(
 
 
 def _plot_ba(
-    activity,
-    bbaa_pred,
-    actinet_pred,
-    bbaa_true,
-    actinet_true,
-    anno_label,
-    compare_to_true,
-    ax,
-    idx,
-    fontsize,
-):
+    activity: str,
+    bbaa_pred: Any,
+    actinet_pred: Any,
+    bbaa_true: Any,
+    actinet_true: Any,
+    anno_label: str,
+    compare_to_true: Union[bool, str],
+    ax: Any,
+    idx: int,
+    fontsize: float,
+) -> None:
     common_kwargs = dict(
         ax=ax,
         show_y_label=(idx == 0),
@@ -549,12 +569,13 @@ def _plot_ba(
         raise ValueError("compare_to_true must be either False, 'bbaa' or 'actinet'")
 
 
-import matplotlib.pyplot as plt
-
-
 def generate_bland_altman_panel(
-    results_df, activities, anno_label, save_path=None, fontsize=20
-):
+    results_df: pd.DataFrame,
+    activities: Sequence[str],
+    anno_label: str,
+    save_path: Optional[str] = None,
+    fontsize: int = 20,
+) -> None:
     fig, axes = plt.subplots(
         3, len(activities), figsize=(4 * len(activities), 18), dpi=800, sharey=True
     )
@@ -616,12 +637,17 @@ def generate_bland_altman_panel(
 
 
 def plot_errors(
-    df: pd.DataFrame, activities, anno_label, group_by=None, save_path=None, fontsize=12
-):
-    activity_labels_dict = MODEL_CONFIG[anno_label]["labels"]
+    df: pd.DataFrame,
+    activities: Sequence[str],
+    anno_label: str,
+    group_by: Optional[str] = None,
+    save_path: Optional[str] = None,
+    fontsize: int = 12,
+) -> None:
+    activity_labels_dict = cast(Dict[str, str], MODEL_CONFIG[anno_label]["labels"])
 
     if group_by is None:
-        all_errors = []
+        all_errors: List[Dict[str, Any]] = []
 
         for activity in activities:
             (

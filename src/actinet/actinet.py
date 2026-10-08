@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import sys
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 import actipy
 
@@ -30,7 +31,9 @@ from actinet.utils.utils import (
 BASE_URL = "https://wearables-files.ndph.ox.ac.uk/files/models/actinet/"
 
 
-def save_and_print_summary(outputSummaryFile, info, verbose):
+def save_and_print_summary(
+    outputSummaryFile: str, info: Dict[str, Any], verbose: bool
+) -> None:
     """Save info to outputSummary.json and print summary stats."""
     with open(outputSummaryFile, "w") as f:
         json.dump(info, f, indent=4, cls=NpEncoder)
@@ -55,7 +58,7 @@ def save_and_print_summary(outputSummaryFile, info, verbose):
         )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="A tool to predict activities from accelerometer data using a self-supervised ResNet-18 model",
         add_help=True,
@@ -371,19 +374,19 @@ def main():
 
 
 def read(
-    filepath,
-    usecols=None,
-    skipRows=0,
-    dateFormat=None,
-    calibration_stdtol_min=None,
-    resample_hz="uniform",
-    sample_rate=None,
-    lowpass_hz=None,
-    csv_txyz_idxs=None,
-    verbose=True,
-    start_time=None,
-    end_time=None,
-):
+    filepath: str,
+    usecols: Optional[str] = None,
+    skipRows: int = 0,
+    dateFormat: Optional[str] = None,
+    calibration_stdtol_min: Optional[float] = None,
+    resample_hz: Optional[Union[Literal["uniform"], int, float, bool]] = "uniform",
+    sample_rate: Optional[int] = None,
+    lowpass_hz: Optional[float] = None,
+    csv_txyz_idxs: Optional[str] = None,
+    verbose: bool = True,
+    start_time: Any = None,
+    end_time: Any = None,
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     start_time, end_time = validate_time_interval(start_time, end_time)
 
     p = pathlib.Path(filepath)
@@ -426,6 +429,8 @@ def read(
                     header[zidx],
                 )
             else:
+                if usecols is None:
+                    usecols = "time,x,y,z"
                 tcol, xcol, ycol, zcol = usecols.split(",")
 
             data = pd.read_csv(
@@ -448,6 +453,8 @@ def read(
         if sample_rate in (None, False):
             freq = infer_freq(data.index)
             sample_rate = int(np.round(pd.Timedelta("1s") / freq))
+
+        assert sample_rate is not None
 
         # Quick fix: Drop duplicate indices. TODO: Maybe should be handled by actipy.
         data = data[~data.index.duplicated(keep="first")]
@@ -512,10 +519,14 @@ def read(
     return data, info
 
 
-def validate_time_interval(start_time=None, end_time=None, index=None):
+def validate_time_interval(
+    start_time: Any = None,
+    end_time: Any = None,
+    index: Optional[pd.Index] = None,
+) -> Tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
     """Parse optional bounds and validate them against a recording index."""
 
-    def parse_bound(value, name):
+    def parse_bound(value: Any, name: str) -> Optional[pd.Timestamp]:
         if value is None:
             return None
         try:
@@ -559,7 +570,7 @@ def validate_time_interval(start_time=None, end_time=None, index=None):
     return start_time, end_time
 
 
-def resolve_path(path):
+def resolve_path(path: Union[str, pathlib.Path]) -> Tuple[pathlib.Path, str, str]:
     """Return parent folder, file name and file extension"""
     p = pathlib.Path(path)
     extension = p.suffixes[0]
@@ -569,11 +580,11 @@ def resolve_path(path):
 
 
 def load_classifier(
-    classifier,
-    model_repo_path=None,
-    force_download=False,
-    verbose=True,
-):
+    classifier: str,
+    model_repo_path: Optional[str] = None,
+    force_download: bool = False,
+    verbose: bool = True,
+) -> ActivityClassifier:
     """Load trained classifier. Download if not exists."""
 
     if classifier in __classifiers__.keys():
@@ -604,25 +615,25 @@ def load_classifier(
                     )
 
     elif pathlib.Path(classifier).exists():
-        classifier_path = classifier
+        classifier_path = pathlib.Path(classifier)
 
     else:
         raise ValueError(f"Unknown classifier: {classifier}")
 
     try:
-        classifier: ActivityClassifier = joblib.load(classifier_path)
+        loaded_classifier: ActivityClassifier = joblib.load(classifier_path)
     except Exception as e:
-        raise ValueError(f"Error loading classifier file.")
+        raise ValueError("Error loading classifier file.")
 
     if model_repo_path and pathlib.Path(model_repo_path).exists() and verbose:
         print(f"Loading model repository from {model_repo_path}.")
 
-    classifier.load_model(model_repo_path)
+    loaded_classifier.load_model(model_repo_path)
 
-    return classifier
+    return loaded_classifier
 
 
-def md5(fname):
+def md5(fname: Union[str, pathlib.Path]) -> str:
     hash_md5 = hashlib.md5()
     with open(fname, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
@@ -631,7 +642,7 @@ def md5(fname):
 
 
 class NpEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):

@@ -1,3 +1,5 @@
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 import pandas as pd
 
@@ -7,8 +9,17 @@ SLEEP_BLOCK_PERIOD = 24 * 60 * 60  # 24 hours
 HMM_SEDENTARY_CODE = 2
 HMM_SLEEP_CODE = 3
 
+Label = Union[int, str]
+Block = Tuple[int, int]
 
-def removeSpuriousSleep(Y, labels, period, sleepTol="1H", removeNaps=False):
+
+def removeSpuriousSleep(
+    Y: np.ndarray,
+    labels: Sequence[str],
+    period: float,
+    sleepTol: Optional[str] = "1H",
+    removeNaps: bool = False,
+) -> np.ndarray:
     """
     Remove spurious sleep epochs from activity classification.
 
@@ -33,7 +44,7 @@ def removeSpuriousSleep(Y, labels, period, sleepTol="1H", removeNaps=False):
         )
     except KeyError:
         raise ValueError(
-            f"'sleep' and 'sedentary' or 'sit-stand' must be output labels for spurious sleep correction."
+            "'sleep' and 'sedentary' or 'sit-stand' must be output labels for spurious sleep correction."
         )
 
     if sleepTol:
@@ -45,7 +56,13 @@ def removeSpuriousSleep(Y, labels, period, sleepTol="1H", removeNaps=False):
     return Y
 
 
-def convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol="1H"):
+def convertSleepBelowThreshold(
+    Y: np.ndarray,
+    period: float,
+    sleep_code: int,
+    sedentary_code: int,
+    sleepTol: str = "1H",
+) -> np.ndarray:
     """
     Convert sleep labels to sedentary if sleep block is below an expected threshold.
 
@@ -79,7 +96,9 @@ def convertSleepBelowThreshold(Y, period, sleep_code, sedentary_code, sleepTol="
     return Y_series.values
 
 
-def convertNaps(Y, period, sleep_code, sedentary_code):
+def convertNaps(
+    Y: np.ndarray, period: float, sleep_code: int, sedentary_code: int
+) -> np.ndarray:
     """
     Convert sleep labels to sedentary, if they do not occur during the longest sleep block in each 24-hour period.
 
@@ -103,11 +122,14 @@ def convertNaps(Y, period, sleep_code, sedentary_code):
     return convert_non_selected_block(Y, longest_blocks, sleep_code, sedentary_code)
 
 
-def find_blocks(labels, gap_tol, block_code="s"):
+def find_blocks(
+    labels: Any, gap_tol: int, block_code: Label = "s"
+) -> List[Block]:
     """Finds blocks of a specific code in a sequence of labels, allowing for gap tolerance of other labels."""
-    blocks = []
+    blocks: List[Block] = []
     is_block = False
     gap_len = 0
+    block_start = 0
 
     for i, elem in enumerate(labels):
         if not is_block and elem == block_code:
@@ -131,12 +153,14 @@ def find_blocks(labels, gap_tol, block_code="s"):
     return blocks
 
 
-def extract_start_end_tuple(row):
+def extract_start_end_tuple(row: pd.Series) -> Block:
     """Helper to extract a (start, end) tuple from a DataFrame row."""
-    return (row["start"], row["end"])
+    return int(row["start"]), int(row["end"])
 
 
-def select_longest_blocks_per_period(blocks, sequence_len, block_period):
+def select_longest_blocks_per_period(
+    blocks: Sequence[Block], sequence_len: int, block_period: int
+) -> List[Block]:
     """
     Selects the longest blocks within an expected period.
     Also includes edge blocks that start at 0 or end at sequence end.
@@ -148,7 +172,7 @@ def select_longest_blocks_per_period(blocks, sequence_len, block_period):
     blocks_df = pd.DataFrame(blocks, columns=["start", "end"])
     blocks_df["length"] = blocks_df["end"] - blocks_df["start"] + 1
 
-    selected = []
+    selected: List[Block] = []
     ref_start = 0
 
     if (start_blocks := blocks_df[blocks_df["start"] == 0]).any().any():
@@ -178,7 +202,12 @@ def select_longest_blocks_per_period(blocks, sequence_len, block_period):
     return selected
 
 
-def convert_non_selected_block(labels, selected_blocks, block_code="s", conv_code="d"):
+def convert_non_selected_block(
+    labels: np.ndarray,
+    selected_blocks: Iterable[Block],
+    block_code: Label = "s",
+    conv_code: Label = "d",
+) -> np.ndarray:
     """
     Converts all block code labels found outside longest blocks to conv code.
     """
@@ -193,13 +222,13 @@ def convert_non_selected_block(labels, selected_blocks, block_code="s", conv_cod
     return labels
 
 
-def add_sleep_sedentary_transitions(df):
+def add_sleep_sedentary_transitions(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adds a single transition from sleep to sedentary, and vice-versa, for each participant, if it does not exist.
     """
     df_copy = df.copy()
 
-    rows_to_append = []
+    rows_to_append: List[Dict[str, Any]] = []
 
     for group in df_copy["group"].unique():
         group_df = df_copy[df_copy["group"] == group]

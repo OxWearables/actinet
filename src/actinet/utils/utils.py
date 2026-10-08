@@ -1,9 +1,13 @@
 import datetime
 import re
+from typing import Any, Dict, Optional, Sequence, TypeVar
+
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from typing import Union
+
+
+PandasObject = TypeVar("PandasObject", pd.Series, pd.DataFrame)
 
 
 ACTIVITY_LABELS_DICT = {
@@ -24,7 +28,7 @@ ACTIVITY_LABELS_DICT = {
 }
 
 
-def infer_freq(t):
+def infer_freq(t: pd.Index) -> pd.Timedelta:
     """Like pd.infer_freq but more forgiving"""
     tdiff = t.to_series().diff()
     q1, q3 = tdiff.quantile([0.25, 0.75])
@@ -34,7 +38,7 @@ def infer_freq(t):
     return freq
 
 
-def to_screen(msg, verbose=True):
+def to_screen(msg: object, verbose: bool = True) -> None:
     """
     Print msg str prepended with current time
 
@@ -46,19 +50,18 @@ def to_screen(msg, verbose=True):
         print(f"\n{datetime.datetime.now().strftime(timeFormat)}\t{msg}")
 
 
-def date_parser(t):
+def date_parser(t: str) -> pd.Timestamp:
     """
     Parse date a date string of the form e.g.
     2020-06-14 19:01:15.123+0100 [Europe/London]
     """
-    tz = re.search(r"(?<=\[).+?(?=\])", t)
-    if tz is not None:
-        tz = tz.group()
+    tz_match = re.search(r"(?<=\[).+?(?=\])", t)
+    tz = tz_match.group() if tz_match is not None else None
     t = re.sub(r"\[(.*?)\]", "", t)
     return pd.to_datetime(t, utc=True).tz_convert(tz)
 
 
-def custom_date_parser(date_str):
+def custom_date_parser(date_str: str) -> datetime.datetime:
     dt = datetime.datetime.strptime(
         date_str.split(" ")[0] + " " + date_str.split(" ")[1], "%Y-%m-%d %H:%M:%S.%f%z"
     )
@@ -66,11 +69,13 @@ def custom_date_parser(date_str):
     return dt_utc.replace(tzinfo=None)
 
 
-def safe_indexer(array, indexes):
+def safe_indexer(array: Optional[Any], indexes: Any) -> Optional[Any]:
     return array[indexes] if array is not None else None
 
 
-def is_good_window(x, window_len, columns):
+def is_good_window(
+    x: pd.DataFrame, window_len: int, columns: Sequence[str]
+) -> bool:
     """
     Check if a window is considered good based on its length, the presence of NaN values in specified columns.
 
@@ -98,7 +103,7 @@ def is_good_window(x, window_len, columns):
     return True
 
 
-def resize(x, length, axis=1):
+def resize(x: np.ndarray, length: int, axis: int = 1) -> np.ndarray:
     """
     Resize the temporal length of the data using linear interpolation.
 
@@ -118,7 +123,9 @@ def resize(x, length, axis=1):
     return x
 
 
-def drop_first_last_days(x: Union[pd.Series, pd.DataFrame], first_or_last="both"):
+def drop_first_last_days(
+    x: PandasObject, first_or_last: str = "both"
+) -> PandasObject:
     """
     Drop the first day, last day, or both from a time series.
 
@@ -146,7 +153,9 @@ def drop_first_last_days(x: Union[pd.Series, pd.DataFrame], first_or_last="both"
     return x
 
 
-def flag_wear_below_days(x: Union[pd.Series, pd.DataFrame], min_wear: str = "12H"):
+def flag_wear_below_days(
+    x: PandasObject, min_wear: str = "12H"
+) -> PandasObject:
     """
     Set days containing less than the specified minimum wear time (`min_wear`) to NaN.
 
@@ -165,19 +174,19 @@ def flag_wear_below_days(x: Union[pd.Series, pd.DataFrame], min_wear: str = "12H
         print("No data to exclude")
         return x
 
-    min_wear = pd.Timedelta(min_wear)
+    min_wear_delta = pd.Timedelta(min_wear)
     dt = infer_freq(x.index)
     ok = x.notna()
     if isinstance(ok, pd.DataFrame):
         ok = ok.all(axis=1)
-    ok = ok.groupby(x.index.date).sum() * dt >= min_wear
+    ok = ok.groupby(x.index.date).sum() * dt >= min_wear_delta
     # keep ok days, rest is set to NaN
     x = x.copy()  # make a copy to avoid modifying the original data
     x[np.isin(x.index.date, ok[~ok].index)] = np.nan
     return x
 
 
-def calculate_wear_stats(data: pd.DataFrame):
+def calculate_wear_stats(data: pd.DataFrame) -> Dict[str, Any]:
     """
     Calculate wear time and related information from raw accelerometer data.
 

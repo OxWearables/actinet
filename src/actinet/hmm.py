@@ -1,8 +1,11 @@
 import numpy as np
 import os
 import pandas as pd
+from typing import Any, Mapping, Optional, Sequence, Union
 
 from actinet.utils.sleep_utils import add_sleep_sedentary_transitions
+
+TimeSequence = Union[np.ndarray, pd.Index, Sequence[Any]]
 
 
 class HMM:
@@ -13,14 +16,14 @@ class HMM:
 
     def __init__(
         self,
-        prior=None,
-        emission=None,
-        transition=None,
-        labels=None,
-        uniform_prior=True,
-        ignore_transition_gaps=False,
-        handle_sleep_transitions=False,
-    ):
+        prior: Optional[np.ndarray] = None,
+        emission: Optional[np.ndarray] = None,
+        transition: Optional[np.ndarray] = None,
+        labels: Optional[np.ndarray] = None,
+        uniform_prior: bool = True,
+        ignore_transition_gaps: bool = False,
+        handle_sleep_transitions: bool = False,
+    ) -> None:
         self.prior = prior
         self.emission = emission
         self.transition = transition
@@ -29,7 +32,7 @@ class HMM:
         self.ignore_transition_gaps = ignore_transition_gaps
         self.handle_sleep_transitions = handle_sleep_transitions
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "Hidden Markov Model\n"
             "Ignore transition gaps: {self.ignore_transition_gaps}\n"
@@ -39,7 +42,14 @@ class HMM:
             "transition: {self.transition}".format(self=self)
         )
 
-    def fit(self, Y_prob, Y_true, groups=None, T=None, interval=None):
+    def fit(
+        self,
+        Y_prob: np.ndarray,
+        Y_true: np.ndarray,
+        groups: Optional[np.ndarray] = None,
+        T: Optional[TimeSequence] = None,
+        interval: Optional[float] = None,
+    ) -> None:
         """
         Fit a HMM to the provided data by calculating the prior, transition and emission matrices.
 
@@ -77,7 +87,13 @@ class HMM:
         self.emission = emission
         self.transition = transition
 
-    def predict(self, y_obs, t=None, interval=None, uniform_prior=None):
+    def predict(
+        self,
+        y_obs: np.ndarray,
+        t: Optional[TimeSequence] = None,
+        interval: Optional[float] = None,
+        uniform_prior: Optional[bool] = None,
+    ) -> np.ndarray:
         """
         Predict sequence of activities using viterbi algorithm, while restoring labels after gaps in data.
 
@@ -104,11 +120,15 @@ class HMM:
         y_smooth = self.viterbi(y_obs, uniform_prior)
 
         if not self.ignore_transition_gaps:
+            if t is None or interval is None:
+                raise ValueError("Times and interval are required to restore gaps")
             y_smooth = restore_labels_after_gaps(y_obs, y_smooth, t, interval)
 
         return y_smooth
 
-    def viterbi(self, y_obs, uniform_prior=None):
+    def viterbi(
+        self, y_obs: np.ndarray, uniform_prior: Optional[bool] = None
+    ) -> np.ndarray:
         """Perform HMM smoothing over observations via Viteri algorithm
         https://en.wikipedia.org/wiki/Viterbi_algorithm.
 
@@ -121,17 +141,25 @@ class HMM:
         :rtype: np.ndarray
         """
 
-        def log(x):
+        def log(x: Any) -> Any:
             return np.log(x + 1e-16)
 
+        if (
+            self.labels is None
+            or self.prior is None
+            or self.emission is None
+            or self.transition is None
+        ):
+            raise ValueError("HMM parameters must be fitted or loaded before prediction")
+
+        labels = self.labels
+        emission = self.emission
+        transition = self.transition
         prior = (
             np.ones(len(self.labels)) / len(self.labels)
             if (self.uniform_prior or uniform_prior)
             else self.prior
         )
-        emission = self.emission
-        transition = self.transition
-        labels = self.labels
 
         nobs = len(y_obs)
         n_labels = len(labels)
@@ -156,13 +184,21 @@ class HMM:
 
         return viterbi_path
 
-    def save(self, path):
+    def save(self, path: Union[str, os.PathLike]) -> None:
         """
         Save model parameters to a Numpy npz file.
 
         :param path: npz file location
         :type path: str
         """
+        if (
+            self.prior is None
+            or self.emission is None
+            or self.transition is None
+            or self.labels is None
+        ):
+            raise ValueError("HMM parameters must be fitted or loaded before saving")
+
         os.makedirs(os.path.dirname(path), exist_ok=True)
         np.savez(
             path,
@@ -174,7 +210,7 @@ class HMM:
             handle_sleep_transitions=self.handle_sleep_transitions,
         )
 
-    def load(self, path):
+    def load(self, path: Union[str, os.PathLike]) -> None:
         """
         Load model parameters from a Numpy npz file.
 
@@ -186,10 +222,12 @@ class HMM:
         self.emission = d["emission"]
         self.transition = d["transition"]
         self.labels = d["labels"]
-        self.ignore_transition_gaps = d["ignore_transition_gaps"]
-        self.handle_sleep_transitions = d["handle_sleep_transitions"]
+        self.ignore_transition_gaps = bool(d["ignore_transition_gaps"])
+        self.handle_sleep_transitions = bool(d["handle_sleep_transitions"])
 
-    def display(self, labels, precision=3):
+    def display(
+        self, labels: Union[Sequence[str], Mapping[str, Any]], precision: int = 3
+    ) -> None:
         """
         Print the model parameters in a readable format.
 
@@ -203,14 +241,16 @@ class HMM:
 
 
 def check_for_input_errors(
-    Y,
-    T,
-    interval,
-    groups=None,
-    ignore_transition_gaps=False,
-    handle_sleep_transitions=False,
-):
+    Y: Any,
+    T: Optional[TimeSequence],
+    interval: Optional[float],
+    groups: Any = None,
+    ignore_transition_gaps: bool = False,
+    handle_sleep_transitions: bool = False,
+) -> None:
     if not ignore_transition_gaps:
+        if T is None:
+            raise Exception("Times must be provided when transition gaps are checked")
         if len(Y) != len(T):
             raise Exception("Provided times should have same length as labels")
         if not interval:
@@ -219,11 +259,18 @@ def check_for_input_errors(
             )
 
     if handle_sleep_transitions:
+        if groups is None:
+            raise Exception("Group labels must be provided for sleep transitions")
         if len(Y) != len(groups):
             raise Exception("Provided group labels should have same length as labels")
 
 
-def restore_labels_after_gaps(y_pred, y_smooth, t, interval):
+def restore_labels_after_gaps(
+    y_pred: np.ndarray,
+    y_smooth: np.ndarray,
+    t: TimeSequence,
+    interval: float,
+) -> np.ndarray:
     df = pd.DataFrame({"y_pred": y_pred, "y_smooth": y_smooth})
 
     if type(t[0]) == int:
@@ -239,13 +286,13 @@ def restore_labels_after_gaps(y_pred, y_smooth, t, interval):
 
 
 def calculate_transition_matrix(
-    Y,
-    groups=None,
-    t=None,
-    interval=None,
-    ignore_transition_gaps=False,
-    handle_sleep_transitions=False,
-):
+    Y: np.ndarray,
+    groups: Optional[np.ndarray] = None,
+    t: Optional[TimeSequence] = None,
+    interval: Optional[float] = None,
+    ignore_transition_gaps: bool = False,
+    handle_sleep_transitions: bool = False,
+) -> np.ndarray:
     check_for_input_errors(
         Y, t, interval, groups, ignore_transition_gaps, handle_sleep_transitions
     )
@@ -253,6 +300,9 @@ def calculate_transition_matrix(
     if ignore_transition_gaps:
         t = range(len(Y))
         interval = 1
+
+    if t is None or interval is None:
+        raise ValueError("Times and interval are required to calculate transitions")
 
     df = pd.DataFrame({"label": Y, "group": groups})
 
@@ -284,7 +334,7 @@ def calculate_transition_matrix(
     return trans_mat
 
 
-def get_activity_label_code(label, labels):
+def get_activity_label_code(label: str, labels: Sequence[str]) -> int:
     try:
         return list(sorted(labels)).index(label)
     except ValueError:
@@ -293,14 +343,14 @@ def get_activity_label_code(label, labels):
         )
 
 
-def print_array(arr, precision=3):
+def print_array(arr: Any, precision: int = 3) -> None:
     """Prints all elements of a NumPy array to N decimal places."""
     arr = np.array(arr)
     with np.printoptions(precision=precision, suppress=True):
         print(arr)
 
 
-def reorder_matrix(data, index_order):
+def reorder_matrix(data: Any, index_order: Sequence[int]) -> np.ndarray:
     """Reorder a 1D or 2D square array"""
     arr = np.array(data)
 
@@ -317,14 +367,20 @@ def reorder_matrix(data, index_order):
         raise ValueError("Input must be a 1D or 2D array.")
 
 
-def pretty_hmm_params(hmm: HMM, labels, precision=3):
+def pretty_hmm_params(
+    hmm: HMM,
+    labels: Union[Sequence[str], Mapping[str, Any]],
+    precision: int = 3,
+) -> None:
     """Print the HMM parameters in a readable format, reordering them according to the provided labels."""
 
-    if isinstance(labels, dict):
+    if isinstance(labels, Mapping):
         labels = list(labels.keys())
 
-    elif not isinstance(labels, list):
+    elif not isinstance(labels, Sequence) or isinstance(labels, str):
         raise ValueError("labels must be a list or dict")
+
+    labels = list(labels)
 
     index_order = [get_activity_label_code(label, labels) for label in labels]
 
