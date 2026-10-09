@@ -10,7 +10,7 @@ To extract a summary of movement metrics from raw accelerometer files:
 .. code-block:: console
 
     $ actinet data/sample.cwa.gz
-    <summary output written to outputs/sample/sample-summary.json>
+    <summary output written to outputs/sample/sample-outputSummary.json>
     <time-series output written to outputs/sample/sample-timeSeries.csv.gz>
 
 See :doc:`cliapi` for more details.
@@ -112,7 +112,7 @@ The quickest way to visualise the activity intensty classification output is to 
 .. code-block:: console
 
     $ actinet data/sample.cwa.gz -p
-    <summary output written to outputs/sample/sample-summary.json>
+    <summary output written to outputs/sample/sample-outputSummary.json>
     <time-series output written to outputs/sample/sample-timeSeries.csv.gz>
     <plot output written to outputs/sample/sample-timeSeries-plot.png>
 
@@ -177,7 +177,8 @@ To combine output summaries from multiple runs::
 
     actinet-collate-outputs outputs/
 
-This writes ``outputs.csv``. Summary fields are aligned by name, and the
+This writes ``collated-outputs/outputs.csv`` and, when per-run daily files are
+present, ``collated-outputs/Daily.csv.gz``. Summary fields are aligned by name, and the
 default ``union`` schema policy retains every field found across the input
 files while leaving unavailable values blank. To reject summaries with
 different field sets, use strict schema validation::
