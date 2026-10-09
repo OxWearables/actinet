@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import errno
+import gzip
 import json
 import logging
 import math
@@ -51,15 +52,16 @@ class _JsonCollationPlan:
 
 def collate_outputs(
     outputs: Union[str, PathLike[str]],
-    outfile: Union[str, PathLike[str]] = "outputs.csv",
+    outfile: Union[str, PathLike[str]] = "collated-outputs/outputs.csv",
     schema_policy: str = "union",
 ) -> None:
-    """Collate ``*-outputSummary.json`` files into one CSV file.
+    """Collate summary JSON files into the primary CSV and daily archives.
 
     JSON object keys are aligned by name. Under the default ``union`` policy,
     every key found across the inputs is retained and missing values are left
     blank. The ``strict`` policy requires every input to have the same keys.
-    The completed CSV replaces *outfile* atomically.
+    The completed primary CSV replaces *outfile* atomically. When daily inputs
+    are present, they are merged into a sibling ``Daily.csv.gz`` file.
     """
 
     _validate_schema_policy(schema_policy)
@@ -68,6 +70,8 @@ def collate_outputs(
     outfile_path.parent.mkdir(parents=True, exist_ok=True)
     outfile_path = outfile_path.parent.resolve() / outfile_path.name
     _validate_output_path(outfile_path)
+    if outfile_path == outfile_path.parent / "Daily.csv.gz":
+        raise ValueError("--outfile cannot be Daily.csv.gz; it is reserved for daily collation")
 
     with _output_lock(outfile_path):
         snapshot_directory = Path(
@@ -90,6 +94,7 @@ def collate_outputs(
 
             print(f"Found {len(infofiles)} summary files...")
             plan = _plan_json_collation(infofiles, schema_policy)
+            has_daily_output = _collate_daily_outputs(outputs_path, outfile_path.parent)
             staged_path, final_mode = _create_staged_output(outfile_path)
             try:
                 _write_json_collation(plan, staged_path)
@@ -105,6 +110,114 @@ def collate_outputs(
             _cleanup_snapshot_directory(snapshot_directory)
 
     print("Summary CSV written to", outfile_path)
+    if has_daily_output:
+        print("Daily CSV written to", outfile_path.parent / "Daily.csv.gz")
+
+
+def _collate_daily_outputs(outputs: Path, destination: Path) -> bool:
+    """Keep per-run daily archives available as one destination-level table."""
+    daily_outfile = destination / "Daily.csv.gz"
+    with _output_lock(daily_outfile):
+        files = _find_daily_outputs(outputs, destination)
+        if not files:
+            return False
+        staging_directory = Path(tempfile.mkdtemp(dir=destination, prefix=".Daily.csv.gz.", suffix=".tmp"))
+        try:
+            snapshots = _snapshot_daily_files(files, staging_directory)
+            columns = _daily_columns(snapshots)
+            staged = staging_directory / "Daily.csv.gz"
+            with gzip.open(staged, "wt", encoding="utf-8", newline="") as stream:
+                safe_columns = _spreadsheet_safe_columns(columns)
+                writer = csv.DictWriter(stream, fieldnames=safe_columns, extrasaction="raise")
+                writer.writeheader()
+                for file in snapshots:
+                    with gzip.open(file, "rt", encoding="utf-8-sig", newline="") as source:
+                        reader = csv.DictReader(source, strict=True)
+                        for row in reader:
+                            if None in row or any(value is None for value in row.values()):
+                                raise ValueError(f"Daily CSV has malformed rows: {file}")
+                            writer.writerow({
+                                safe_column: _normalize_daily_cell(row.get(column))
+                                for column, safe_column in zip(columns, safe_columns)
+                            })
+            _sync_file(staged)
+            if daily_outfile.exists():
+                os.chmod(staged, stat.S_IMODE(daily_outfile.stat().st_mode))
+            os.replace(staged, daily_outfile)
+            _fsync_directory(destination.resolve())
+        finally:
+            if staging_directory.exists():
+                for child in staging_directory.iterdir():
+                    child.unlink()
+                staging_directory.rmdir()
+    return True
+
+
+def _snapshot_daily_files(files: Sequence[Path], directory: Path) -> list[Path]:
+    snapshots: list[Path] = []
+    for index, source in enumerate(files):
+        snapshot = directory / f"source-{index:08d}.csv.gz"
+        try:
+            descriptor = os.open(source, _source_open_flags())
+        except OSError as error:
+            raise ValueError(f"Could not safely open Daily CSV {source}: {error}") from error
+        try:
+            source_stat = os.fstat(descriptor)
+            if not stat.S_ISREG(source_stat.st_mode):
+                raise ValueError(f"Daily CSV source is not a regular file: {source}")
+            _copy_stable_regular_file(descriptor, source, snapshot)
+        finally:
+            os.close(descriptor)
+        snapshots.append(snapshot)
+    return snapshots
+
+
+def _daily_columns(files: Sequence[Path]) -> list[str]:
+    columns: list[str] = []
+    seen: set[str] = set()
+    for file in files:
+        with gzip.open(file, "rt", encoding="utf-8-sig", newline="") as stream:
+            reader = csv.DictReader(stream, strict=True)
+            if not reader.fieldnames:
+                raise ValueError(f"Daily CSV has no header: {file}")
+            if any(not column or not column.strip() for column in reader.fieldnames):
+                raise ValueError(f"Daily CSV has blank column names: {file}")
+            if len(set(reader.fieldnames)) != len(reader.fieldnames):
+                raise ValueError(f"Daily CSV has duplicate column names: {file}")
+            for column in reader.fieldnames:
+                if column not in seen:
+                    seen.add(column)
+                    columns.append(column)
+            for row in reader:
+                if None in row:
+                    raise ValueError(f"Daily CSV has rows with extra fields: {file}")
+    return columns
+
+
+def _normalize_daily_cell(value: Any) -> Any:
+    if isinstance(value, str) and _looks_numeric(value):
+        return value
+    return _normalize_csv_cell(value)
+
+
+def _looks_numeric(value: str) -> bool:
+    try:
+        float(value)
+    except ValueError:
+        return False
+    return bool(value.strip())
+
+
+def _find_daily_outputs(outputs: Path, destination: Path) -> list[Path]:
+    resolved_destination = destination.resolve()
+    generated = (resolved_destination / "Daily.csv.gz").resolve()
+    return sorted(
+        path
+        for path in outputs.rglob("*-Daily.csv.gz")
+        if path.is_file()
+        and not path.is_symlink()
+        and path.resolve() != generated
+    )
 
 
 def _resolve_outputs_directory(outputs: Path) -> Path:
@@ -636,7 +749,12 @@ def convert_ordereddict(value: Any) -> Any:
 def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("outputs", help="Directory containing JSON files.")
-    parser.add_argument("--outfile", "-o", default="outputs.csv", help="Output CSV filename.")
+    parser.add_argument(
+        "--outfile",
+        "-o",
+        default="collated-outputs/outputs.csv",
+        help="Output CSV filename (default: collated-outputs/outputs.csv).",
+    )
     parser.add_argument(
         "--schema-policy",
         choices=["union", "strict"],

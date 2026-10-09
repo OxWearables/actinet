@@ -1,5 +1,6 @@
 import csv
 import errno
+import gzip
 import json
 import multiprocessing
 import os
@@ -90,6 +91,12 @@ def test_collate_outputs_function_and_cli(tmp_path, monkeypatch, capsys):
     collate_main()
     assert cli_out.exists()
 
+    default_out = tmp_path / "collated-outputs" / "outputs.csv"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", ["collate", str(outputs)])
+    collate_main()
+    assert default_out.exists()
+
 
 def test_collate_outputs_unions_schemas_by_name_in_source_order(tmp_path):
     outputs = tmp_path / "outputs"
@@ -105,6 +112,22 @@ def test_collate_outputs_unions_schemas_by_name_in_source_order(tmp_path):
     assert frame["Filename"].tolist() == ["a", "z"]
     assert pd.isna(frame.loc[0, "last"])
     assert pd.isna(frame.loc[1, "first"])
+
+
+def test_collate_outputs_writes_daily_csv(tmp_path):
+    outputs = tmp_path / "outputs" / "run"
+    outputs.mkdir(parents=True)
+    (outputs / "sample-outputSummary.json").write_text(json.dumps({"Filename": "sample"}))
+    with gzip.open(outputs / "sample-Daily.csv.gz", "wt", newline="") as stream:
+        stream.write("Date,Filename,Steps\n2024-01-01,sample,10\n")
+
+    outfile = tmp_path / "collated-outputs" / "outputs.csv"
+    collate_outputs(tmp_path / "outputs", outfile)
+
+    daily = pd.read_csv(tmp_path / "collated-outputs" / "Daily.csv.gz")
+    assert daily.to_dict("records") == [
+        {"Date": "2024-01-01", "Filename": "sample", "Steps": 10}
+    ]
 
 
 def test_collate_outputs_preserves_scalar_and_nested_values(tmp_path):
