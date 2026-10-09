@@ -177,6 +177,32 @@ To combine output summaries from multiple runs::
 
     actinet-collate-outputs outputs/
 
+This writes ``outputs.csv``. Summary fields are aligned by name, and the
+default ``union`` schema policy retains every field found across the input
+files while leaving unavailable values blank. To reject summaries with
+different field sets, use strict schema validation::
+
+    actinet-collate-outputs outputs/ --schema-policy strict
+
+Use ``--outfile`` to select a different destination. Collation uses a
+destination-specific lock, validates every input, and stages the complete CSV
+before replacing the destination atomically. Concurrent writers for the same
+destination wait for one another, while independent destinations can proceed
+in parallel. Invalid or corrupt summaries therefore leave an existing
+collated CSV unchanged. Inputs are processed in path order for deterministic
+row and column ordering. If no summary files are found, the command fails
+without creating or replacing the destination CSV.
+Existing output symlinks are rejected rather than replaced; use a regular file
+path for the destination.
+
+For safer interactive use in spreadsheet applications, string fields and
+column names beginning with ``=``, ``+``, ``-``, ``@``, their full-width
+Unicode variants, a tab, or a line break are prefixed with an apostrophe.
+Numeric negative values are unchanged. This spreadsheet-safety measure
+deliberately changes the exported representation of affected strings; the
+source JSON files remain the lossless record. Floating ``NaN`` values are
+written as blank cells, matching the previous collator.
+
 
 Crude vs. Adjusted Activity Estimates
 =====================================
