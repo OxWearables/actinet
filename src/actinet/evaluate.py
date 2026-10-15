@@ -6,6 +6,7 @@ from sklearn.metrics import (
     f1_score,
     cohen_kappa_score,
 )
+import copy
 import numpy as np
 import pandas as pd
 import os
@@ -26,6 +27,10 @@ def evaluate_preprocessing(
     weights_path: str = "models/weights.pt",
     verbose: bool = True,
 ) -> np.ndarray:
+    if classifier.model_weights is not None:
+        raise ValueError("Cross-validation requires a classifier without fitted weights.")
+    initial_classifier = classifier
+
     skf = StratifiedGroupKFold(n_splits=5)
 
     le = LabelEncoder().fit(Y)
@@ -34,6 +39,7 @@ def evaluate_preprocessing(
     Y_preds = np.empty_like(Y_encoded)
 
     for fold, (train_index, test_index) in enumerate(skf.split(X, Y_encoded, groups)):
+        classifier = copy.deepcopy(initial_classifier)
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = Y_encoded[train_index], Y_encoded[test_index]
         groups_train = safe_indexer(groups, train_index)
@@ -82,6 +88,10 @@ def evaluate_models(
     out_dir: Optional[str] = None,
     verbose: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    if actinet_classifier.model_weights is not None:
+        raise ValueError("Cross-validation requires a classifier without fitted weights.")
+    initial_classifier = actinet_classifier
+
     skf = StratifiedGroupKFold(n_splits=5)
 
     le = LabelEncoder().fit(Y_rf)
@@ -97,6 +107,7 @@ def evaluate_models(
     for fold, (train_index, test_index) in enumerate(
         skf.split(X_rf, Y_encoded_rf, groups_rf)
     ):
+        actinet_classifier = copy.deepcopy(initial_classifier)
         if verbose:
             print(f"======== Evalating Fold {fold+1} ========")
         # Ensure the same train and test split for groups are used in both models in each fold
