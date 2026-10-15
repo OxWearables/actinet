@@ -214,8 +214,11 @@ class FixedSplitter:
 
 def test_evaluate_preprocessing_runs_group_folds(monkeypatch, capsys):
     monkeypatch.setattr(evaluate, "StratifiedGroupKFold", lambda n_splits: FixedSplitter())
-    classifier = MagicMock()
-    classifier.predict.side_effect = [np.array([0, 1]), np.array([0, 1])]
+    classifier = MagicMock(model_weights=None)
+    fold_classifiers = [MagicMock(model_weights=None) for _ in range(2)]
+    classifier.__deepcopy__ = MagicMock(side_effect=fold_classifiers)
+    for fold_classifier in fold_classifiers:
+        fold_classifier.predict.return_value = np.array([0, 1])
     X = np.arange(8).reshape(4, 2)
     y = np.array(["a", "b", "a", "b"])
     groups = np.array(["g1", "g1", "g2", "g2"])
@@ -223,15 +226,22 @@ def test_evaluate_preprocessing_runs_group_folds(monkeypatch, capsys):
         classifier, X, y, groups, np.arange(4), weights_path="weights-{}.pt", verbose=True
     )
     np.testing.assert_array_equal(result, y)
-    assert classifier.fit.call_count == 2
+    classifier.fit.assert_not_called()
+    classifier.predict.assert_not_called()
+    for fold_classifier in fold_classifiers:
+        fold_classifier.fit.assert_called_once()
+        fold_classifier.predict.assert_called_once()
     assert "Fold 1 Test Scores" in capsys.readouterr().out
 
 
 def test_evaluate_models_returns_and_saves_fold_results(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(evaluate, "StratifiedGroupKFold", lambda n_splits: FixedSplitter())
-    actinet_classifier = MagicMock()
+    actinet_classifier = MagicMock(model_weights=None)
+    fold_classifiers = [MagicMock(model_weights=None) for _ in range(2)]
+    actinet_classifier.__deepcopy__ = MagicMock(side_effect=fold_classifiers)
+    for fold_classifier in fold_classifiers:
+        fold_classifier.predict.return_value = np.array([0, 1])
     rf_classifier = MagicMock()
-    actinet_classifier.predict.side_effect = [np.array([0, 1]), np.array([0, 1])]
     rf_classifier.predict.side_effect = [np.array([0, 1]), np.array([0, 1])]
     X = np.arange(8).reshape(4, 2)
     y = np.array(["a", "b", "a", "b"])
@@ -253,6 +263,11 @@ def test_evaluate_models_returns_and_saves_fold_results(tmp_path, monkeypatch, c
         verbose=True,
     )
     assert len(actinet_result) == len(rf_result) == 2
+    actinet_classifier.fit.assert_not_called()
+    actinet_classifier.predict.assert_not_called()
+    for fold_classifier in fold_classifiers:
+        fold_classifier.fit.assert_called_once()
+        fold_classifier.predict.assert_called_once()
     assert (tmp_path / "actinet_results.pkl").exists()
     assert (tmp_path / "rf_results.pkl").exists()
     assert "Actinet performance" in capsys.readouterr().out
