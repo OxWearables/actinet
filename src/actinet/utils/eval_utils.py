@@ -11,7 +11,6 @@ from sklearn.metrics import (
     balanced_accuracy_score,
 )
 
-
 Number = Union[int, float]
 
 
@@ -40,8 +39,7 @@ def extract_activity_predictions(
     age_band: Any = None,
     sex: Any = None,
     return_true_labels: Literal[True] = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
-    ...
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]: ...
 
 
 @overload
@@ -51,8 +49,7 @@ def extract_activity_predictions(
     age_band: Any = None,
     sex: Any = None,
     return_true_labels: Literal[False] = False,
-) -> Tuple[np.ndarray, np.ndarray, int]:
-    ...
+) -> Tuple[np.ndarray, np.ndarray, int]: ...
 
 
 def extract_activity_predictions(
@@ -120,13 +117,13 @@ def extract_activity_predictions(
 
 def build_mae_cell(true_values: Any, pred_values: Any) -> str:
     """Builds a MAE cell for a given set of true and predicted values."""
-    mae = np.abs(true_values - pred_values)
-    return f"{np.mean(mae):.3f} ± {np.std(mae):.3f}"
+    ae = np.abs(true_values - pred_values)
+    return f"{np.mean(ae):.3f} ± {np.std(ae):.3f}"
 
 
-def build_pvalue_cell(true_values: Any, pred_values: Any) -> str:
-    """Builds a p-value cell for a given set of true and predicted values."""
-    _, p_value = stats.ttest_rel(true_values, pred_values)
+def build_pvalue_cell(values1: Any, values2: Any) -> str:
+    """Builds a p-value cell for a given set of values."""
+    _, p_value = stats.ttest_rel(values1, values2)
     if p_value < 0.001:
         return "<0.001"
     return f"{p_value:.3f}"
@@ -134,7 +131,9 @@ def build_pvalue_cell(true_values: Any, pred_values: Any) -> str:
 
 def build_mae_table(df: pd.DataFrame, activities: Iterable[str]) -> pd.DataFrame:
     df_maes = pd.DataFrame(
-        columns=activities, index=["Baseline", "ActiNet", "p-value"], dtype=float
+        columns=activities,
+        index=["Baseline", "ActiNet", "p-value"],
+        dtype=float,
     )
     for activity in activities:
         (
@@ -151,7 +150,8 @@ def build_mae_table(df: pd.DataFrame, activities: Iterable[str]) -> pd.DataFrame
             activity_actinet_true, activity_actinet_pred
         )
         df_maes.loc["p-value", activity] = build_pvalue_cell(
-            activity_bbaa_true, activity_bbaa_pred
+            activity_actinet_true - activity_actinet_pred,
+            activity_bbaa_true - activity_bbaa_pred,
         )
     return df_maes
 
